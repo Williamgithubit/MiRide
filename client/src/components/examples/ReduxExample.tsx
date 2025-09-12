@@ -1,0 +1,281 @@
+import React, { useState } from "react";
+import { useAppSelector, useAppDispatch } from "../../store/hooks";
+import { useGetCarsQuery, useGetCarByIdQuery } from "../../store/Car/carApi";
+import { useGetRentalsQuery } from "../../store/Rental/rentalApi";
+import {
+  loginStart,
+  loginSuccess,
+  loginFailure,
+  logout,
+} from "../../store/Auth/authSlice";
+import { useLoginMutation } from "../../store/Auth/authApi";
+
+const ReduxExample: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const auth = useAppSelector((state) => state.auth);
+  const [carId, setCarId] = useState<number | null>(null);
+
+  // RTK Query hooks
+  const {
+    data: cars,
+    isLoading: carsLoading,
+    error: carsError,
+  } = useGetCarsQuery();
+  const { data: car } = useGetCarByIdQuery(carId || 0, { skip: !carId });
+  const { data: rentals } = useGetRentalsQuery();
+
+  // Login mutation hook
+  const [login, { isLoading: isLoggingIn }] = useLoginMutation();
+
+  // Form state
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      dispatch(loginStart());
+      const result = await login({ email, password }).unwrap();
+      // Transform the API response to match the expected AnyUser type
+      dispatch(
+        loginSuccess({
+          token: result.token,
+          user: {
+            id: result.user.id,
+            email: result.user.email,
+            name: result.user.name,
+            phone: result.user.phone || "", // Add a default value since the API doesn't provide this
+            role: result.user.role as "customer" | "owner" | "admin",
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        })
+      );
+    } catch (error) {
+      dispatch(
+        loginFailure(error instanceof Error ? error.message : "Login failed")
+      );
+    }
+  };
+
+  const handleLogout = () => {
+    dispatch(logout());
+  };
+
+  const handleSelectCar = (id: number) => {
+    setCarId(id);
+  };
+
+  return (
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Redux Example</h1>
+
+      {/* Authentication Section */}
+      <div className="bg-white shadow-md rounded p-4 mb-6">
+        <h2 className="text-xl font-semibold mb-2">Authentication</h2>
+
+        {auth.isAuthenticated ? (
+          <div>
+            <p className="mb-2">
+              Logged in as:{" "}
+              <span className="font-medium">{auth.user?.email}</span>
+            </p>
+            <button
+              onClick={handleLogout}
+              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+            >
+              Logout
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label htmlFor="email" className="block mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full border rounded px-3 py-2"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="block mb-1">
+                Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full border rounded px-3 py-2"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isLoggingIn}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
+            >
+              {isLoggingIn ? "Logging in..." : "Login"}
+            </button>
+            {auth.error && <p className="text-red-500">{auth.error}</p>}
+          </form>
+        )}
+      </div>
+
+      {/* Cars Section */}
+      <div className="bg-white shadow-md rounded p-4 mb-6">
+        <h2 className="text-xl font-semibold mb-2">Cars</h2>
+
+        {carsLoading ? (
+          <p>Loading cars...</p>
+        ) : carsError ? (
+          <p className="text-red-500">Error loading cars</p>
+        ) : (
+          <div>
+            <ul className="divide-y">
+              {cars?.map((car) => (
+                <li key={car.id} className="py-2">
+                  <button
+                    onClick={() => handleSelectCar(Number(car.id))}
+                    className="text-left w-full hover:bg-gray-100 p-2 rounded"
+                  >
+                    <span className="font-medium">
+                      {car.name} {car.model} ({car.year})
+                    </span>
+                    <span className="ml-2 text-sm text-gray-500">
+                      ${car.dailyRate}/day
+                    </span>
+                    <span
+                      className={`ml-2 text-sm ${
+                        car.isAvailable ? "text-green-500" : "text-red-500"
+                      }`}
+                    >
+                      {car.isAvailable ? "Available" : "Unavailable"}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Selected Car Details */}
+      {car && (
+        <div className="bg-white shadow-md rounded p-4 mb-6">
+          <h2 className="text-xl font-semibold mb-2">Car Details</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-gray-600">Make:</p>
+              <p className="font-medium">{car.name}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">Model:</p>
+              <p className="font-medium">{car.model}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">Year:</p>
+              <p className="font-medium">{car.year}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">Color:</p>
+              <p className="font-medium">{car.color}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">License Plate:</p>
+              <p className="font-medium">{car.licensePlate}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">Daily Rate:</p>
+              <p className="font-medium">${car.dailyRate}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rentals Section */}
+      <div className="bg-white shadow-md rounded p-4">
+        <h2 className="text-xl font-semibold mb-2">Rentals</h2>
+
+        {!rentals ? (
+          <p>Loading rentals...</p>
+        ) : rentals.length === 0 ? (
+          <p>No rentals found</p>
+        ) : (
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Car
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Start Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  End Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Total Cost
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {rentals.map((rental) => (
+                <tr key={rental.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {rental.id}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {rental.car
+                      ? `${rental.car.name} ${rental.car.model}`
+                      : `Car ID: ${rental.carId}`}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(rental.startDate).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(rental.endDate).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    ${rental.totalCost}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        ${
+                          rental.status === "active"
+                            ? "bg-green-100 text-green-800"
+                            : rental.status === "completed"
+                            ? "bg-blue-100 text-blue-800"
+                            : rental.status === "cancelled"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                    >
+                      {rental.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ReduxExample;

@@ -1,0 +1,524 @@
+import React, { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+type UserType = { id: number; name: string; email: string; role: string; };
+type AuthContextType = { user: UserType | null; login: (email: string, password: string) => Promise<void>; logout: () => void; };
+import {
+  Box,
+  Typography,
+  Paper,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Button,
+  Divider,
+  Chip,
+  TableContainer,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  Stack,
+  Card,
+  CardContent,
+  TextField,
+  MenuItem
+} from '@mui/material';
+import {
+  DirectionsCar,
+  ListAlt,
+  AttachMoney,
+  Settings,
+  Message,
+  Notifications,
+  Star,
+  Add,
+  Edit,
+  Visibility,
+  Check,
+  Cancel
+} from '@mui/icons-material';
+
+const sidebarItems = [
+  { id: 'listings', label: 'My Listings', icon: <DirectionsCar /> },
+  { id: 'bookings', label: 'Booking Requests', icon: <ListAlt /> },
+  { id: 'earnings', label: 'Earnings Overview', icon: <AttachMoney /> },
+  { id: 'maintenance', label: 'Car Maintenance', icon: <Settings /> },
+  { id: 'reviews', label: 'Customer Reviews', icon: <Star /> },
+  { id: 'messages', label: 'Messages', icon: <Message /> },
+  { id: 'analytics', label: 'Analytics', icon: <Notifications /> }
+];
+
+const OwnerDashboard: React.FC = () => {
+  const auth = useAuth() as AuthContextType;
+  const { user } = auth;
+  const [activeSection, setActiveSection] = useState('listings');
+
+  // Function to render main content based on active section
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'listings':
+        return (
+          <Paper elevation={3} sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h5">My Car Listings</Typography>
+              <Button variant="contained" color="primary" startIcon={<Add />}>
+                Add New Car
+              </Button>
+            </Box>
+            
+            {/* Filter and sort options */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Stack direction="row" spacing={1}>
+                <Button variant="contained" size="small" color="primary">All (5)</Button>
+                <Button variant="outlined" size="small" color="inherit">Available (3)</Button>
+                <Button variant="outlined" size="small" color="inherit">Rented (2)</Button>
+              </Stack>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>Sort by:</Typography>
+                <TextField
+                  select
+                  size="small"
+                  defaultValue="Newest first"
+                  variant="outlined"
+                  sx={{ minWidth: 150 }}
+                >
+                  <MenuItem value="Newest first">Newest first</MenuItem>
+                  <MenuItem value="Oldest first">Oldest first</MenuItem>
+                  <MenuItem value="Highest earnings">Highest earnings</MenuItem>
+                  <MenuItem value="Most popular">Most popular</MenuItem>
+                </TextField>
+              </Box>
+            </Box>
+            
+            {/* Car listings */}
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+              {/* Car 1 */}
+              <Box sx={{ flexBasis: { xs: '100%', sm: '45%', lg: '30%' }, display: 'flex' }}>
+                <Card variant="outlined">
+                  <Box sx={{ position: 'relative' }}>
+                    <Box 
+                      component="img"
+                      src="https://via.placeholder.com/300x150"
+                      alt="Car"
+                      sx={{ width: '100%', height: 200, objectFit: 'cover' }}
+                    />
+                    <Chip 
+                      label="Available" 
+                      color="success" 
+                      size="small" 
+                      sx={{ position: 'absolute', top: 8, right: 8 }}
+                    />
+                  </Box>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <Typography variant="h6" component="div">Toyota Camry 2023</Typography>
+                      <Typography variant="subtitle1" color="success.main" fontWeight="bold">$65/day</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+                      <Box sx={{ color: 'warning.main', display: 'flex' }}>
+                        {[1,2,3,4,5].map(star => <Star key={star} fontSize="small" />)}
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>(12 reviews)</Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      Automatic • Sedan • 5 Seats
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Location: San Francisco
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+                      Booked 8 times in last month
+                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                      <Button size="small" startIcon={<Edit />} color="primary">Edit</Button>
+                      <Button size="small" startIcon={<Visibility />} color="primary">View details</Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Box>
+              
+              {/* Car 2 */}
+              <Box sx={{ flexBasis: { xs: '100%', sm: '45%', lg: '30%' }, display: 'flex' }}>
+                <Card variant="outlined">
+                  <Box sx={{ position: 'relative' }}>
+                    <Box 
+                      component="img"
+                      src="https://via.placeholder.com/300x150"
+                      alt="Car"
+                      sx={{ width: '100%', height: 200, objectFit: 'cover' }}
+                    />
+                    <Chip 
+                      label="Rented" 
+                      color="error" 
+                      size="small" 
+                      sx={{ position: 'absolute', top: 8, right: 8 }}
+                    />
+                  </Box>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <Typography variant="h6" component="div">Honda Civic 2022</Typography>
+                      <Typography variant="subtitle1" color="success.main" fontWeight="bold">$55/day</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+                      <Box sx={{ color: 'warning.main', display: 'flex' }}>
+                        {[1,2,3,4].map(star => <Star key={star} fontSize="small" />)}
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>(8 reviews)</Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      Automatic • Sedan • 5 Seats
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Location: San Jose
+                    </Typography>
+                    <Typography variant="body2" color="error.main" sx={{ mt: 1.5 }}>
+                      Rented until Aug 15, 2023
+                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                      <Button size="small" startIcon={<Edit />} color="primary">Edit</Button>
+                      <Button size="small" startIcon={<Visibility />} color="primary">View details</Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+          </Paper>
+        );
+      case 'bookings':
+        return (
+          <Paper elevation={3} sx={{ p: 3 }}>
+            <Typography variant="h5" sx={{ mb: 3 }}>Booking Requests</Typography>
+            
+            <Box sx={{ mb: 3 }}>
+              <Stack direction="row" spacing={1}>
+                <Button variant="contained" size="small" color="primary">All (3)</Button>
+                <Button variant="outlined" size="small" color="inherit">Pending (1)</Button>
+                <Button variant="outlined" size="small" color="inherit">Approved (1)</Button>
+                <Button variant="outlined" size="small" color="inherit">Completed (1)</Button>
+              </Stack>
+            </Box>
+            
+            {/* Booking requests table */}
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ bgcolor: 'grey.100' }}>
+                    <TableCell>Customer</TableCell>
+                    <TableCell>Car</TableCell>
+                    <TableCell>Dates</TableCell>
+                    <TableCell>Amount</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {/* Pending request */}
+                  <TableRow hover>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="medium">John Smith</Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography variant="caption" color="text.secondary">4.8</Typography>
+                        <Star sx={{ fontSize: 12, color: 'warning.main', ml: 0.5, mr: 0.5 }} /> 
+                        <Typography variant="caption" color="text.secondary">(10 rentals)</Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="medium">Toyota Camry</Typography>
+                      <Typography variant="caption" color="text.secondary">2023</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">Aug 10 - Aug 17, 2023</Typography>
+                      <Typography variant="caption" color="text.secondary">7 days</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="medium">$455.00</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip label="Pending" color="warning" size="small" variant="outlined" />
+                    </TableCell>
+                    <TableCell>
+                      <Stack direction="row" spacing={1}>
+                        <Button variant="contained" size="small" color="success" startIcon={<Check />}>Approve</Button>
+                        <Button variant="contained" size="small" color="error" startIcon={<Cancel />}>Decline</Button>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                  
+                  {/* Approved request */}
+                  <TableRow hover>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="medium">Emily Johnson</Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography variant="caption" color="text.secondary">4.9</Typography>
+                        <Star sx={{ fontSize: 12, color: 'warning.main', ml: 0.5, mr: 0.5 }} /> 
+                        <Typography variant="caption" color="text.secondary">(5 rentals)</Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="medium">Honda Civic</Typography>
+                      <Typography variant="caption" color="text.secondary">2022</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">Aug 5 - Aug 12, 2023</Typography>
+                      <Typography variant="caption" color="text.secondary">7 days</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="medium">$385.00</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip label="Approved" color="success" size="small" variant="outlined" />
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="contained" size="small" color="primary" startIcon={<Visibility />}>View Details</Button>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+        );
+      case 'earnings':
+        return (
+          <Paper elevation={3} sx={{ p: 3 }}>
+            <Typography variant="h5" sx={{ mb: 3 }}>Earnings Overview</Typography>
+            
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+              <Box sx={{ flexBasis: { xs: '100%', sm: '45%', md: '30%' }, display: 'flex' }}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="h6" component="div">Total Earnings</Typography>
+                    <Typography variant="h4" component="div">$2,450.00</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      +15% from last month
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid sx={{ display: 'flex' }} item xs={12} sm={6} md={4}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="h6" component="div">This Month</Typography>
+                    <Typography variant="h4" component="div">$850.00</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      +5% from last month
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid sx={{ display: 'flex' }} item xs={12} sm={6} md={4}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="h6" component="div">Pending Payouts</Typography>
+                    <Typography variant="h4" component="div">$350.00</Typography>
+                    <Button variant="contained" size="small" color="primary" sx={{ mt: 1 }}>
+                      Withdraw
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+            
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="h6" component="div">Monthly Earnings</Typography>
+              <Box 
+                component="img"
+                src="https://via.placeholder.com/600x200"
+                alt="Chart"
+                sx={{ width: '100%', height: 200, objectFit: 'cover', mt: 2 }}
+              />
+            </Box>
+            
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="h6" component="div">Earnings by Car</Typography>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: 'grey.100' }}>
+                      <TableCell>Car</TableCell>
+                      <TableCell>Total Bookings</TableCell>
+                      <TableCell>Total Days</TableCell>
+                      <TableCell>Earnings</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    <TableRow hover>
+                      <TableCell>Toyota Camry</TableCell>
+                      <TableCell>12</TableCell>
+                      <TableCell>45</TableCell>
+                      <TableCell>$1,350.00</TableCell>
+                    </TableRow>
+                    <TableRow hover>
+                      <TableCell>Honda Civic</TableCell>
+                      <TableCell>8</TableCell>
+                      <TableCell>32</TableCell>
+                      <TableCell>$1,100.00</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          </Paper>
+        );
+      case 'maintenance':
+        return (
+          <Paper elevation={3} sx={{ p: 3 }}>
+            <Typography variant="h5" sx={{ mb: 3 }}>Car Maintenance Tracker</Typography>
+            
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h6" component="div">Upcoming Maintenance</Typography>
+              <Button variant="contained" size="small" color="primary" startIcon={<Add />}>
+                Add Maintenance Task
+              </Button>
+            </Box>
+            
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ bgcolor: 'grey.100' }}>
+                    <TableCell>Car</TableCell>
+                    <TableCell>Service Type</TableCell>
+                    <TableCell>Due Date</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  <TableRow hover>
+                    <TableCell>Toyota Camry</TableCell>
+                    <TableCell>Oil Change</TableCell>
+                    <TableCell>Jul 15, 2023</TableCell>
+                    <TableCell>
+                      <Chip label="Upcoming" color="warning" size="small" variant="outlined" />
+                    </TableCell>
+                    <TableCell>
+                      <Stack direction="row" spacing={1}>
+                        <Button variant="contained" size="small" color="primary" startIcon={<Edit />}>Edit</Button>
+                        <Button variant="contained" size="small" color="success" startIcon={<Check />}>Complete</Button>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow hover>
+                    <TableCell>Honda Civic</TableCell>
+                    <TableCell>Tire Rotation</TableCell>
+                    <TableCell>Jul 20, 2023</TableCell>
+                    <TableCell>
+                      <Chip label="Upcoming" color="warning" size="small" variant="outlined" />
+                    </TableCell>
+                    <TableCell>
+                      <Stack direction="row" spacing={1}>
+                        <Button variant="contained" size="small" color="primary" startIcon={<Edit />}>Edit</Button>
+                        <Button variant="contained" size="small" color="success" startIcon={<Check />}>Complete</Button>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </TableContainer>
+            
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="h6" component="div">Maintenance History</Typography>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: 'grey.100' }}>
+                      <TableCell>Car</TableCell>
+                      <TableCell>Service Type</TableCell>
+                      <TableCell>Date</TableCell>
+                      <TableCell>Cost</TableCell>
+                      <TableCell>Notes</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    <TableRow hover>
+                      <TableCell>Toyota Camry</TableCell>
+                      <TableCell>Oil Change</TableCell>
+                      <TableCell>Jun 15, 2023</TableCell>
+                      <TableCell>$45.00</TableCell>
+                      <TableCell>Regular maintenance</TableCell>
+                    </TableRow>
+                    <TableRow hover>
+                      <TableCell>Honda Civic</TableCell>
+                      <TableCell>Brake Service</TableCell>
+                      <TableCell>Jun 10, 2023</TableCell>
+                      <TableCell>$120.00</TableCell>
+                      <TableCell>Replaced front brake pads</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          </Paper>
+        );
+      default:
+        return (
+          <Paper elevation={3} sx={{ p: 3 }}>
+            <Typography variant="h5" sx={{ mb: 3 }}>{activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}</Typography>
+            <Typography variant="body2" color="text.secondary">This section is under development.</Typography>
+          </Paper>
+        );
+    }
+  };
+
+  return (
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+      {/* Sidebar */}
+      <Paper 
+        elevation={3}
+        sx={{ 
+          width: 240, 
+          p: 3, 
+          display: 'flex', 
+          flexDirection: 'column',
+          borderRadius: 0
+        }}
+      >
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" color="primary">Owner Dashboard</Typography>
+          <Typography variant="body2" color="text.secondary">Welcome back, {user?.name}</Typography>
+        </Box>
+        
+        <List sx={{ flexGrow: 1, mb: 2 }}>
+          {sidebarItems.map((item) => (
+            <ListItemButton
+              key={item.id}
+              selected={activeSection === item.id}
+              onClick={() => setActiveSection(item.id)}
+              sx={{
+                borderRadius: 1,
+                mb: 0.5,
+                bgcolor: activeSection === item.id ? 'primary.light' : 'transparent',
+                color: activeSection === item.id ? 'primary.main' : 'text.primary',
+              }}
+            >
+              <ListItemIcon sx={{ 
+                color: activeSection === item.id ? 'primary.main' : 'text.secondary'
+              }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText primary={item.label} />
+            </ListItemButton>
+          ))}
+        </List>
+        
+        <Divider sx={{ my: 2 }} />
+        
+        <Button 
+          variant="text" 
+          color="inherit" 
+          sx={{ justifyContent: 'flex-start', py: 1 }}
+        >
+          Logout
+        </Button>
+      </Paper>
+
+      {/* Main Content */}
+      <Box sx={{ flexGrow: 1, p: 4, overflow: 'auto' }}>
+        {renderContent()}
+      </Box>
+    </Box>
+  );
+};
+
+export default OwnerDashboard;
