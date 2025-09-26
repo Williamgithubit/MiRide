@@ -1,19 +1,24 @@
 import express from 'express';
 import { authenticate, authorize } from '../controllers/authController.js';
 import {
+  getCustomerStats,
   getAdminStats,
   getOwnerStats,
   getRevenueData,
   getCarUtilizationData,
   generateReport,
   getPlatformSettings,
-  updatePlatformSettings
+  updatePlatformSettings,
+  getOwnerAnalytics
 } from '../controllers/dashboardController.js';
 
 const router = express.Router();
 
 // Apply authentication middleware to all dashboard routes
 router.use(authenticate);
+
+// Customer dashboard routes
+router.get('/customer-stats', authorize(['customer']), getCustomerStats);
 
 // Admin dashboard routes
 router.get('/stats/admin', authorize(['admin']), getAdminStats);
@@ -22,6 +27,9 @@ router.get('/stats/admin', authorize(['admin']), getAdminStats);
 router.get('/owner-stats', authorize(['owner', 'admin']), getOwnerStats);
 router.get('/stats/owner', authorize(['owner', 'admin']), getOwnerStats);
 router.get('/owner/:ownerId', authorize(['owner', 'admin']), getOwnerStats);
+
+// Owner analytics route
+router.get('/owner/analytics', authorize(['owner', 'admin']), getOwnerAnalytics);
 
 // Revenue charts data
 router.get('/revenue-data', authorize(['owner', 'admin']), getRevenueData);

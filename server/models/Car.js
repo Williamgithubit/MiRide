@@ -60,7 +60,7 @@ const Car = (sequelize, DataTypes) => {
       },
     },
     fuelType: {
-      type: DataTypes.ENUM('Petrol', 'Electric', 'Hybrid'),
+      type: DataTypes.ENUM('Petrol', 'Diesel', 'Electric', 'Hybrid'),
       allowNull: false,
       field: 'fuel_type',
       defaultValue: 'Petrol',

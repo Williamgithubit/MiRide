@@ -1,5 +1,5 @@
 import express from 'express';
-import { createRental, getRental, getStats, getActive, deleteRental, getRentals, getOwnerRentals, updateRentalStatus, getRevenue } from '../controllers/rentalController.js';
+import { createRental, getRental, getStats, getActive, getCustomerRentals, deleteRental, getRentals, getOwnerRentals, updateRentalStatus, getRevenue, getPendingBookings, approveBooking, rejectBooking, getCurrentBookings, getBookingHistory, getCustomerBookingStats, createTestBooking, cancelBooking } from '../controllers/rentalController.js';
 import auth from '../middleware/auth.js';
 import db from '../models/index.js';
 
@@ -35,15 +35,26 @@ const verifyRentalOwnership = async (req, res, next) => {
 rentalRouter.get('/', auth(), getRentals); // Allow all authenticated users to view rentals
 rentalRouter.get('/stats', auth(['admin']), getStats); // Admin only for stats
 
+// Owner routes (must come before /:id routes to avoid conflicts)
+rentalRouter.get('/pending', auth(['owner', 'admin']), getPendingBookings);
+rentalRouter.get('/owner', auth(['owner', 'admin']), getOwnerRentals);
+rentalRouter.get('/revenue', auth(['owner', 'admin']), getRevenue);
+rentalRouter.get('/owner/:ownerId', auth(['owner', 'admin']), getOwnerRentals);
+rentalRouter.post('/create-test-booking', auth(['owner', 'admin']), createTestBooking);
+rentalRouter.put('/:id/approve', auth(['owner', 'admin']), approveBooking);
+rentalRouter.put('/:id/reject', auth(['owner', 'admin']), rejectBooking);
+rentalRouter.put('/:id/status', auth(['owner', 'admin']), updateRentalStatus);
+
 // Customer routes
 rentalRouter.post('/', auth(['customer']), createRental);
-rentalRouter.get('/active', auth(['customer']), getActive);
+rentalRouter.post('/checkout', auth(['customer']), createRental);
+rentalRouter.get('/customer/current', auth(['customer']), getCurrentBookings);
+rentalRouter.get('/customer/history', auth(['customer']), getBookingHistory);
+rentalRouter.get('/customer/active', auth(['customer']), getActive);
+rentalRouter.get('/customer/stats', auth(['customer']), getCustomerBookingStats);
+rentalRouter.get('/customer', auth(['customer']), getCustomerRentals);
 rentalRouter.get('/:id', auth(['customer']), verifyRentalOwnership, getRental);
+rentalRouter.put('/:id/cancel', auth(['customer']), cancelBooking);
 rentalRouter.delete('/:id', auth(['customer']), verifyRentalOwnership, deleteRental);
-
-// Owner routes
-rentalRouter.get('/owner/:ownerId', auth(['owner', 'admin']), getOwnerRentals);
-rentalRouter.put('/:id/status', auth(['owner', 'admin']), updateRentalStatus);
-rentalRouter.get('/revenue', auth(['owner', 'admin']), getRevenue);
 
 export default rentalRouter;

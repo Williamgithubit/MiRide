@@ -13,6 +13,8 @@ import dashboardRoutes from './routes/dashboardRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import maintenanceRoutes from './routes/maintenanceRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -40,6 +42,8 @@ app.use('/api/dashboard', dashboardRoutes); // Dashboard routes for admin and ow
 app.use('/api/admin', adminRoutes); // Admin-only routes
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Default route
 app.get('/', (req, res) => {
@@ -59,7 +63,7 @@ app.use((err, req, res, next) => {
 // Sync database and start server
 const startServer = async () => {
   try {
-    await db.sequelize.sync({ alter: true }); //
+    await db.sequelize.authenticate(); //
     console.log('Database connection has been established successfully.');
     
     // In development, you may want to sync the models with the database

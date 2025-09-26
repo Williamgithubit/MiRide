@@ -77,6 +77,7 @@ const auth = (roles = []) => {
       }
 
       req.user = user;
+      req.userId = user.id; // For compatibility with existing controllers
       next();
     } catch (error) {
       console.error("Auth error:", error);

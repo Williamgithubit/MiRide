@@ -1,6 +1,80 @@
 import db from '../models/index.js';
 import { Op } from 'sequelize';
 
+// Get customer dashboard stats
+export const getCustomerStats = async (req, res) => {
+  try {
+    // Get customer ID from authenticated user (using req.userId set by authenticate middleware)
+    const customerId = req.userId;
+
+    if (!customerId) {
+      console.log('getCustomerStats - No customer ID found. req.userId:', req.userId);
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    console.log('getCustomerStats - Customer ID:', customerId);
+
+    // Get current date and time
+    const now = new Date();
+
+    // Get customer's rentals
+    const customerRentals = await db.Rental.findAll({
+      where: { customerId },
+      include: [
+        { 
+          model: db.Car, 
+          as: 'car', 
+          attributes: ['id', 'brand', 'model', 'year', 'imageUrl'] 
+        }
+      ],
+      order: [['startDate', 'DESC']]
+    });
+
+    // Calculate stats
+    const activeRentals = customerRentals.filter(rental => 
+      new Date(rental.startDate) <= now && new Date(rental.endDate) >= now
+    ).length;
+
+    const totalBookings = customerRentals.length;
+    const totalSpent = customerRentals.reduce((sum, rental) => sum + rental.totalCost, 0);
+
+    // Get available cars count
+    const availableCars = await db.Car.count({
+      where: { isAvailable: true }
+    });
+
+    // Get recent bookings (last 5)
+    const recentBookings = customerRentals.slice(0, 5).map(rental => {
+      // Ensure dates are properly converted to Date objects
+      const startDate = new Date(rental.startDate);
+      const endDate = new Date(rental.endDate);
+      
+      return {
+        id: rental.id,
+        carDetails: `${rental.car.year} ${rental.car.brand} ${rental.car.model}`,
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0],
+        status: new Date() > endDate ? 'completed' : 
+                 new Date() < startDate ? 'pending' : 'active',
+        totalCost: rental.totalCost
+      };
+    });
+
+    const stats = {
+      activeRentals,
+      totalBookings,
+      totalSpent,
+      availableCars,
+      recentBookings
+    };
+
+    return res.status(200).json(stats);
+  } catch (error) {
+    console.error('Error fetching customer stats:', error);
+    return res.status(500).json({ message: 'Internal server error', error: error.message });
+  }
+};
+
 // Get admin dashboard stats
 export const getAdminStats = async (req, res) => {
   try {
@@ -103,7 +177,7 @@ export const getAdminStats = async (req, res) => {
 // Get owner dashboard stats - optimized with single query
 export const getOwnerStats = async (req, res) => {
   try {
-    // Get owner ID from authenticated user
+    // Get owner ID from authenticated user (using req.userId set by authenticate middleware)
     const ownerId = req.userId;
 
     // Get current date and time
@@ -496,6 +570,288 @@ export const updatePlatformSettings = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating platform settings:', error);
+    return res.status(500).json({ message: 'Internal server error', error: error.message });
+  }
+};
+
+// Get comprehensive owner analytics data
+export const getOwnerAnalytics = async (req, res) => {
+  try {
+    // Verify user has owner role
+    if (req.userRole !== 'owner') {
+      return res.status(403).json({ message: 'Access denied. Owner privileges required.' });
+    }
+
+    const ownerId = req.userId;
+    const { period = 'monthly' } = req.query;
+    const now = new Date();
+    
+    // Calculate date ranges
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+    
+    // Get period-specific date range for trends
+    let trendStartDate;
+    switch (period) {
+      case 'weekly':
+        trendStartDate = new Date(now);
+        trendStartDate.setDate(now.getDate() - 42); // 6 weeks
+        break;
+      case 'yearly':
+        trendStartDate = new Date(now);
+        trendStartDate.setFullYear(now.getFullYear() - 2); // 2 years
+        break;
+      case 'monthly':
+      default:
+        trendStartDate = new Date(now);
+        trendStartDate.setMonth(now.getMonth() - 11); // 12 months
+        break;
+    }
+
+    // Get owner's cars
+    const ownerCars = await db.Car.findAll({
+      where: { ownerId },
+      attributes: ['id', 'make', 'model', 'year', 'imageUrl', 'isAvailable']
+    });
+
+    const carIds = ownerCars.map(car => car.id);
+
+    if (carIds.length === 0) {
+      return res.status(200).json({
+        totalBookings: 0,
+        totalBookingsThisMonth: 0,
+        totalRevenue: 0,
+        totalRevenueThisMonth: 0,
+        activeCars: 0,
+        inactiveCars: 0,
+        pendingRequests: 0,
+        bookingsTrend: [],
+        topRentedCars: [],
+        bookingStatusDistribution: [],
+        recentBookings: [],
+        utilizationRate: 0,
+        averageRentalDuration: 0,
+        customerSatisfaction: 0,
+        revenuePerCar: 0,
+      });
+    }
+
+    // Get comprehensive analytics with optimized queries
+    const [analyticsResults] = await db.sequelize.query(`
+      WITH owner_rentals AS (
+        SELECT 
+          r.*,
+          c.make,
+          c.model,
+          c.year,
+          c.image_url,
+          u.name as customer_name,
+          u.email as customer_email
+        FROM rentals r
+        INNER JOIN cars c ON r.car_id = c.id
+        INNER JOIN users u ON r.customer_id = u.id
+        WHERE c.owner_id = :ownerId
+      ),
+      monthly_stats AS (
+        SELECT 
+          COUNT(*) as total_bookings,
+          SUM(total_cost) as total_revenue,
+          AVG(EXTRACT(DAY FROM (end_date - start_date))) as avg_duration,
+          COUNT(CASE WHEN start_date >= :startOfMonth THEN 1 END) as bookings_this_month,
+          SUM(CASE WHEN start_date >= :startOfMonth THEN total_cost ELSE 0 END) as revenue_this_month,
+          COUNT(CASE WHEN status = 'pending_approval' THEN 1 END) as pending_requests
+        FROM owner_rentals
+      ),
+      car_stats AS (
+        SELECT 
+          COUNT(CASE WHEN is_available = true THEN 1 END) as active_cars,
+          COUNT(CASE WHEN is_available = false THEN 1 END) as inactive_cars,
+          COUNT(*) as total_cars
+        FROM cars 
+        WHERE owner_id = :ownerId
+      ),
+      status_distribution AS (
+        SELECT 
+          status,
+          COUNT(*) as count,
+          COUNT(*) * 100.0 / SUM(COUNT(*)) OVER() as percentage
+        FROM owner_rentals
+        GROUP BY status
+      ),
+      top_cars AS (
+        SELECT 
+          car_id,
+          CONCAT(make, ' ', model, ' ', year) as car_name,
+          make,
+          model,
+          year,
+          image_url,
+          COUNT(*) as rental_count,
+          SUM(total_cost) as total_revenue
+        FROM owner_rentals
+        GROUP BY car_id, make, model, year, image_url
+        ORDER BY rental_count DESC
+        LIMIT 10
+      )
+      SELECT 
+        ms.*,
+        cs.active_cars,
+        cs.inactive_cars,
+        cs.total_cars,
+        COALESCE(
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'status', sd.status,
+              'count', sd.count,
+              'percentage', sd.percentage
+            )
+          ) FILTER (WHERE sd.status IS NOT NULL),
+          '[]'::json
+        ) as status_distribution,
+        COALESCE(
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'carId', tc.car_id,
+              'carName', tc.car_name,
+              'make', tc.make,
+              'model', tc.model,
+              'year', tc.year,
+              'imageUrl', tc.image_url,
+              'rentalCount', tc.rental_count,
+              'totalRevenue', tc.total_revenue
+            ) ORDER BY tc.rental_count DESC
+          ) FILTER (WHERE tc.car_id IS NOT NULL),
+          '[]'::json
+        ) as top_cars
+      FROM monthly_stats ms
+      CROSS JOIN car_stats cs
+      LEFT JOIN status_distribution sd ON true
+      LEFT JOIN top_cars tc ON true
+      GROUP BY ms.total_bookings, ms.total_revenue, ms.avg_duration, 
+               ms.bookings_this_month, ms.revenue_this_month, ms.pending_requests,
+               cs.active_cars, cs.inactive_cars, cs.total_cars
+    `, {
+      replacements: { ownerId, startOfMonth, startOfLastMonth, endOfLastMonth },
+      type: db.sequelize.QueryTypes.SELECT
+    });
+
+    // Get bookings trend data
+    const trendQuery = period === 'weekly' 
+      ? `DATE_TRUNC('week', start_date)` 
+      : period === 'yearly'
+      ? `DATE_TRUNC('year', start_date)`
+      : `DATE_TRUNC('month', start_date)`;
+
+    const trendFormat = period === 'weekly'
+      ? 'YYYY-"W"WW'
+      : period === 'yearly'
+      ? 'YYYY'
+      : 'Mon YYYY';
+
+    const [trendData] = await db.sequelize.query(`
+      SELECT 
+        TO_CHAR(${trendQuery}, '${trendFormat}') as period,
+        COUNT(*) as bookings,
+        SUM(total_cost) as revenue
+      FROM rentals r
+      INNER JOIN cars c ON r.car_id = c.id
+      WHERE c.owner_id = :ownerId 
+        AND r.start_date >= :trendStartDate
+      GROUP BY ${trendQuery}
+      ORDER BY ${trendQuery} ASC
+    `, {
+      replacements: { ownerId, trendStartDate },
+      type: db.sequelize.QueryTypes.SELECT
+    });
+
+    // Get recent bookings
+    const recentBookings = await db.Rental.findAll({
+      where: {
+        '$car.ownerId$': ownerId
+      },
+      include: [
+        {
+          model: db.Car,
+          as: 'car',
+          attributes: ['make', 'model', 'year']
+        },
+        {
+          model: db.User,
+          as: 'customer',
+          attributes: ['name', 'email']
+        }
+      ],
+      order: [['createdAt', 'DESC']],
+      limit: 15
+    });
+
+    // Calculate utilization rate and customer satisfaction
+    const utilizationRate = analyticsResults.total_cars > 0 
+      ? (analyticsResults.total_bookings / (analyticsResults.total_cars * 30)) * 100 
+      : 0;
+
+    // Get average rating from reviews
+    const avgRating = await db.sequelize.query(`
+      SELECT AVG(rating) as avg_rating
+      FROM reviews r
+      INNER JOIN cars c ON r.car_id = c.id
+      WHERE c.owner_id = :ownerId
+    `, {
+      replacements: { ownerId },
+      type: db.sequelize.QueryTypes.SELECT
+    });
+
+    const customerSatisfaction = avgRating[0]?.avg_rating || 0;
+
+    // Format the response
+    const analytics = {
+      // Summary stats
+      totalBookings: parseInt(analyticsResults.total_bookings) || 0,
+      totalBookingsThisMonth: parseInt(analyticsResults.bookings_this_month) || 0,
+      totalRevenue: parseFloat(analyticsResults.total_revenue) || 0,
+      totalRevenueThisMonth: parseFloat(analyticsResults.revenue_this_month) || 0,
+      activeCars: parseInt(analyticsResults.active_cars) || 0,
+      inactiveCars: parseInt(analyticsResults.inactive_cars) || 0,
+      pendingRequests: parseInt(analyticsResults.pending_requests) || 0,
+      
+      // Trends
+      bookingsTrend: trendData.map(item => ({
+        period: item.period,
+        bookings: parseInt(item.bookings),
+        revenue: parseFloat(item.revenue)
+      })),
+      
+      // Top performing cars
+      topRentedCars: analyticsResults.top_cars || [],
+      
+      // Booking status distribution
+      bookingStatusDistribution: analyticsResults.status_distribution || [],
+      
+      // Recent bookings
+      recentBookings: recentBookings.map(booking => ({
+        id: booking.id,
+        customerName: booking.customer?.name || 'Unknown',
+        customerEmail: booking.customer?.email || 'Unknown',
+        carName: `${booking.car?.year} ${booking.car?.make} ${booking.car?.model}`,
+        startDate: booking.startDate,
+        endDate: booking.endDate,
+        totalAmount: parseFloat(booking.totalCost),
+        status: booking.status
+      })),
+      
+      // Metrics
+      utilizationRate: Math.min(utilizationRate, 100),
+      averageRentalDuration: parseFloat(analyticsResults.avg_duration) || 0,
+      customerSatisfaction: parseFloat(customerSatisfaction) || 0,
+      revenuePerCar: analyticsResults.total_cars > 0 
+        ? (parseFloat(analyticsResults.total_revenue) || 0) / analyticsResults.total_cars 
+        : 0,
+    };
+
+    return res.status(200).json(analytics);
+  } catch (error) {
+    console.error('Error fetching owner analytics:', error);
     return res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 };

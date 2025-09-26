@@ -2,7 +2,7 @@
   "development": {
      "username": "postgres",
     "password": "Tealobreeze~8",
-     "database": "basic_api",
+     "database": "miride",
      "host": "127.0.0.1",
      "dialect": "postgres"
   },

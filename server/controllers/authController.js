@@ -369,6 +369,7 @@ export const authenticate = async (req, res, next) => {
     // Verify that the user exists in either Customer or User model
     let userExists = false;
     let userModel = null;
+    let userObject = null;
     
     // Check User model (Customer model was removed, now using User model only)
     try {
@@ -376,6 +377,7 @@ export const authenticate = async (req, res, next) => {
       if (user) {
         userExists = true;
         userModel = 'user';
+        userObject = user;
         console.log('User found in User model with ID:', decoded.id);
       }
     } catch (userErr) {
@@ -388,10 +390,11 @@ export const authenticate = async (req, res, next) => {
       return res.status(401).json({ message: 'User not found' });
     }
     
-    // Set user ID, role, and model in request for use in other middleware/routes
+    // Set user ID, role, model, and user object in request for use in other middleware/routes
     req.userId = decoded.id;
     req.userRole = decoded.role;
     req.userModel = userModel;
+    req.user = userObject; // Add the full user object for compatibility
     
     console.log('Authentication successful for user:', { id: decoded.id, role: decoded.role, model: userModel });
     next();

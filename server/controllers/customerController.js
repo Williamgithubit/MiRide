@@ -10,21 +10,19 @@ export const createCustomer = async (req, res) => {
             return res.status(403).json({ message: "Insufficient permissions to assign this role" });
         }
 
-        const existingCustomer = await db.Customer.findOne({ where: { email } });
+        const existingCustomer = await db.User.findOne({ where: { email } });
         if (existingCustomer) {
             return res.status(400).json({ message: "Customer with this email already exists" });
         }
 
         // Create customer with all provided fields
-        const newCustomer = await db.Customer.create({ 
+        const newCustomer = await db.User.create({ 
             name, 
             email, 
             password, // Will be hashed by the model hook
             phone, 
             role: role || 'customer',
-            isActive: isActive !== undefined ? isActive : true,
-            imageUrl,
-            address
+            isActive: isActive !== undefined ? isActive : true
         });
 
         // Don't return the password in the response
@@ -67,7 +65,7 @@ export const getCustomers = async (req, res) => {
             whereClause.role = 'customer';
         }
 
-        const customers = await db.Customer.findAll({
+        const customers = await db.User.findAll({
             where: whereClause,
             attributes: { exclude: ['password'] }, // Never return passwords
             order: [['createdAt', 'DESC']]
@@ -85,20 +83,27 @@ export const getCustomer = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const customer = await db.Customer.findByPk(id, {
-            attributes: { exclude: ['password'] }, // Never return password
-            include: [{
-                model: db.Rental,
-                as: 'rentals'
-            }]
+        console.log('Fetching customer with ID:', id);
+        
+        // Validate ID format
+        if (!id || id === '0' || id === 'undefined' || id === 'null') {
+            console.log('Invalid customer ID provided:', id);
+            return res.status(400).json({ message: "Invalid customer ID" });
+        }
+        
+        const customer = await db.User.findByPk(id, {
+            attributes: { exclude: ['password'] } // Never return password
         });
         
         if (!customer) {
+            console.log('Customer not found with ID:', id);
             return res.status(404).json({ message: "Customer not found" });
         }
 
+        console.log('Found customer:', customer.name, 'Role:', customer.role);
+
         // Non-admins can only view customer accounts or their own account
-        if (req.userRole !== 'admin' && customer.role !== 'customer' && customer.id !== req.userId) {
+        if (req.user && req.user.role !== 'admin' && customer.role !== 'customer' && customer.id !== req.user.id) {
             return res.status(403).json({ message: "Insufficient permissions to view this user" });
         }
 
@@ -115,7 +120,7 @@ export const updateCustomer = async (req, res) => {
     const { name, email, phone, role, address, imageUrl, isActive, password } = req.body;
 
     try {
-        const customer = await db.Customer.findByPk(id);
+        const customer = await db.User.findByPk(id);
         if (!customer) {
             return res.status(404).json({ message: "Customer not found" });
         }
@@ -132,7 +137,7 @@ export const updateCustomer = async (req, res) => {
 
         // Check if email is being changed and if it's already in use
         if (email && email !== customer.email) {
-            const existingCustomer = await db.Customer.findOne({ where: { email } });
+            const existingCustomer = await db.User.findOne({ where: { email } });
             if (existingCustomer) {
                 return res.status(400).json({ message: "Email already in use" });
             }
@@ -143,8 +148,6 @@ export const updateCustomer = async (req, res) => {
         if (name) updates.name = name;
         if (email) updates.email = email;
         if (phone) updates.phone = phone;
-        if (address) updates.address = address;
-        if (imageUrl) updates.imageUrl = imageUrl;
         if (password) updates.password = password; // Will be hashed by the model hook
         
         // Only admins can update these fields
@@ -176,14 +179,14 @@ export const deleteCustomer = async (req, res) => {
             return res.status(403).json({ message: "Insufficient permissions to delete users" });
         }
         
-        const customer = await db.Customer.findByPk(id);
+        const customer = await db.User.findByPk(id);
         if (!customer) {
             return res.status(404).json({ message: "Customer not found" });
         }
         
         // Safety check - prevent deleting the last admin
         if (customer.role === 'admin') {
-            const adminCount = await db.Customer.count({ where: { role: 'admin' } });
+            const adminCount = await db.User.count({ where: { role: 'admin' } });
             if (adminCount <= 1) {
                 return res.status(400).json({ message: "Cannot delete the only admin user" });
             }
@@ -209,8 +212,8 @@ export const getCustomerStats = async (req, res) => {
             return res.status(403).json({ message: "Insufficient permissions" });
         }
         
-        const totalCustomers = await db.Customer.count();
-        const newCustomersThisMonth = await db.Customer.count({
+        const totalCustomers = await db.User.count();
+        const newCustomersThisMonth = await db.User.count({
             where: {
                 createdAt: {
                     [db.Sequelize.Op.gte]: new Date(new Date().setDate(1)) // First day of current month
@@ -218,7 +221,7 @@ export const getCustomerStats = async (req, res) => {
             }
         });
         
-        const customersByRole = await db.Customer.findAll({
+        const customersByRole = await db.User.findAll({
             attributes: [
                 'role',
                 [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'count']

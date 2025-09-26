@@ -29,12 +29,12 @@ const RentalModel = (sequelize, DataTypes) => {
       allowNull: false,
       validate: {
         isDate: true,
-        isFutureDate(value) {
+        isFutureOrTodayDate(value) {
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           const startDate = new Date(value);
-          if (startDate <= today) {
-            throw new Error('Start date must be a future date.');
+          if (startDate < today) {
+            throw new Error('Start date cannot be in the past.');
           }
         }
       },
@@ -55,8 +55,100 @@ const RentalModel = (sequelize, DataTypes) => {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
+    // New fields for enhanced booking system
+    ownerId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: 'users',
+        key: 'id',
+      },
+    },
+    totalDays: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    totalAmount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+    },
+    status: {
+      type: DataTypes.ENUM('pending_approval', 'approved', 'rejected', 'active', 'completed', 'cancelled'),
+      defaultValue: 'pending_approval',
+      allowNull: false,
+    },
+    paymentStatus: {
+      type: DataTypes.ENUM('pending', 'paid', 'refunded', 'failed'),
+      defaultValue: 'pending',
+      allowNull: false,
+    },
+    paymentIntentId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    stripeSessionId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    pickupLocation: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    dropoffLocation: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    specialRequests: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    // Add-ons
+    hasInsurance: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    hasGPS: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    hasChildSeat: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    hasAdditionalDriver: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    insuranceCost: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0,
+    },
+    gpsCost: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0,
+    },
+    childSeatCost: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0,
+    },
+    additionalDriverCost: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0,
+    },
+    approvedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    rejectedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    rejectionReason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
   }, {
-    timestamps: false,
+    timestamps: true,
     tableName: 'rentals',
     underscored: true
   });
@@ -64,11 +156,15 @@ const RentalModel = (sequelize, DataTypes) => {
   Rental.associate = (models) => {
     Rental.belongsTo(models.Car, {
       foreignKey: 'carId',
-      as: 'Car'
+      as: 'car'
     });
     Rental.belongsTo(models.User, {
       foreignKey: 'customerId',
-      as: 'Customer'
+      as: 'customer'
+    });
+    Rental.belongsTo(models.User, {
+      foreignKey: 'ownerId',
+      as: 'owner'
     });
   };
 

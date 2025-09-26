@@ -1,4 +1,4 @@
 node_modules/
 scripts/
 .env
-.env.example
+.env.example 

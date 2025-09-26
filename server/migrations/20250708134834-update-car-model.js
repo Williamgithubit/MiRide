@@ -86,14 +86,27 @@ export default {
       });
     }
 
-    await queryInterface.addColumn('cars', 'is_liked', {
-      type: Sequelize.BOOLEAN,
-      allowNull: false,
-      defaultValue: false
-    });
+    // Add is_liked column if it doesn't exist
+    if (!(await columnExists('cars', 'is_liked'))) {
+      await queryInterface.addColumn('cars', 'is_liked', {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      });
+    }
 
-    await queryInterface.renameColumn('cars', 'isAvailable', 'is_available');
-    await queryInterface.renameColumn('cars', 'imageUrl', 'image_url');
+    // Try to rename columns, but skip if they fail (likely already renamed)
+    try {
+      await queryInterface.renameColumn('cars', 'isAvailable', 'is_available');
+    } catch (error) {
+      console.log('Column rename failed (may already be renamed):', error.message);
+    }
+    
+    try {
+      await queryInterface.renameColumn('cars', 'imageUrl', 'image_url');
+    } catch (error) {
+      console.log('Column rename failed (may already be renamed):', error.message);
+    }
   },
 
   async down(queryInterface, Sequelize) {

@@ -5,7 +5,7 @@ import { Op } from 'sequelize';
 // Get all reviews for owner's cars
 export const getReviewsByOwner = async (req, res) => {
   try {
-    const ownerId = req.user?.id || req.params.ownerId;
+    const ownerId = req.userId || req.params.ownerId;
     
     const reviews = await db.Review.findAll({
       include: [
@@ -33,6 +33,41 @@ export const getReviewsByOwner = async (req, res) => {
     res.json(reviews);
   } catch (error) {
     console.error('Error fetching reviews:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Get reviews by customer
+export const getReviewsByCustomer = async (req, res) => {
+  try {
+    const customerId = req.params.customerId || req.userId;
+    
+    const reviews = await db.Review.findAll({
+      where: { customerId },
+      include: [
+        {
+          model: db.Car,
+          as: 'car',
+          attributes: ['id', 'name', 'model', 'brand', 'year', 'imageUrl'],
+        },
+        {
+          model: db.User,
+          as: 'customer',
+          attributes: ['id', 'name', 'email'],
+        },
+        {
+          model: db.Rental,
+          as: 'rental',
+          attributes: ['id', 'startDate', 'endDate', 'totalCost'],
+          required: false,
+        },
+      ],
+      order: [['createdAt', 'DESC']],
+    });
+
+    res.json(reviews);
+  } catch (error) {
+    console.error('Error fetching customer reviews:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
@@ -77,12 +112,14 @@ export const createReview = async (req, res) => {
   try {
     const {
       carId,
-      customerId,
       rentalId,
       rating,
       title,
       comment,
     } = req.body;
+    
+    // Get customerId from authenticated user
+    const customerId = req.userId;
 
     // Verify the rental exists and belongs to the customer
     if (rentalId) {
@@ -153,8 +190,83 @@ export const createReview = async (req, res) => {
   }
 };
 
-// Update review (owner response)
+// Update review (customer editing their own review)
 export const updateReview = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rating, comment, title } = req.body;
+
+    // Find review that belongs to the authenticated customer
+    const review = await db.Review.findOne({
+      where: { 
+        id,
+        customerId: req.userId 
+      },
+      include: [
+        {
+          model: db.Car,
+          as: 'car',
+          attributes: ['id', 'name', 'model', 'brand', 'year', 'imageUrl'],
+        },
+        {
+          model: db.User,
+          as: 'customer',
+          attributes: ['id', 'name'],
+        },
+        {
+          model: db.Rental,
+          as: 'rental',
+          attributes: ['id', 'startDate', 'endDate'],
+          required: false,
+        },
+      ],
+    });
+
+    if (!review) {
+      return res.status(404).json({ message: 'Review not found or not authorized' });
+    }
+
+    // Update the review
+    await review.update({
+      rating: rating || review.rating,
+      comment: comment || review.comment,
+      title: title || review.title,
+    });
+
+    // Update car's average rating
+    await updateCarRating(review.carId);
+
+    // Return updated review with all associations
+    const updatedReview = await db.Review.findByPk(id, {
+      include: [
+        {
+          model: db.Car,
+          as: 'car',
+          attributes: ['id', 'name', 'model', 'brand', 'year', 'imageUrl'],
+        },
+        {
+          model: db.User,
+          as: 'customer',
+          attributes: ['id', 'name'],
+        },
+        {
+          model: db.Rental,
+          as: 'rental',
+          attributes: ['id', 'startDate', 'endDate'],
+          required: false,
+        },
+      ],
+    });
+
+    res.json(updatedReview);
+  } catch (error) {
+    console.error('Error updating review:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Update review response (owner response to customer review)
+export const updateReviewResponse = async (req, res) => {
   try {
     const { id } = req.params;
     const { response } = req.body;
@@ -164,7 +276,7 @@ export const updateReview = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          where: { ownerId: req.user?.id },
+          where: { ownerId: req.userId },
         },
       ],
     });
@@ -201,28 +313,26 @@ export const updateReview = async (req, res) => {
 
     res.json(updatedReview);
   } catch (error) {
-    console.error('Error updating review:', error);
+    console.error('Error updating review response:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
 
-// Delete review
+// Delete review (customer can delete their own review)
 export const deleteReview = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const review = await db.Review.findByPk(id, {
-      include: [
-        {
-          model: db.Car,
-          as: 'car',
-          where: { ownerId: req.user?.id },
-        },
-      ],
+    // Find review that belongs to the authenticated customer
+    const review = await db.Review.findOne({
+      where: { 
+        id,
+        customerId: req.userId 
+      }
     });
 
     if (!review) {
-      return res.status(404).json({ message: 'Review not found' });
+      return res.status(404).json({ message: 'Review not found or not authorized' });
     }
 
     const carId = review.carId;
@@ -241,7 +351,7 @@ export const deleteReview = async (req, res) => {
 // Get review statistics
 export const getReviewStats = async (req, res) => {
   try {
-    const ownerId = req.user?.id || req.params.ownerId;
+    const ownerId = req.userId || req.params.ownerId;
     
     const ratingDistribution = await db.Review.findAll({
       include: [

@@ -66,6 +66,7 @@ export default {
           },
           { transaction }
         );
+      }
       
       // Add imageUrl field if it doesn't exist
       if (!(await columnExists('customers', 'image_url'))) {

@@ -6,7 +6,7 @@ import { Op } from 'sequelize';
 export const getMaintenanceByOwner = async (req, res) => {
   try {
     console.log('=== getMaintenanceByOwner called ===');
-    const ownerId = req.user?.id || req.params.ownerId;
+    const ownerId = req.userId || req.user?.id || req.params.ownerId;
     console.log('Owner ID:', ownerId);
     
     if (!ownerId) {
@@ -40,7 +40,7 @@ export const getMaintenanceByOwner = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'brand', 'year', 'imageUrl'],
+          attributes: ['id', 'name', 'model', 'make', 'year', 'imageUrl'],
         },
       ],
       order: [['createdAt', 'DESC']],
@@ -69,7 +69,7 @@ export const getMaintenanceByCar = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'brand', 'year', 'imageUrl'],
+          attributes: ['id', 'name', 'model', 'make', 'year', 'imageUrl'],
         },
       ],
       order: [['createdAt', 'DESC']],
@@ -85,6 +85,10 @@ export const getMaintenanceByCar = async (req, res) => {
 // Create new maintenance record
 export const createMaintenance = async (req, res) => {
   try {
+    console.log('=== createMaintenance called ===');
+    console.log('Request body:', req.body);
+    console.log('User ID:', req.userId || req.user?.id);
+    
     const {
       carId,
       type,
@@ -98,14 +102,17 @@ export const createMaintenance = async (req, res) => {
     } = req.body;
 
     // Verify car ownership
+    console.log('Verifying car ownership for carId:', carId, 'ownerId:', req.userId || req.user?.id);
     const car = await db.Car.findOne({
       where: { 
         id: carId, 
-        ownerId: req.user?.id 
+        ownerId: req.userId || req.user?.id 
       },
     });
+    console.log('Car found:', car ? 'Yes' : 'No');
 
     if (!car) {
+      console.log('Car not found or not owned by user');
       return res.status(404).json({ message: 'Car not found or not owned by user' });
     }
 
@@ -127,7 +134,7 @@ export const createMaintenance = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'brand', 'year', 'imageUrl'],
+          attributes: ['id', 'name', 'model', 'make', 'year', 'imageUrl'],
         },
       ],
     });
@@ -150,7 +157,7 @@ export const updateMaintenance = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          where: { ownerId: req.user?.id },
+          where: { ownerId: req.userId || req.user?.id },
         },
       ],
     });
@@ -171,7 +178,7 @@ export const updateMaintenance = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'brand', 'year', 'imageUrl'],
+          attributes: ['id', 'name', 'model', 'make', 'year', 'imageUrl'],
         },
       ],
     });
@@ -193,7 +200,7 @@ export const deleteMaintenance = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          where: { ownerId: req.user?.id },
+          where: { ownerId: req.userId || req.user?.id },
         },
       ],
     });
@@ -214,7 +221,7 @@ export const deleteMaintenance = async (req, res) => {
 export const getMaintenanceStats = async (req, res) => {
   try {
     console.log('=== getMaintenanceStats called ===');
-    const ownerId = req.user?.id || req.params.ownerId;
+    const ownerId = req.userId || req.user?.id || req.params.ownerId;
     console.log('Owner ID for stats:', ownerId);
     
     if (!ownerId) {
