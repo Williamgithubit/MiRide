@@ -1,0 +1,50 @@
+/* Analytics component styles */
+:root {
+  --tooltip-bg: #ffffff;
+  --tooltip-border: #e5e7eb;
+}
+
+[data-theme="dark"] {
+  --tooltip-bg: #374151;
+  --tooltip-border: #4b5563;
+}
+
+/* Recharts tooltip custom styling */
+.recharts-tooltip-wrapper {
+  outline: none;
+}
+
+.recharts-tooltip-content {
+  background-color: var(--tooltip-bg) !important;
+  border: 1px solid var(--tooltip-border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Chart responsive container */
+.recharts-responsive-container {
+  min-height: 300px;
+}
+
+/* Custom chart animations */
+.recharts-bar-rectangle {
+  transition: fill 0.2s ease-in-out;
+}
+
+.recharts-line-curve {
+  transition: stroke 0.2s ease-in-out;
+}
+
+/* Loading skeleton animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

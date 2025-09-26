@@ -20,7 +20,7 @@ export interface CustomerFormData {
 }
 
 export const useCustomers = () => {
-  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
   
   // RTK Query hooks
@@ -34,7 +34,7 @@ export const useCustomers = () => {
   const { 
     data: selectedCustomer, 
     isLoading: isLoadingSelectedCustomer 
-  } = useGetCustomerByIdQuery(selectedCustomerId || 0, { 
+  } = useGetCustomerByIdQuery(selectedCustomerId || '', { 
     skip: selectedCustomerId === null 
   });
   
@@ -50,7 +50,7 @@ export const useCustomers = () => {
   const [deleteCustomer, deleteCustomerResult] = useDeleteCustomerMutation();
 
   // Custom functions
-  const selectCustomer = (id: number) => {
+  const selectCustomer = (id: string) => {
     setSelectedCustomerId(id);
   };
 
@@ -73,7 +73,7 @@ export const useCustomers = () => {
     }
   };
 
-  const editCustomer = async (id: number, customerData: Partial<CustomerFormData>) => {
+  const editCustomer = async (id: string, customerData: Partial<CustomerFormData>) => {
     try {
       const result = await updateCustomer({ id, ...customerData }).unwrap();
       showSuccessToast('Customer updated successfully');
@@ -84,7 +84,7 @@ export const useCustomers = () => {
     }
   };
 
-  const removeCustomer = async (id: number) => {
+  const removeCustomer = async (id: string) => {
     try {
       await deleteCustomer(id).unwrap();
       showSuccessToast('Customer deleted successfully');

@@ -28,6 +28,17 @@ import dashboardApi from './Dashboard/dashboardApi';
 import { maintenanceApi } from './Maintenance/maintenanceApi';
 // Import the review API
 import { reviewApi } from './Review/reviewApi';
+// Import the notification API
+import { notificationApi } from './Notification/notificationApi';
+// Import the owner notification API
+import { ownerNotificationApi } from './Notification/ownerNotificationApi';
+// Import the owner review API
+import { ownerReviewApi } from './Review/ownerReviewApi';
+// Import the booking slice and API
+import bookingReducer from './Booking/bookingSlice';
+import { bookingApi } from './Booking/bookingApi';
+// Import the payment API
+import { paymentApi } from './Payment/paymentApi';
 
 // Define the root state type
 // Note: _persist property removed since we're temporarily bypassing persistence
@@ -50,12 +61,18 @@ const persistConfig = {
     dashboardApi.reducerPath,
     maintenanceApi.reducerPath,
     reviewApi.reducerPath,
+    notificationApi.reducerPath,
+    ownerNotificationApi.reducerPath,
+    ownerReviewApi.reducerPath,
+    bookingApi.reducerPath,
+    paymentApi.reducerPath,
   ],
 };
 
 // Combine reducers
 const appReducer = {
   auth: authReducer,
+  booking: bookingReducer,
   [authApi.reducerPath]: authApi.reducer,
   [carApi.reducerPath]: carApi.reducer,
   [rentalApi.reducerPath]: rentalApi.reducer,
@@ -64,6 +81,11 @@ const appReducer = {
   [dashboardApi.reducerPath]: dashboardApi.reducer,
   [maintenanceApi.reducerPath]: maintenanceApi.reducer,
   [reviewApi.reducerPath]: reviewApi.reducer,
+  [notificationApi.reducerPath]: notificationApi.reducer,
+  [ownerNotificationApi.reducerPath]: ownerNotificationApi.reducer,
+  [ownerReviewApi.reducerPath]: ownerReviewApi.reducer,
+  [bookingApi.reducerPath]: bookingApi.reducer,
+  [paymentApi.reducerPath]: paymentApi.reducer,
 };
 // Create the root reducer
 const rootReducer = combineReducers(appReducer);
@@ -88,6 +110,11 @@ export const store = configureStore({
       .concat(dashboardApi.middleware)
       .concat(maintenanceApi.middleware)
       .concat(reviewApi.middleware)
+      .concat(notificationApi.middleware)
+      .concat(ownerNotificationApi.middleware)
+      .concat(ownerReviewApi.middleware)
+      .concat(bookingApi.middleware)
+      .concat(paymentApi.middleware)
       .concat(authMiddleware),
   devTools: process.env.NODE_ENV !== 'production',
 });

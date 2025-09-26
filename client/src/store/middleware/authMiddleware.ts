@@ -73,7 +73,7 @@ export const authMiddleware: Middleware<{}, RootState, AppDispatch> =
     // Get the current state
     const state = api.getState() as RootState;
     
-    // Skip token check for auth-related actions
+    // Skip token check for auth-related actions only (payment actions need auth)
     if (action.type && (action.type.includes('auth/') || action.type.includes('login'))) {
       return next(action);
     }

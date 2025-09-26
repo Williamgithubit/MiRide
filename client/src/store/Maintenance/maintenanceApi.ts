@@ -23,7 +23,7 @@ export interface CarMaintenanceRecord {
     id: number;
     name: string;
     model: string;
-    brand: string;
+    make: string;
     year: number;
     imageUrl: string;
   };

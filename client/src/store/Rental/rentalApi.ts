@@ -6,22 +6,52 @@ import { Customer } from '../Customer/customerApi';
 export interface Rental {
   id: number;
   carId: number;
-  customerId: number;
+  customerId: string;
   startDate: string;
   endDate: string;
   totalCost: number;
-  status: 'pending' | 'active' | 'completed' | 'cancelled';
+  totalAmount: number;
+  totalDays: number;
+  ownerId: string;
+  status: 'pending_approval' | 'approved' | 'rejected' | 'active' | 'completed' | 'cancelled';
+  paymentStatus?: 'pending' | 'paid' | 'refunded' | 'failed';
+  paymentIntentId?: string;
+  stripeSessionId?: string;
+  pickupLocation?: string;
+  dropoffLocation?: string;
+  specialRequests?: string;
+  hasInsurance?: boolean;
+  hasGPS?: boolean;
+  hasChildSeat?: boolean;
+  hasAdditionalDriver?: boolean;
+  insuranceCost?: number;
+  gpsCost?: number;
+  childSeatCost?: number;
+  additionalDriverCost?: number;
   createdAt: string;
   updatedAt: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
   car?: Car;
   customer?: Customer;
 }
 
 export interface CreateRentalRequest {
   carId: number;
-  customerId: number;
+  customerId?: number; // Made optional since it's handled by auth
   startDate: string;
   endDate: string;
+  totalDays?: number;
+  totalPrice?: number;
+  insurance?: boolean;
+  gps?: boolean;
+  childSeat?: boolean;
+  additionalDriver?: boolean;
+  pickupLocation?: string;
+  dropoffLocation?: string;
+  specialRequests?: string;
+  selectedCar?: Car;
 }
 
 export const rentalApi = createApi({
@@ -56,8 +86,8 @@ export const rentalApi = createApi({
       query: (id) => `/rentals/${id}`,
       providesTags: (result, error, id) => [{ type: 'Rental', id }],
     }),
-    getCustomerRentals: builder.query<Rental[], number>({
-      query: (customerId) => `/rentals/customer/${customerId}`,
+    getCustomerRentals: builder.query<Rental[], void>({
+      query: () => `/rentals/customer`,
       providesTags: (result) =>
         result
           ? [
@@ -65,6 +95,16 @@ export const rentalApi = createApi({
               { type: 'Rental', id: 'CUSTOMER' },
             ]
           : [{ type: 'Rental', id: 'CUSTOMER' }],
+    }),
+    getActiveRentals: builder.query<Rental[], void>({
+      query: () => `/rentals/active`,
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: 'Rental' as const, id })),
+              { type: 'Rental', id: 'ACTIVE' },
+            ]
+          : [{ type: 'Rental', id: 'ACTIVE' }],
     }),
     getCarRentals: builder.query<Rental[], number>({
       query: (carId) => `/rentals/car/${carId}`,
@@ -78,7 +118,7 @@ export const rentalApi = createApi({
     }),
     createRental: builder.mutation<Rental, CreateRentalRequest>({
       query: (rental) => ({
-        url: '/rentals',
+        url: '/rentals/checkout',
         method: 'POST',
         body: rental,
       }),
@@ -125,6 +165,54 @@ export const rentalApi = createApi({
         { type: 'Rental', id: 'CAR' },
       ],
     }),
+    // Owner-specific endpoints
+    getPendingBookings: builder.query<Rental[], void>({
+      query: () => '/rentals/pending',
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: 'Rental' as const, id })),
+              { type: 'Rental', id: 'PENDING' },
+            ]
+          : [{ type: 'Rental', id: 'PENDING' }],
+    }),
+    getOwnerBookings: builder.query<Rental[], void>({
+      query: () => '/rentals/owner',
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: 'Rental' as const, id })),
+              { type: 'Rental', id: 'OWNER' },
+            ]
+          : [{ type: 'Rental', id: 'OWNER' }],
+    }),
+    approveBooking: builder.mutation<Rental, number>({
+      query: (id) => ({
+        url: `/rentals/${id}/approve`,
+        method: 'PUT',
+      }),
+      invalidatesTags: (result, error, id) => [
+        { type: 'Rental', id },
+        { type: 'Rental', id: 'LIST' },
+        { type: 'Rental', id: 'PENDING' },
+        { type: 'Rental', id: 'OWNER' },
+        { type: 'Rental', id: 'CAR' },
+      ],
+    }),
+    rejectBooking: builder.mutation<Rental, { id: number; reason: string }>({
+      query: ({ id, reason }) => ({
+        url: `/rentals/${id}/reject`,
+        method: 'PUT',
+        body: { reason },
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Rental', id },
+        { type: 'Rental', id: 'LIST' },
+        { type: 'Rental', id: 'PENDING' },
+        { type: 'Rental', id: 'OWNER' },
+        { type: 'Rental', id: 'CAR' },
+      ],
+    }),
   }),
 });
 
@@ -132,9 +220,15 @@ export const {
   useGetRentalsQuery,
   useGetRentalByIdQuery,
   useGetCustomerRentalsQuery,
+  useGetActiveRentalsQuery,
   useGetCarRentalsQuery,
   useCreateRentalMutation,
   useUpdateRentalMutation,
   useCancelRentalMutation,
   useCompleteRentalMutation,
+  // Owner-specific hooks
+  useGetPendingBookingsQuery,
+  useGetOwnerBookingsQuery,
+  useApproveBookingMutation,
+  useRejectBookingMutation,
 } = rentalApi;

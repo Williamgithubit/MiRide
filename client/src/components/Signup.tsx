@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaEye, FaEyeSlash, FaUser, FaCar, FaEnvelope, FaLock } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaUser, FaCar, FaEnvelope, FaLock, FaSpinner } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import useReduxAuth from '../store/hooks/useReduxAuth';
 
@@ -121,8 +121,8 @@ const Signup: React.FC = () => {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           {/* User icon */}
-          <div className="mx-auto h-12 w-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
-            <FaUser className="h-6 w-6 text-red-500" />
+          <div className="mx-auto h-12 w-12 bg-green-900 rounded-full flex items-center justify-center mb-4">
+            <FaUser className="h-6 w-6 text-white" />
           </div>
           
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -155,8 +155,11 @@ const Signup: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleRoleChange('customer')}
+                disabled={loading}
                 className={`p-4 rounded-lg border-2 transition-all duration-200 ${
-                  formData.role === 'customer'
+                  loading 
+                    ? 'cursor-not-allowed opacity-50' 
+                    : formData.role === 'customer'
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
@@ -171,8 +174,11 @@ const Signup: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleRoleChange('owner')}
+                disabled={loading}
                 className={`p-4 rounded-lg border-2 transition-all duration-200 ${
-                  formData.role === 'owner'
+                  loading 
+                    ? 'cursor-not-allowed opacity-50' 
+                    : formData.role === 'owner'
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
@@ -199,15 +205,18 @@ const Signup: React.FC = () => {
                 Full Name
               </label>
               <div className="relative">
-                <FaUser className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <FaUser className={`absolute left-3 top-3 h-4 w-4 transition-colors ${loading ? 'text-gray-300' : 'text-gray-400'}`} />
                 <input
                   name="name"
                   type="text"
                   placeholder="John Doe"
                   value={formData.name}
                   onChange={handleChange}
+                  disabled={loading}
                   required
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-800 focus:border-transparent transition-all duration-200 ${
+                    loading ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+                  }`}
                 />
               </div>
             </div>
@@ -218,15 +227,18 @@ const Signup: React.FC = () => {
                 Email address
               </label>
               <div className="relative">
-                <FaEnvelope className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <FaEnvelope className={`absolute left-3 top-3 h-4 w-4 transition-colors ${loading ? 'text-gray-300' : 'text-gray-400'}`} />
                 <input
                   name="email"
                   type="email"
                   placeholder="you@example.com"
                   value={formData.email}
                   onChange={handleChange}
+                  disabled={loading}
                   required
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-800 focus:border-transparent transition-all duration-200 ${
+                    loading ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+                  }`}
                 />
               </div>
             </div>
@@ -237,7 +249,7 @@ const Signup: React.FC = () => {
                 Password
               </label>
               <div className="relative">
-                <FaLock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <FaLock className={`absolute left-3 top-3 h-4 w-4 transition-colors ${loading ? 'text-gray-300' : 'text-gray-400'}`} />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   name="password"
@@ -245,12 +257,18 @@ const Signup: React.FC = () => {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={loading}
+                  className={`w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-800 focus:border-transparent transition-all duration-200 ${
+                    loading ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+                  }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                  disabled={loading}
+                  className={`absolute right-3 top-3 transition-colors ${
+                    loading ? 'text-gray-300 cursor-not-allowed' : 'text-gray-400 hover:text-gray-600'
+                  }`}
                 >
                   {showPassword ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
                 </button>
@@ -263,7 +281,7 @@ const Signup: React.FC = () => {
                 Confirm Password
               </label>
               <div className="relative">
-                <FaLock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <FaLock className={`absolute left-3 top-3 h-4 w-4 transition-colors ${loading ? 'text-gray-300' : 'text-gray-400'}`} />
                 <input
                   type={showConfirm ? 'text' : 'password'}
                   name="confirmPassword"
@@ -271,12 +289,18 @@ const Signup: React.FC = () => {
                   required
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={loading}
+                  className={`w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-800 focus:border-transparent transition-all duration-200 ${
+                    loading ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+                  }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                  disabled={loading}
+                  className={`absolute right-3 top-3 transition-colors ${
+                    loading ? 'text-gray-300 cursor-not-allowed' : 'text-gray-400 hover:text-gray-600'
+                  }`}
                 >
                   {showConfirm ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
                 </button>
@@ -287,13 +311,17 @@ const Signup: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-white transition-colors duration-200 ${
+              className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-white transition-all duration-200 bg-green-900 hover:bg-green-700 ${
                 loading 
                   ? 'bg-gray-400 cursor-not-allowed' 
                   : 'bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'
               }`}
             >
-              <span className="mr-2">→</span>
+              {loading ? (
+                <FaSpinner className="animate-spin mr-2 h-4 w-4" />
+              ) : (
+                <span className="mr-2">→</span>
+              )}
               {loading ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>

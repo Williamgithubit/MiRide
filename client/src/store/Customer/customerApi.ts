@@ -2,12 +2,12 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { RootState } from '../store';
 
 export interface Customer {
-  id: number;
+  id: string;
   name: string;
   email: string;
-  phone: string;
-  address: string;
-  driverLicense: string;
+  phone?: string;
+  address?: string;
+  driverLicense?: string;
   createdAt: string;
   updatedAt: string;
   role?: string;
@@ -41,8 +41,16 @@ export const customerApi = createApi({
             ]
           : [{ type: 'Customer', id: 'LIST' }],
     }),
-    getCustomerById: builder.query<Customer, number>({
-      query: (id) => `/customers/${id}`,
+    getCustomerById: builder.query<Customer, string>({
+      query: (id) => {
+        // Emergency fix: Prevent invalid ID calls
+        if (!id || id === '0' || id === 'undefined' || id === 'null' || id === 'invalid') {
+          console.error('customerApi - Invalid ID provided:', id);
+          throw new Error('Invalid customer ID provided');
+        }
+        console.log('customerApi - Fetching customer with ID:', id);
+        return `/customers/${id}`;
+      },
       providesTags: (result, error, id) => [{ type: 'Customer', id }],
     }),
     addCustomer: builder.mutation<Customer, Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>>({
@@ -53,7 +61,7 @@ export const customerApi = createApi({
       }),
       invalidatesTags: [{ type: 'Customer', id: 'LIST' }],
     }),
-    updateCustomer: builder.mutation<Customer, Partial<Customer> & { id: number }>({
+    updateCustomer: builder.mutation<Customer, Partial<Customer> & { id: string }>({
       query: ({ id, ...customer }) => ({
         url: `/customers/${id}`,
         method: 'PUT',
@@ -64,7 +72,7 @@ export const customerApi = createApi({
         { type: 'Customer', id: 'LIST' },
       ],
     }),
-    deleteCustomer: builder.mutation<void, number>({
+    deleteCustomer: builder.mutation<void, string>({
       query: (id) => ({
         url: `/customers/${id}`,
         method: 'DELETE',

@@ -1,9 +1,9 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import useReduxAuth from '../store/hooks/useReduxAuth';
-import CustomerDashboard from './dashboards/CustomerDashboard';
-import OwnerDashboard from './dashboards/OwnerDashboard';
-import AdminDashboard from './dashboards/AdminDashboard';
+import CustomerDashboard from './dashboards/customer/CustomerDashboard';
+import OwnerDashboard from './dashboards/owner/OwnerDashboard';
+import AdminDashboard from './dashboards/admin/AdminDashboard';
 
 interface DashboardRouterProps {
   role?: 'customer' | 'owner' | 'admin';

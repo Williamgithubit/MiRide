@@ -28,6 +28,61 @@ export interface OwnerStats {
   earningsByMonth: RevenueData[];
 }
 
+export interface AnalyticsData {
+  // Summary stats
+  totalBookings: number;
+  totalBookingsThisMonth: number;
+  totalRevenue: number;
+  totalRevenueThisMonth: number;
+  activeCars: number;
+  inactiveCars: number;
+  pendingRequests: number;
+  
+  // Trends
+  bookingsTrend: Array<{
+    period: string;
+    bookings: number;
+    revenue: number;
+  }>;
+  
+  // Top performing cars
+  topRentedCars: Array<{
+    carId: number;
+    carName: string;
+    make: string;
+    model: string;
+    year: number;
+    rentalCount: number;
+    totalRevenue: number;
+    imageUrl?: string;
+  }>;
+  
+  // Booking status distribution
+  bookingStatusDistribution: Array<{
+    status: string;
+    count: number;
+    percentage: number;
+  }>;
+  
+  // Recent bookings with revenue details
+  recentBookings: Array<{
+    id: number;
+    customerName: string;
+    customerEmail: string;
+    carName: string;
+    startDate: string;
+    endDate: string;
+    totalAmount: number;
+    status: string;
+  }>;
+  
+  // Car utilization metrics
+  utilizationRate: number;
+  averageRentalDuration: number;
+  customerSatisfaction: number;
+  revenuePerCar: number;
+}
+
 export interface AdminStats {
   totalUsers: number;
   totalCars: number;
@@ -48,6 +103,21 @@ export interface RevenueResponse {
   period: string;
   format: string;
   data: RevenueData[];
+}
+
+export interface CustomerStats {
+  activeRentals: number;
+  totalBookings: number;
+  totalSpent: number;
+  availableCars: number;
+  recentBookings: Array<{
+    id: number;
+    carDetails: string;
+    startDate: string;
+    endDate: string;
+    status: string;
+    totalCost: number;
+  }>;
 }
 
 // Create base query with auth
@@ -79,6 +149,15 @@ const dashboardApi = createApi({
   },
   tagTypes: ['DashboardStats', 'OwnerStats', 'AdminStats', 'Revenue'],
   endpoints: (builder) => ({
+    // Get customer dashboard stats
+    getCustomerStats: builder.query<CustomerStats, void>({
+      query: () => ({
+        url: '/dashboard/customer-stats',
+        method: 'GET',
+      }),
+      providesTags: ['DashboardStats'],
+    }),
+
     // Get owner dashboard stats
     getOwnerStats: builder.query<OwnerStats, number | void>({
       query: (ownerId) => ({
@@ -115,6 +194,15 @@ const dashboardApi = createApi({
       providesTags: ['DashboardStats'],
     }),
 
+    // Get comprehensive analytics data for owner
+    getOwnerAnalytics: builder.query<AnalyticsData, { period?: string }>({
+      query: ({ period = 'monthly' } = {}) => ({
+        url: `/dashboard/owner/analytics?period=${period}`,
+        method: 'GET',
+      }),
+      providesTags: ['OwnerStats', 'Revenue'],
+    }),
+
     // Generate reports
     generateReport: builder.query<any, { reportType: string; startDate?: string; endDate?: string }>({
       query: ({ reportType, startDate, endDate }) => {
@@ -149,11 +237,14 @@ const dashboardApi = createApi({
 });
 
 export const {
+  useGetCustomerStatsQuery,
   useGetOwnerStatsQuery,
   useGetAdminStatsQuery,
   useGetRevenueDataQuery,
   useGetCarUtilizationQuery,
+  useGetOwnerAnalyticsQuery,
   useGenerateReportQuery,
+  useLazyGenerateReportQuery,
   useGetPlatformSettingsQuery,
   useUpdatePlatformSettingsMutation,
 } = dashboardApi;

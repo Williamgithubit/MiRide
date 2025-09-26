@@ -45,7 +45,7 @@ const tokenStorage = {
   removeToken: (): void => {
     try {
       localStorage.removeItem('token');
-      api.setAuthToken(null);
+      setAuthToken(null);
       console.log('Token successfully removed from storage and API service');
     } catch (error) {
       console.error('Error removing token from localStorage:', error);

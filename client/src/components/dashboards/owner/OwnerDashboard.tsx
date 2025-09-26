@@ -12,9 +12,11 @@ import OverviewSection from "../dashboard-components/owner-components/OverviewSe
 import CarListingsSection from "../dashboard-components/owner-components/CarListingsSection";
 import { BookingRequestsSection } from "../dashboard-components/owner-components/BookingRequestsSection";
 import EarningsSection from "../dashboard-components/owner-components/EarningsSection";
-import AnalyticsSection from "../dashboard-components/owner-components/AnalyticsSection";
-import { MaintenanceSection } from "../dashboard-components/owner-components/MaintenanceSection";
+import Analytics from "../dashboard-components/owner-components/Analytics";
+import Maintenance from "../dashboard-components/owner-components/maintenance-components/Maintenance";
 import { ReviewsSection } from "../dashboard-components/owner-components/ReviewsSection";
+import { OwnerReviews } from "../dashboard-components/owner-components/OwnerReviews";
+import { OwnerNotifications } from "../dashboard-components/owner-components/OwnerNotifications";
 import CarDetailsModal from "../dashboard-components/owner-components/CarDetailsModal";
 import EditCarModal from "../dashboard-components/owner-components/EditCarModal";
 import DeleteConfirmationModal from "../dashboard-components/owner-components/DeleteConfirmationModal";
@@ -419,19 +421,16 @@ const OwnerDashboard: React.FC = () => {
         );
 
       case "analytics":
-        return (
-          <AnalyticsSection
-            avgRating={avgRating}
-            totalEarnings={totalEarnings}
-            ownerCars={ownerCars}
-          />
-        );
+        return <Analytics />;
 
       case "maintenance":
-        return <MaintenanceSection />;
+        return <Maintenance />;
 
       case "owner-reviews":
-        return <ReviewsSection />;
+        return <OwnerReviews />;
+
+      case "notifications":
+        return <OwnerNotifications />;
 
       default:
         return (

@@ -8,9 +8,10 @@ import Header from "./Header";
 import toast from "react-hot-toast";
 import Modal from "react-modal";
 import Confetti from "react-confetti";
-import { useAppDispatch } from "../store/hooks";
 import useCars from "../store/hooks/useCars";
 import useRentals from "../store/hooks/useRentals";
+import ErrorBoundary from "./ErrorBoundary";
+import BookingModal from "./dashboards/dashboard-components/customer-components/BookingModal";
 
 // Custom hook to get window size
 const useWindowSize = () => {
@@ -37,16 +38,15 @@ const useWindowSize = () => {
   return windowSize;
 };
 
-type Tab = "available" | "rented";
-
 const BrowseCars: React.FC = () => {
   const [cars, setCars] = useState<CarCardProps[]>([]);
   const [rentals, setRentals] = useState<Rental[]>([]);
-  const [tab, setTab] = useState<Tab>("available");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [selectedCarForBooking, setSelectedCarForBooking] = useState<any>(null);
   const { width, height } = useWindowSize();
 
   const navigate = useNavigate();
@@ -59,7 +59,6 @@ const BrowseCars: React.FC = () => {
     pagination,
     isLoading: isLoadingCars,
     error: carsError,
-    refetch: refetchCars,
   } = useCars({
     page: currentPage,
     limit: pageSize,
@@ -69,7 +68,6 @@ const BrowseCars: React.FC = () => {
     rentals: rentalData,
     isLoading: isLoadingRentals,
     error: rentalsError,
-    addRental,
   } = useRentals();
 
   // Handle page change
@@ -80,39 +78,46 @@ const BrowseCars: React.FC = () => {
 
   useEffect(() => {
     // Set cars from Redux state with pagination
-    if (carData && pagination) {
+    if (carData) {
       const mappedCars = carData.map((car) => ({
         ...car,
         id: car.id ?? 0,
         isLiked: false,
         isAvailable: Boolean(car.isAvailable),
-        name: car.name || `${car.make || ""} ${car.model || ""}`.trim(),
-        make: car.make || "Unknown",
+        name: (car as any).brand || "Unnamed Vehicle",
+        make: (car as any).brand || "Unknown",
         model: car.model || "Unknown",
         year: car.year ?? new Date().getFullYear(),
         seats: car.seats ?? 5,
         fuelType: (car.fuelType as any) || "Petrol",
         location: car.location || "Local",
         features: car.features || [],
-        rating: car.rating ?? 4.5,
+        rating: Number(car.rating) || 4.5,
         reviews: car.reviews ?? 0,
-        rentalPricePerDay: car.dailyRate ?? car.rentalPricePerDay ?? 0,
+        rentalPricePerDay: Number((car as any).rentalPricePerDay) || car.dailyRate || 0,
         description:
           car.description ||
-          `${car.year || ""} ${car.make || ""} ${car.model || ""}`.trim(),
+          `${car.year || ""} ${(car as any).brand || ""} ${car.model || ""}`.trim(),
       }));
 
       setCars(mappedCars as any);
+    }
+  }, [carData]);
+
+  useEffect(() => {
+    if (pagination) {
       setTotalPages(pagination.totalPages || 1);
     }
+  }, [pagination?.totalPages]);
 
+  useEffect(() => {
     // Set rentals if user is authenticated
     if (isAuthenticated && rentalData) {
       setRentals(rentalData);
     } else {
       setRentals([]);
     }
-  }, [carData, rentalData, isAuthenticated, pagination]);
+  }, [rentalData, isAuthenticated]);
 
   // Handle errors
   useEffect(() => {
@@ -131,87 +136,40 @@ const BrowseCars: React.FC = () => {
   const isLoading = isLoadingCars || isLoadingRentals;
 
   const handleRentCar = async (carId: number) => {
-    if (!user || user.id === "0" || user.id === "") {
+    if (!isAuthenticated || !user || user.id === "0" || user.id === "") {
       setShowLoginModal(true);
       return;
     }
+
+    // Find the selected car
+    const selectedCar = cars.find(car => car.id === carId);
+    if (!selectedCar) {
+      toast.error("Car not found");
+      return;
+    }
+
     // Check if user has already rented this car
     const hasAlreadyRented = rentalData?.some(
       (rental: Rental) =>
-        rental.carId === Number(carId) && rental.customerId === Number(user.id)
+        rental.carId === Number(carId) && rental.customerId === user.id
     );
     if (hasAlreadyRented) {
       toast.error("You have already rented this car.");
       return;
     }
-    const now = new Date();
-    const startDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    const endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-    try {
-      // Use the addRental function from useRentals hook
-      const rental = await addRental({
-        carId,
-        customerId: parseInt(user.id, 10),
-        startDate: startDate.toISOString().split("T")[0],
-        endDate: endDate.toISOString().split("T")[0],
-      });
-
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 5000);
-
-      toast.success("Car rented successfully!");
-    } catch (error) {
-      toast.error("Failed to rent car");
-      console.error(error);
-    }
+    // Open the booking modal with the selected car
+    setSelectedCarForBooking(selectedCar);
+    setShowBookingModal(true);
   };
 
-  // Map Car objects to CarCardProps objects
-  const mapCarToCardProps = (car: Car) => {
-    // Ensure all required fields are included with proper types
-    return {
-      ...car,
-      id: car.id || 0, // Ensure id is always a number
-      isLiked: false, // Default value, update if you have this info
-      isAvailable: Boolean(car.isAvailable),
-      imageUrl:
-        car.imageUrl || "https://via.placeholder.com/300x200?text=Car+Image",
-      name: car.name || "Unnamed Vehicle",
-      make: car.make || "Unknown Brand",
-      model: car.model || "Unknown Model",
-      year: car.year || new Date().getFullYear(),
-      color: car.color || "Unknown",
-      licensePlate: car.licensePlate || "N/A",
-      dailyRate: car.dailyRate || 0,
-      seats: "seats" in car ? (car as any).seats : 5, // Type assertion for optional fields
-      fuelType:
-        "fuelType" in car
-          ? ((car as any).fuelType as "Petrol" | "Electric" | "Hybrid")
-          : "Petrol",
-      location: "Local",
-      features: [],
-      rating: 4.5,
-      reviews: 10,
-      rentalPricePerDay: car.dailyRate || 0,
-      description:
-        car.description ||
-        `${car.year || ""} ${car.make || ""} ${car.model || ""}`.trim() ||
-        "No description available",
-      // Include any additional fields that might be required by CarCardProps
-      type: "type" in car ? (car as any).type : "Sedan",
-      transmission:
-        "transmission" in car ? (car as any).transmission : "Automatic",
-    };
+  const handleCloseBookingModal = () => {
+    setShowBookingModal(false);
+    setSelectedCarForBooking(null);
   };
 
-  // Filter cars based on availability status
-  const availableCars = cars
-    .filter((car) => car.isAvailable)
-    .map(mapCarToCardProps);
-  const rentedCars = isAuthenticated
-    ? cars.filter((car) => !car.isAvailable).map(mapCarToCardProps)
-    : [];
+
+  // Filter user rentals
   const userRentals = user
     ? rentals.filter(
         (rental) => rental.customerId.toString() === user.id.toString()
@@ -221,44 +179,87 @@ const BrowseCars: React.FC = () => {
   return (
     <>
       <Header />
-      <section className="py-16 px-4 md:px-10 lg:px-20 bg-gray-50 min-h-screen mt-12">
-        <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">
-          Browse Cars for Rent
-        </h2>
-
-        <div className="flex justify-center gap-4 mb-6">
-          <button
-            onClick={() => setTab("available")}
-            className={`px-4 py-2 rounded ${
-              tab === "available"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-800"
-            }`}
-          >
-            Available Cars
-          </button>
-
-          {isAuthenticated && (
-            <button
-              onClick={() => setTab("rented")}
-              className={`px-4 py-2 rounded ${
-                tab === "rented"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 text-gray-800"
-              }`}
-            >
-              Rented Cars
-            </button>
-          )}
+      {/* Hero Section */}
+      <section className="bg-gradient-to-r from-green-600 to-green-800 text-white py-16 px-4 mt-12">
+        <div className="max-w-6xl mx-auto text-center">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            Get the Ride That Suits You
+          </h1>
+          <p className="text-xl mb-8 text-blue-100">
+            Choose from our wide selection of clean, reliable vehicles across Liberia
+          </p>
+          
+          {/* Statistics */}
+          <div className="flex justify-center items-center gap-8 md:gap-16 mb-8">
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold">{cars.length}+</div>
+              <div className="text-blue-200 text-sm">Cars Available</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold">15+</div>
+              <div className="text-blue-200 text-sm">Locations</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold">4.8</div>
+              <div className="text-blue-200 text-sm">Average Rating</div>
+            </div>
+          </div>
         </div>
+      </section>
+
+      {/* Search and Filter Section */}
+      <section className="bg-white py-6 px-4 shadow-sm">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="flex-1 max-w-md">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search by make or model..."
+                  className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <svg className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+            
+            <div className="flex gap-4">
+              <select className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="">All</option>
+                <option value="sedan">Sedan</option>
+                <option value="suv">SUV</option>
+                <option value="hatchback">Hatchback</option>
+              </select>
+              
+              <select className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="">All</option>
+                <option value="petrol">Petrol</option>
+                <option value="electric">Electric</option>
+                <option value="hybrid">Hybrid</option>
+              </select>
+            </div>
+          </div>
+          
+          <div className="mt-4">
+            <p className="text-gray-600">Found {cars.length} vehicles available</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-8 px-4 bg-gray-50 min-h-screen">
+        <div className="max-w-6xl mx-auto">
 
         <div className="container mx-auto px-4 py-8">
-          <CarList
-            cars={tab === "available" ? cars : []}
-            onRent={handleRentCar}
-            isLoading={isLoading}
-            isAuthenticated={isAuthenticated}
-          />
+          <ErrorBoundary>
+            <CarList
+              cars={cars}
+              onRent={handleRentCar}
+              onViewDetails={(carId) => navigate(`/car-details/${carId}`)}
+              isLoading={isLoading}
+              isAuthenticated={isAuthenticated}
+            />
+          </ErrorBoundary>
 
           {!isLoading && cars.length > 0 && (
             <div className="mt-8 flex justify-center">
@@ -347,6 +348,7 @@ const BrowseCars: React.FC = () => {
             </ul>
           </div>
         )}
+        </div>
       </section>
 
       {showConfetti && (
@@ -357,6 +359,13 @@ const BrowseCars: React.FC = () => {
           numberOfPieces={500}
         />
       )}
+
+      {/* Enhanced Booking Modal */}
+      <BookingModal
+        isOpen={showBookingModal}
+        onClose={handleCloseBookingModal}
+        selectedCar={selectedCarForBooking}
+      />
 
       <Suspense fallback={null}>
         {showLoginModal && (

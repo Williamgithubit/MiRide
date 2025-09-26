@@ -47,7 +47,18 @@ const mapApiUserToUser = (apiUser: ApiUser): AnyUser => {
   console.log('Name value after processing:', name);
   
   // Ensure ID is treated as a string, handling both string and number types
-  const userId = typeof apiUser.id === 'number' ? String(apiUser.id) : (apiUser.id || '');
+  // CRITICAL: Prevent ID from becoming '0' which causes API errors
+  let userId = typeof apiUser.id === 'number' ? String(apiUser.id) : (apiUser.id || '');
+  
+  // Emergency fix: If ID is '0' or invalid, log error and use empty string
+  if (userId === '0' || !userId) {
+    console.error('CRITICAL: Invalid user ID detected in mapApiUserToUser:', {
+      originalId: apiUser.id,
+      convertedId: userId,
+      apiUser
+    });
+    userId = ''; // This will cause authentication to fail gracefully
+  }
   
   // Ensure role is properly typed
   const role = (apiUser.role as 'customer' | 'owner' | 'admin') || 'customer';

@@ -32,7 +32,7 @@ interface Review {
     id: number;
     name: string;
     model: string;
-    brand: string;
+    make: string;
     year: number;
     imageUrl: string;
   };
@@ -160,12 +160,12 @@ export const ReviewsSection = () => {
         <div className="flex items-center gap-3">
           <img
             src={row.car.imageUrl || "/placeholder-car.jpg"}
-            alt={`${row.car.brand} ${row.car.model}`}
+            alt={`${row.car.make} ${row.car.model}`}
             className="w-12 h-12 rounded-md object-cover"
           />
           <div>
             <div className="font-medium text-white">
-              {row.car.brand} {row.car.model}
+              {row.car.make} {row.car.model}
             </div>
             <div className="text-sm text-gray-400">{row.car.year}</div>
           </div>

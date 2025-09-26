@@ -108,8 +108,8 @@ export const useRentals = () => {
     }
   };
 
-  const getCustomerRentals = (customerId: number) => {
-    return useGetCustomerRentalsQuery(customerId);
+  const getCustomerRentals = () => {
+    return useGetCustomerRentalsQuery();
   };
 
   const getCarRentals = (carId: number) => {

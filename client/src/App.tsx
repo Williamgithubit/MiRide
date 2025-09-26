@@ -17,7 +17,11 @@ const DashboardRouter = lazy(() => import('./components/DashboardRouter'));
 const ProtectedRoute = lazy(() => import('./components/ProtectedRoute'));
 const RoleProtectedRoute = lazy(() => import('./components/RoleProtectedRoute'));
 const BrowseCars = lazy(() => import('./components/BrowseCars'));
+const CarDetails = lazy(() => import('./components/CarDetails'));
+const BookingFlow = lazy(() => import('./components/BookingFlow'));
 const RoleTest = lazy(() => import('./components/RoleTest'));
+const BookingSuccess = lazy(() => import('./components/pages/BookingSuccess'));
+const BookingCancelled = lazy(() => import('./components/pages/BookingCancelled'));
 
 // Lazy load dashboard components
 const NewDashboardRouter = lazy(() => import('./components/dashboards/DashboardRouter'));
@@ -60,7 +64,12 @@ const AppContent: React.FC = () => {
         />
         
         <Route path="/" element={<Home />} />
+        <Route path="/browse-cars" element={<BrowseCars />} />
         <Route path="/cars" element={<BrowseCars />} />
+        <Route path="/car-details/:carId" element={<CarDetails />} />
+        <Route path="/booking/:carId" element={<BookingFlow />} />
+        <Route path="/booking-success" element={<BookingSuccess />} />
+        <Route path="/booking-cancelled" element={<BookingCancelled />} />
         <Route path="/role-test" element={<ProtectedRoute><RoleTest /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

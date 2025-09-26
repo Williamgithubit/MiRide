@@ -18,7 +18,7 @@ const EditCarModal: React.FC<EditCarModalProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     name: "",
-    brand: "",
+    make: "",
     model: "",
     year: new Date().getFullYear(),
     rentalPricePerDay: 0,

@@ -54,6 +54,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   const sidebarItems: SidebarItem[] = [
     // Customer Items
     {
+      id: "overview",
+      label: "Overview",
+      icon: <FaHome />,
+      roles: ["customer"],
+    },
+    {
       id: "bookings",
       label: "My Bookings",
       icon: <FaCalendarAlt />,
@@ -128,8 +134,8 @@ const Sidebar: React.FC<SidebarProps> = ({
       roles: ["owner"],
     },
     {
-      id: "messaging",
-      label: "Messaging",
+      id: "notifications",
+      label: "Notifications",
       icon: <FaEnvelope />,
       roles: ["owner"],
     },

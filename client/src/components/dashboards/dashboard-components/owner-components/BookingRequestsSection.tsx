@@ -1,57 +1,44 @@
-// client/src/components/dashboards/dashboard-components/owner-components/BookingRequestsSection.tsx
-import { useState, useEffect } from "react";
-import Table from "@/components/dashboards/shared/Table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  useGetRentalsQuery,
-  useUpdateRentalMutation,
-} from "@/store/Rental/rentalApi";
+import React, { useState } from "react";
 import { toast } from "react-hot-toast";
-import { format } from "date-fns";
-import { Loader2, Check, X } from "lucide-react";
-
-interface BookingRequest {
-  id: string;
-  car: {
-    id: string;
-    make: string;
-    model: string;
-    year: number;
-    image: string;
-  };
-  customer: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  startDate: string;
-  endDate: string;
-  totalCost: number;
-  status: "pending" | "active" | "cancelled" | "completed";
-}
+import {
+  useGetOwnerBookingsQuery,
+  useApproveBookingMutation,
+  useRejectBookingMutation,
+  Rental
+} from "../../../../store/Rental/rentalApi";
+import BookingRequestsTable, { BookingRequest } from './booking-requests/BookingRequestsTable';
+import { ApprovalModal, RejectionModal } from './booking-requests/BookingActionModals';
+import BookingDetailsModal from './booking-requests/BookingDetailsModal';
+import { FaSync } from 'react-icons/fa';
 
 export const BookingRequestsSection = () => {
   const [updating, setUpdating] = useState<Record<string, boolean>>({});
+  const [selectedBooking, setSelectedBooking] = useState<BookingRequest | null>(null);
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   // Use RTK Query hooks
   const {
     data: rentals = [],
     isLoading: loading,
     error: rentalsError,
-  } = useGetRentalsQuery();
+    refetch
+  } = useGetOwnerBookingsQuery();
 
-  const [updateRental] = useUpdateRentalMutation();
+  const [approveBooking] = useApproveBookingMutation();
+  const [rejectBooking] = useRejectBookingMutation();
 
-  // Transform Rental[] to BookingRequest[]
-  const bookings: BookingRequest[] = rentals.map((rental) => ({
+  // Transform Rental[] to BookingRequest[] with filtering
+  const allBookings: BookingRequest[] = rentals.map((rental: Rental) => ({
     id: rental.id.toString(),
     car: {
       id: rental.car?.id?.toString() || rental.carId.toString(),
-      make: rental.car?.make || rental.car?.name?.split(" ")[0] || "Unknown",
+      make: rental.car?.make || rental.car?.make || rental.car?.name?.split(" ")[0] || "Unknown",
       model: rental.car?.model || rental.car?.name || "Unknown",
       year: rental.car?.year || new Date().getFullYear(),
-      image: rental.car?.imageUrl || "/placeholder-car.jpg",
+      image: rental.car?.imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K',
     },
     customer: {
       id: rental.customer?.id?.toString() || rental.customerId.toString(),
@@ -60,174 +47,173 @@ export const BookingRequestsSection = () => {
     },
     startDate: rental.startDate,
     endDate: rental.endDate,
-    totalCost: rental.totalCost,
-    status: rental.status === "active" ? "pending" : rental.status,
+    totalCost: Number(rental.totalAmount) || Number(rental.totalCost) || 0,
+    status: rental.status,
+    createdAt: rental.createdAt,
+    paymentStatus: rental.paymentStatus,
   }));
 
+  // Filter bookings based on status
+  const bookings = React.useMemo(() => {
+    if (statusFilter === 'all') {
+      return allBookings;
+    }
+    return allBookings.filter(booking => booking.status === statusFilter);
+  }, [allBookings, statusFilter]);
+
+  const handleApprove = (bookingId: string) => {
+    const booking = bookings.find(b => b.id === bookingId);
+    if (booking) {
+      setSelectedBooking(booking);
+      setShowApprovalModal(true);
+    }
+  };
+
+  const handleReject = (bookingId: string) => {
+    const booking = bookings.find(b => b.id === bookingId);
+    if (booking) {
+      setSelectedBooking(booking);
+      setShowRejectionModal(true);
+    }
+  };
+
+  const handleViewDetails = (booking: BookingRequest) => {
+    setSelectedBooking(booking);
+    setShowDetailsModal(true);
+  };
+
+  const confirmApproval = async () => {
+    if (!selectedBooking) return;
+    
+    try {
+      setUpdating(prev => ({ ...prev, [selectedBooking.id]: true }));
+      await approveBooking(parseInt(selectedBooking.id)).unwrap();
+      toast.success("Booking approved successfully!");
+      setShowApprovalModal(false);
+      setSelectedBooking(null);
+    } catch (error) {
+      console.error("Error approving booking:", error);
+      toast.error("Failed to approve booking");
+    } finally {
+      setUpdating(prev => ({ ...prev, [selectedBooking.id]: false }));
+    }
+  };
+
+  const confirmRejection = async (reason: string) => {
+    if (!selectedBooking) return;
+    
+    try {
+      setUpdating(prev => ({ ...prev, [selectedBooking.id]: true }));
+      await rejectBooking({ 
+        id: parseInt(selectedBooking.id), 
+        reason 
+      }).unwrap();
+      toast.success("Booking rejected successfully!");
+      setShowRejectionModal(false);
+      setSelectedBooking(null);
+    } catch (error) {
+      console.error("Error rejecting booking:", error);
+      toast.error("Failed to reject booking");
+    } finally {
+      setUpdating(prev => ({ ...prev, [selectedBooking.id]: false }));
+    }
+  };
+
+
   // Handle errors
-  useEffect(() => {
+  React.useEffect(() => {
     if (rentalsError) {
       console.error("Error fetching rentals:", rentalsError);
       toast.error("Failed to load booking requests");
     }
   }, [rentalsError]);
 
-  const handleUpdateStatus = async (
-    bookingId: string,
-    status: "confirmed" | "cancelled"
-  ) => {
-    try {
-      setUpdating((prev) => ({ ...prev, [bookingId]: true }));
-      const rentalStatus = status === "confirmed" ? "active" : "cancelled";
-      await updateRental({
-        id: parseInt(bookingId),
-        status: rentalStatus,
-      }).unwrap();
-      toast.success(`Booking ${status} successfully`);
-    } catch (error) {
-      console.error("Error updating booking status:", error);
-      toast.error(`Failed to ${status} booking`);
-    } finally {
-      setUpdating((prev) => ({ ...prev, [bookingId]: false }));
-    }
-  };
-
-  const columns = [
-    {
-      key: "car",
-      label: "Car",
-      render: (value: unknown, row: BookingRequest) => (
-        <div className="flex items-center gap-3">
-          <img
-            src={row.car.image || "/placeholder-car.jpg"}
-            alt={`${row.car.make} ${row.car.model}`}
-            className="w-12 h-12 rounded-md object-cover"
-          />
-          <div>
-            <div className="font-medium">
-              {row.car.make} {row.car.model}
-            </div>
-            <div className="text-sm text-gray-500">{row.car.year}</div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "customer",
-      label: "Customer",
-      render: (value: unknown, row: BookingRequest) => (
-        <div>
-          <div className="font-medium">{row.customer.name}</div>
-          <div className="text-sm text-gray-500">{row.customer.email}</div>
-        </div>
-      ),
-    },
-    {
-      key: "dates",
-      label: "Rental Period",
-      render: (value: unknown, row: BookingRequest) => (
-        <div>
-          <div>
-            {format(new Date(row.startDate), "MMM d, yyyy")} -{" "}
-            {format(new Date(row.endDate), "MMM d, yyyy")}
-          </div>
-          <div className="text-sm text-gray-500">
-            {Math.ceil(
-              (new Date(row.endDate).getTime() -
-                new Date(row.startDate).getTime()) /
-                (1000 * 60 * 60 * 24)
-            )}{" "}
-            days
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "totalCost",
-      label: "Total Cost",
-      render: (value: unknown, row: BookingRequest) =>
-        `$${(typeof row.totalCost === "number"
-          ? row.totalCost
-          : parseFloat(row.totalCost) || 0
-        ).toFixed(2)}`,
-    },
-    {
-      key: "status",
-      label: "Status",
-      render: (value: unknown, row: BookingRequest) => (
-        <Badge
-          variant={
-            row.status === "active" || row.status === "completed"
-              ? "default"
-              : row.status === "cancelled"
-              ? "destructive"
-              : "outline"
-          }
-        >
-          {row.status
-            ? row.status.charAt(0).toUpperCase() + row.status.slice(1)
-            : "Unknown"}
-        </Badge>
-      ),
-    },
-    {
-      key: "actions",
-      label: "Actions",
-      render: (value: unknown, row: BookingRequest) => (
-        <div className="flex gap-2">
-          {row.status === "pending" && (
-            <>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 px-2"
-                onClick={() => handleUpdateStatus(row.id, "confirmed")}
-                disabled={!!updating[row.id]}
-              >
-                {updating[row.id] ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Check className="h-4 w-4 text-green-500" />
-                )}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 px-2"
-                onClick={() => handleUpdateStatus(row.id, "cancelled")}
-                disabled={!!updating[row.id]}
-              >
-                <X className="h-4 w-4 text-red-500" />
-              </Button>
-            </>
-          )}
-        </div>
-      ),
-    },
-  ];
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold tracking-tight text-white">
-          Booking Requests
-        </h2>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => window.location.reload()}
-          disabled={loading}
-        >
-          {loading ? "Refreshing..." : "Refresh"}
-        </Button>
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+            Booking Requests
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Manage and review customer booking requests ({bookings.length} {statusFilter === 'all' ? 'total' : statusFilter.replace('_', ' ')} bookings)
+          </p>
+        </div>
+        <div className="flex items-center justify-end gap-4">
+          {/* Status Filter */}
+          <div className="flex items-center gap-2">
+            <label htmlFor="status-filter" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Status:
+            </label>
+            <select
+              id="status-filter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Status</option>
+              <option value="pending_approval">Pending Approval</option>
+              <option value="approved">Approved</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+              <option value="rejected">Rejected</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          
+          <button
+            onClick={() => refetch()}
+            disabled={loading}
+            className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center space-x-2"
+          >
+            <FaSync className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{loading ? "Refreshing..." : "Refresh"}</span>
+            <span className="sm:hidden">↻</span>
+          </button>
+        </div>
       </div>
 
-      <Table
-        columns={columns}
-        data={bookings}
-        searchable={true}
-        pagination={true}
-        pageSize={10}
+      {/* Enhanced Booking Requests Table */}
+      <BookingRequestsTable
+        bookings={bookings}
+        loading={loading}
+        onApprove={handleApprove}
+        onReject={handleReject}
+        onViewDetails={handleViewDetails}
+        updating={updating}
+      />
+
+      {/* Modals */}
+      <ApprovalModal
+        isOpen={showApprovalModal}
+        onClose={() => {
+          setShowApprovalModal(false);
+          setSelectedBooking(null);
+        }}
+        onConfirm={confirmApproval}
+        booking={selectedBooking}
+        loading={updating[selectedBooking?.id || '']}
+      />
+
+      <RejectionModal
+        isOpen={showRejectionModal}
+        onClose={() => {
+          setShowRejectionModal(false);
+          setSelectedBooking(null);
+        }}
+        onConfirm={confirmRejection}
+        booking={selectedBooking}
+        loading={updating[selectedBooking?.id || '']}
+      />
+
+      <BookingDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => {
+          setShowDetailsModal(false);
+          setSelectedBooking(null);
+        }}
+        booking={selectedBooking}
       />
     </div>
   );

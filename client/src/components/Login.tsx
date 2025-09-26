@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaSpinner } from "react-icons/fa";
 import { toast } from "react-toastify";
 import useReduxAuth from "../store/hooks/useReduxAuth";
 
@@ -123,7 +123,10 @@ const Login: React.FC = () => {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={loading}
+              className={`w-full mt-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 transition-all duration-200 ${
+                loading ? "bg-gray-100 cursor-not-allowed" : "bg-white"
+              }`}
             />
           </div>
 
@@ -136,12 +139,18 @@ const Login: React.FC = () => {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={loading}
+              className={`w-full mt-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 transition-all duration-200 ${
+                loading ? "bg-gray-100 cursor-not-allowed" : "bg-white"
+              }`}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-9 text-gray-500"
+              disabled={loading}
+              className={`absolute right-3 top-9 text-gray-500 transition-colors ${
+                loading ? "cursor-not-allowed opacity-50" : "hover:text-gray-700"
+              }`}
             >
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </button>
@@ -168,12 +177,15 @@ const Login: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-2 px-4 rounded-md font-medium text-white transition cursor-pointer ${
+            className={`w-full py-2 px-4 rounded-md font-medium text-white transition-all duration-200 cursor-pointer flex items-center justify-center ${
               loading
-                ? "bg-blue-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700"
+                ? "bg-green-600 cursor-not-allowed"
+                : "bg-green-800 hover:bg-green-700"
             }`}
           >
+            {loading && (
+              <FaSpinner className="animate-spin mr-2 h-4 w-4" />
+            )}
             {loading ? "Logging in..." : "Login"}
           </button>
 
