@@ -21,7 +21,7 @@ const BrowseCars: React.FC<BrowseCarsProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [searchFilters, setSearchFilters] = useState({
     location: '',
-    priceRange: '$0 - $50',
+    priceRange: 'All Prices',
     carType: 'All Types',
     availability: 'available'
   });
@@ -29,9 +29,9 @@ const BrowseCars: React.FC<BrowseCarsProps> = ({
   // Filter cars based on search criteria
   const filteredCars = useMemo(() => {
     return availableCars.filter(car => {
-      // Search term filter (make, model, year)
+      // Search term filter (brand, model, year)
       const matchesSearch = searchTerm === '' || 
-        car.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        car.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         car.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         car.year?.toString().includes(searchTerm);
 
@@ -39,13 +39,25 @@ const BrowseCars: React.FC<BrowseCarsProps> = ({
       const matchesLocation = searchFilters.location === '' || 
         car.location?.toLowerCase().includes(searchFilters.location.toLowerCase());
 
-      // Car type filter
+      // Car type filter - since cars don't have 'type' property, treat all as matching when 'All Types' is selected
+      // or try to infer type from model/brand for basic filtering
       const matchesCarType = searchFilters.carType === 'All Types' || 
-        car.type?.toLowerCase() === searchFilters.carType.toLowerCase();
+        (() => {
+          if (!car.type && searchFilters.carType !== 'All Types') {
+            // If no type is set, allow all cars to pass through for now
+            // This could be enhanced to infer type from model/brand
+            return true;
+          }
+          return car.type?.toLowerCase() === searchFilters.carType.toLowerCase();
+        })();
 
-      // Price range filter
+      // Price range filter - convert string price to number for comparison
       const matchesPriceRange = (() => {
-        const price = car.rentalPricePerDay || 0;
+        if (searchFilters.priceRange === 'All Prices') {
+          return true;
+        }
+        
+        const price = Number(car.rentalPricePerDay) || 0;
         switch (searchFilters.priceRange) {
           case '$0 - $50':
             return price >= 0 && price <= 50;
@@ -72,7 +84,7 @@ const BrowseCars: React.FC<BrowseCarsProps> = ({
     setSearchTerm('');
     setSearchFilters({
       location: '',
-      priceRange: '$0 - $50',
+      priceRange: 'All Prices',
       carType: 'All Types',
       availability: 'available'
     });
@@ -83,7 +95,7 @@ const BrowseCars: React.FC<BrowseCarsProps> = ({
       <img src={car.imageUrl} alt={car.model} className="w-full h-48 object-cover" />
       <div className="p-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          {car.year} {car.make} {car.model}
+          {car.year} {car.brand} {car.model}
         </h3>
         <div className="flex items-center mt-2 text-sm text-gray-600 dark:text-gray-400">
           <MapPin className="w-4 h-4 mr-1" />
@@ -160,6 +172,7 @@ const BrowseCars: React.FC<BrowseCarsProps> = ({
               onChange={(e) => setSearchFilters({...searchFilters, priceRange: e.target.value})}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700"
             >
+              <option value="All Prices">All Prices</option>
               <option value="$0 - $50">$0 - $50</option>
               <option value="$50 - $100">$50 - $100</option>
               <option value="$100+">$100+</option>

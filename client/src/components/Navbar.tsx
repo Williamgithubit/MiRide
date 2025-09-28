@@ -60,7 +60,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
       <div className="h-16"></div> {/* Spacer for fixed navbar */}
       <nav
         ref={navRef}
-        className="fixed top-0 left-0 right-0 bg-blue-600 text-white z-50 shadow-md"
+        className="fixed top-0 left-0 right-0 bg-green-600 text-white z-50 shadow-md"
       >
         <div className="container mx-auto px-4 relative">
           <div className="flex justify-between items-center h-16">
@@ -79,7 +79,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
                   <button
                     onClick={() => onTabChange("cars")}
                     className={`px-3 py-2 rounded-md text-sm font-medium cursor-pointer ${
-                      activeTab === "cars" ? "bg-blue-700" : "hover:bg-blue-700"
+                      activeTab === "cars" ? "bg-green-700" : "hover:bg-green-700"
                     }`}
                   >
                     Available Cars
@@ -88,8 +88,8 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
                     onClick={() => onTabChange("rentals")}
                     className={`px-3 py-2 rounded-md text-sm font-medium cursor-pointer ${
                       activeTab === "rentals"
-                        ? "bg-blue-700"
-                        : "hover:bg-blue-700"
+                        ? "bg-green-700"
+                        : "hover:bg-green-700"
                     }`}
                   >
                     My Rentals
@@ -119,7 +119,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
                   <Link
                     to="/login"
                     className={`px-3 py-2 rounded-md text-sm font-medium ${
-                      isActive("/login") ? "bg-blue-700" : "hover:bg-blue-700"
+                      isActive("/login") ? "bg-green-700" : "hover:bg-green-700"
                     }`}
                   >
                     Login
@@ -127,7 +127,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
                   <Link
                     to="/signup"
                     className={`px-3 py-2 rounded-md text-sm font-medium ${
-                      isActive("/signup") ? "bg-blue-700" : "hover:bg-blue-700"
+                      isActive("/signup") ? "bg-green-700" : "hover:bg-green-700"
                     }`}
                   >
                     Sign Up
@@ -140,7 +140,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
             <div className="md:hidden">
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="inline-flex items-center justify-center p-2 rounded-md hover:bg-blue-700 focus:outline-none"
+                className="inline-flex items-center justify-center p-2 rounded-md hover:bg-green-700 focus:outline-none"
               >
                 <svg
                   className="h-6 w-6"
@@ -170,7 +170,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
 
           {/* Mobile Menu */}
           {isMenuOpen && (
-            <div className="md:hidden absolute top-16 left-0 right-0 bg-blue-600 border-t border-blue-500 shadow-lg">
+            <div className="md:hidden absolute top-16 left-0 right-0 bg-green-600 border-t border-green-500 shadow-lg">
               <div className="px-4 pt-2 pb-3 space-y-1">
                 {isAuthenticated ? (
                   <>
@@ -181,8 +181,8 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
                       }}
                       className={`w-full text-left px-3 py-2 rounded-md text-base font-medium ${
                         activeTab === "cars"
-                          ? "bg-blue-700"
-                          : "hover:bg-blue-700"
+                          ? "bg-green-700"
+                          : "hover:bg-green-700"
                       }`}
                     >
                       Available Cars
@@ -194,13 +194,13 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
                       }}
                       className={`w-full text-left px-3 py-2 rounded-md text-base font-medium ${
                         activeTab === "rentals"
-                          ? "bg-blue-700"
-                          : "hover:bg-blue-700"
+                          ? "bg-green-700"
+                          : "hover:bg-green-700"
                       }`}
                     >
                       My Rentals
                     </button>
-                    <div className="border-t border-blue-700 mt-2 pt-2">
+                    <div className="border-t border-green-700 mt-2 pt-2">
                       <button
                         onClick={handleLogout}
                         className="w-full flex items-center justify-between px-3 py-2 rounded-md text-base font-medium hover:bg-red-600 transition-colors duration-200"
@@ -221,7 +221,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
                           </svg>
                           <span>Sign Out</span>
                         </span>
-                        <span className="text-sm text-blue-200">
+                        <span className="text-sm text-green-200">
                           {user?.name}
                         </span>
                       </button>
@@ -233,7 +233,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
                       to="/login"
                       onClick={closeMenu}
                       className={`block px-3 py-2 rounded-md text-base font-medium ${
-                        isActive("/login") ? "bg-blue-700" : "hover:bg-blue-700"
+                        isActive("/login") ? "bg-green-700" : "hover:bg-green-700"
                       }`}
                     >
                       Login
@@ -243,8 +243,8 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
                       onClick={closeMenu}
                       className={`block px-3 py-2 rounded-md text-base font-medium ${
                         isActive("/signup")
-                          ? "bg-blue-700"
-                          : "hover:bg-blue-700"
+                          ? "bg-green-700"
+                          : "hover:bg-green-700"
                       }`}
                     >
                       Sign Up

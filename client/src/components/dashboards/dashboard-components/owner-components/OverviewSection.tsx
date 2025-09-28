@@ -48,7 +48,7 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
         />
         <DashboardCard
           title="Average Rating"
-          value={avgRating.toFixed(1)}
+          value={isNaN(avgRating) ? "0.0" : avgRating.toFixed(1)}
           icon={TrendingUp}
           change={{ value: 2.1, type: "increase" }}
         />

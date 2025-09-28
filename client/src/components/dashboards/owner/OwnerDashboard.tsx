@@ -7,6 +7,10 @@ import {
   useDeleteCarMutation,
   Car,
 } from "../../../store/Car/carApi";
+import {
+  useGetOwnerBookingsQuery,
+  Rental,
+} from "../../../store/Rental/rentalApi";
 import toast from "react-hot-toast";
 import OverviewSection from "../dashboard-components/owner-components/OverviewSection";
 import CarListingsSection from "../dashboard-components/owner-components/CarListingsSection";
@@ -23,10 +27,6 @@ import DeleteConfirmationModal from "../dashboard-components/owner-components/De
 import AddCarModal from "../dashboard-components/owner-components/AddCarModal";
 
 const OwnerDashboard: React.FC = () => {
-  console.log(
-    "OwnerDashboard component rendering at:",
-    new Date().toISOString()
-  );
   const [activeSection, setActiveSection] = useState("overview");
   const [showAddCarModal, setShowAddCarModal] = useState(false);
   const [showEditCarModal, setShowEditCarModal] = useState(false);
@@ -44,6 +44,13 @@ const OwnerDashboard: React.FC = () => {
     refetch: refetchCars,
   } = useGetCarsByOwnerQuery();
 
+  const {
+    data: ownerRentalsData = [],
+    isLoading: rentalsLoading,
+    error: rentalsError,
+    refetch: refetchRentals,
+  } = useGetOwnerBookingsQuery();
+
   const [deleteCar] = useDeleteCarMutation();
 
   // Memoize expensive calculations and derived data
@@ -57,32 +64,41 @@ const OwnerDashboard: React.FC = () => {
     [totalCars, availableCars]
   );
   const avgRating = React.useMemo(
-    () =>
-      ownerCars.length > 0
-        ? ownerCars.reduce((sum, car) => sum + (car.rating || 0), 0) /
-          ownerCars.length
-        : 0,
+    () => {
+      if (ownerCars.length === 0) return 0;
+      
+      const validRatings = ownerCars
+        .map(car => Number(car.rating) || 0)
+        .filter(rating => !isNaN(rating) && rating > 0);
+      
+      if (validRatings.length === 0) return 0;
+      
+      const sum = validRatings.reduce((acc, rating) => acc + rating, 0);
+      const average = sum / validRatings.length;
+      
+      return isNaN(average) ? 0 : average;
+    },
     [ownerCars]
   );
 
+  // Calculate real earnings from actual rental data
   const totalEarnings = React.useMemo(
     () =>
-      ownerCars.reduce((sum, car) => {
-        const dailyRate = car.rentalPricePerDay || 0;
-        const rating = car.rating || 0;
-        const estimatedDaysRented = Math.floor(rating * 10);
-        return sum + dailyRate * estimatedDaysRented;
+      ownerRentalsData.reduce((sum, rental) => {
+        // Only count completed rentals for earnings
+        if (rental.status === 'completed') {
+          const amount = Number(rental.totalAmount) || Number(rental.totalCost) || 0;
+          return sum + (isNaN(amount) ? 0 : amount);
+        }
+        return sum;
       }, 0),
-    [ownerCars]
+    [ownerRentalsData]
   );
 
+  // Count total rentals from real data
   const totalRentals = React.useMemo(
-    () =>
-      ownerCars.reduce((sum, car) => {
-        const rating = car.rating || 0;
-        return sum + Math.floor(rating * 5);
-      }, 0),
-    [ownerCars]
+    () => ownerRentalsData.length,
+    [ownerRentalsData]
   );
 
   const revenueChartData = React.useMemo(
@@ -111,35 +127,27 @@ const OwnerDashboard: React.FC = () => {
           data: [availableCars, rentedCars, Math.floor(totalCars * 0.1)],
           backgroundColor: ["#104911", "#F59E0B", "#EF4444"],
           borderWidth: 0,
-        },
-      ],
+        }],
     }),
     [availableCars, rentedCars, totalCars]
   );
 
+  // Process real rental data for display
   const ownerRentals = React.useMemo(
     () =>
-      ownerCars.slice(0, 5).map((car, index) => ({
-        id: index + 1,
-        carId: car.id,
-        carName: `${car.year} ${car.make} ${car.model}`,
-        customerName: [
-          "John Doe",
-          "Jane Smith",
-          "Mike Johnson",
-          "Sarah Wilson",
-          "Tom Brown",
-        ][index],
-        startDate: new Date(
-          Date.now() - (index + 1) * 24 * 60 * 60 * 1000
-        ).toLocaleDateString(),
-        endDate: new Date(
-          Date.now() + (7 - index) * 24 * 60 * 60 * 1000
-        ).toLocaleDateString(),
-        totalAmount: (car.rentalPricePerDay || 0) * (7 - index),
-        status: index < 2 ? "Active" : "Completed",
+      ownerRentalsData.slice(0, 5).map((rental) => ({
+        id: rental.id,
+        carId: rental.carId,
+        carDetails: rental.car 
+          ? `${rental.car.year || ''} ${rental.car.brand || rental.car.brand || ''} ${rental.car.model || ''}`.trim()
+          : 'Unknown Car',
+        customerName: rental.customer?.name || 'Unknown Customer',
+        startDate: new Date(rental.startDate).toLocaleDateString(),
+        endDate: new Date(rental.endDate).toLocaleDateString(),
+        totalCost: Number(rental.totalAmount) || Number(rental.totalCost) || 0,
+        status: rental.status,
       })),
-    [ownerCars]
+    [ownerRentalsData]
   );
 
   // Handle errors
@@ -148,7 +156,11 @@ const OwnerDashboard: React.FC = () => {
       console.error("Error fetching cars:", carsError);
       toast.error("Failed to load cars");
     }
-  }, [carsError]);
+    if (rentalsError) {
+      console.error("Error fetching rentals:", rentalsError);
+      toast.error("Failed to load rental data");
+    }
+  }, [carsError, rentalsError]);
 
   const handleCarAdded = () => {
     refetchCars(); // Refresh the car list
@@ -210,7 +222,7 @@ const OwnerDashboard: React.FC = () => {
             />
             <div>
               <p className="font-medium">
-                {row.year || ""} {row.make || ""} {row.model || ""}
+                {row.year || ""} {row.brand || ""} {row.model || ""}
               </p>
               <p className="text-sm text-gray-500">{row.name || ""}</p>
             </div>
@@ -344,7 +356,7 @@ const OwnerDashboard: React.FC = () => {
   const renderContent = () => {
     switch (activeSection) {
       case "overview":
-        if (isLoading) {
+        if (isLoading || rentalsLoading) {
           return (
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -352,12 +364,15 @@ const OwnerDashboard: React.FC = () => {
           );
         }
 
-        if (carsError) {
+        if (carsError || rentalsError) {
           return (
             <div className="text-center py-12">
-              <p className="text-red-500 mb-4">Failed to load cars</p>
+              <p className="text-red-500 mb-4">Failed to load dashboard data</p>
               <button
-                onClick={() => refetchCars()}
+                onClick={() => {
+                  refetchCars();
+                  refetchRentals();
+                }}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 Retry

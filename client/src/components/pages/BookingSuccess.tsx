@@ -60,52 +60,73 @@ const BookingSuccess: React.FC = () => {
   const fetchSessionDetails = async () => {
     try {
       console.log('Fetching session details for:', sessionId);
-      // For now, we'll create mock data based on the session ID
-      // In a real implementation, you'd fetch this from your backend
-      const mockBookingDetails: BookingDetails = {
-        sessionId: sessionId!,
-        carDetails: {
-          year: '2023',
-          make: 'Toyota',
-          model: 'Camry',
+      
+      // Call the fallback endpoint to create booking and get session details
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/payments/create-booking-fallback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
-        bookingInfo: {
-          startDate: new Date().toISOString().split('T')[0],
-          endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          totalDays: 3,
-          pickupLocation: 'Downtown Office',
-          dropoffLocation: 'Airport Terminal',
-          specialRequests: 'Please ensure the car is clean',
-        },
-        pricing: {
-          basePrice: 150,
-          insurance: 45,
-          gps: 15,
-          childSeat: 24,
-          additionalDriver: 25,
-          totalAmount: 259,
-        },
-        addOns: {
-          insurance: true,
-          gps: true,
-          childSeat: true,
-          additionalDriver: true,
-        },
-        paymentInfo: {
-          paymentMethod: 'Visa ending in 4242',
-          transactionId: sessionId!.substring(0, 16),
-          paymentDate: new Date().toLocaleString(),
-        },
-      };
+        body: JSON.stringify({ sessionId })
+      });
 
-      console.log('Setting booking details:', mockBookingDetails);
-      setBookingDetails(mockBookingDetails);
-      setIsLoading(false);
-      toast.success('Payment successful! Your booking has been confirmed.');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.sessionDetails) {
+        const bookingDetails: BookingDetails = {
+          sessionId: data.sessionDetails.sessionId,
+          carDetails: {
+            year: data.sessionDetails.carDetails.year.toString(),
+            make: data.sessionDetails.carDetails.make,
+            model: data.sessionDetails.carDetails.model,
+            image: data.sessionDetails.carDetails.image
+          },
+          bookingInfo: {
+            startDate: data.sessionDetails.bookingInfo.startDate,
+            endDate: data.sessionDetails.bookingInfo.endDate,
+            totalDays: data.sessionDetails.bookingInfo.totalDays,
+            pickupLocation: data.sessionDetails.bookingInfo.pickupLocation,
+            dropoffLocation: data.sessionDetails.bookingInfo.dropoffLocation,
+            specialRequests: data.sessionDetails.bookingInfo.specialRequests
+          },
+          pricing: {
+            basePrice: data.sessionDetails.pricing.basePrice,
+            insurance: data.sessionDetails.pricing.insurance,
+            gps: data.sessionDetails.pricing.gps,
+            childSeat: data.sessionDetails.pricing.childSeat,
+            additionalDriver: data.sessionDetails.pricing.additionalDriver,
+            totalAmount: data.sessionDetails.pricing.totalAmount
+          },
+          addOns: {
+            insurance: data.sessionDetails.addOns.insurance,
+            gps: data.sessionDetails.addOns.gps,
+            childSeat: data.sessionDetails.addOns.childSeat,
+            additionalDriver: data.sessionDetails.addOns.additionalDriver
+          },
+          paymentInfo: {
+            paymentMethod: data.sessionDetails.paymentInfo.paymentMethod,
+            transactionId: data.sessionDetails.paymentInfo.transactionId,
+            paymentDate: data.sessionDetails.paymentInfo.paymentDate
+          }
+        };
+
+        console.log('Setting booking details from API:', bookingDetails);
+        setBookingDetails(bookingDetails);
+        setIsLoading(false);
+        toast.success('Payment successful! Your booking has been confirmed.');
+      } else {
+        throw new Error(data.message || 'Failed to create booking');
+      }
     } catch (error) {
       console.error('Error fetching session details:', error);
       setIsLoading(false);
-      toast.error('Error loading booking details');
+      toast.error('Error loading booking details. Please contact support.');
     }
   };
 

@@ -72,6 +72,16 @@ export const useCustomerData = () => {
   const totalBookings = Number(customerStats?.totalBookings) || 0;
   const recentBookings = customerStats?.recentBookings || [];
 
+  // Debug logging for car data (can be removed in production)
+  // if (process.env.NODE_ENV === 'development') {
+  //   console.log('useCustomerData - Car Debug Info:', {
+  //     totalCarsFromAPI: carsData?.length || 0,
+  //     availableCarsCount: availableCars.length,
+  //     carsData: carsData?.slice(0, 2),
+  //     availableCars: availableCars.slice(0, 2)
+  //   });
+  // }
+
   // Loading state
   const isLoading = statsLoading || carsLoading || rentalsLoading || activeRentalsLoading || customerLoading;
 
