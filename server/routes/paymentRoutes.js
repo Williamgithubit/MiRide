@@ -318,4 +318,162 @@ paymentRouter.post('/create-payment-intent', async (req, res) => {
   }
 });
 
+// Development fallback endpoint to create booking when webhook doesn't work
+paymentRouter.post('/create-booking-fallback', auth(), async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    
+    if (!sessionId) {
+      return res.status(400).json({ error: 'Session ID is required' });
+    }
+
+    console.log('Creating booking fallback for session:', sessionId);
+
+    // Retrieve the session from Stripe to get the metadata
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    if (session.payment_status !== 'paid') {
+      return res.status(400).json({ error: 'Payment not completed' });
+    }
+
+    // Check if booking already exists
+    const existingRental = await db.Rental.findOne({
+      where: { stripeSessionId: sessionId }
+    });
+
+    if (existingRental) {
+      console.log('Booking already exists for session:', sessionId);
+      return res.json({ 
+        success: true, 
+        message: 'Booking already exists',
+        rentalId: existingRental.id 
+      });
+    }
+
+    // Extract booking details from session metadata
+    const {
+      carId,
+      customerId: metadataCustomerId,
+      startDate,
+      endDate,
+      totalDays,
+      insurance,
+      gps,
+      childSeat,
+      additionalDriver,
+      pickupLocation,
+      dropoffLocation,
+      specialRequests
+    } = session.metadata;
+
+    // Get car details to find the owner
+    const car = await db.Car.findByPk(carId);
+    if (!car) {
+      throw new Error(`Car with ID ${carId} not found`);
+    }
+
+    // Use customer ID from metadata or authenticated user
+    const customerId = metadataCustomerId || req.user.id;
+
+    console.log('Creating rental with customer ID:', customerId);
+
+    // Create the rental booking record
+    const rental = await db.Rental.create({
+      customerId: customerId,
+      carId: parseInt(carId),
+      ownerId: car.ownerId,
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+      totalDays: parseInt(totalDays),
+      totalCost: session.amount_total / 100, // Legacy field
+      totalAmount: session.amount_total / 100, // Convert from cents
+      status: 'pending_approval',
+      paymentStatus: 'paid',
+      paymentIntentId: session.payment_intent,
+      stripeSessionId: session.id,
+      pickupLocation: pickupLocation || 'Not specified',
+      dropoffLocation: dropoffLocation || 'Not specified',
+      specialRequests: specialRequests || null,
+      // Add-ons
+      hasInsurance: insurance === 'true',
+      hasGPS: gps === 'true',
+      hasChildSeat: childSeat === 'true',
+      hasAdditionalDriver: additionalDriver === 'true',
+      insuranceCost: insurance === 'true' ? 15 * parseInt(totalDays) : 0,
+      gpsCost: gps === 'true' ? 5 * parseInt(totalDays) : 0,
+      childSeatCost: childSeat === 'true' ? 8 * parseInt(totalDays) : 0,
+      additionalDriverCost: additionalDriver === 'true' ? 25 : 0
+    });
+
+    console.log('Rental booking created via fallback:', rental.id);
+
+    // Update car availability
+    await car.update({ isAvailable: false });
+    console.log(`Car ${car.id} marked as unavailable`);
+
+    // Send notification to car owner
+    try {
+      const notificationResult = await NotificationService.notifyOwnerNewBooking(rental);
+      if (notificationResult.success) {
+        console.log(`✅ Owner notification sent successfully for rental ${rental.id}`);
+      } else {
+        console.error(`❌ Failed to send owner notification: ${notificationResult.error}`);
+      }
+    } catch (notifError) {
+      console.error('Error sending notification:', notifError);
+      // Don't fail the booking creation if notification fails
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Booking created successfully',
+      rentalId: rental.id,
+      sessionDetails: {
+        sessionId: session.id,
+        carDetails: {
+          year: car.year,
+          make: car.brand, // Note: using brand as make for consistency
+          model: car.model,
+          image: car.imageUrl
+        },
+        bookingInfo: {
+          startDate,
+          endDate,
+          totalDays: parseInt(totalDays),
+          pickupLocation: pickupLocation || 'Not specified',
+          dropoffLocation: dropoffLocation || 'Not specified',
+          specialRequests: specialRequests || null
+        },
+        pricing: {
+          basePrice: car.rentalPricePerDay * parseInt(totalDays),
+          insurance: insurance === 'true' ? 15 * parseInt(totalDays) : 0,
+          gps: gps === 'true' ? 5 * parseInt(totalDays) : 0,
+          childSeat: childSeat === 'true' ? 8 * parseInt(totalDays) : 0,
+          additionalDriver: additionalDriver === 'true' ? 25 : 0,
+          totalAmount: session.amount_total / 100
+        },
+        addOns: {
+          insurance: insurance === 'true',
+          gps: gps === 'true',
+          childSeat: childSeat === 'true',
+          additionalDriver: additionalDriver === 'true'
+        },
+        paymentInfo: {
+          paymentMethod: session.payment_method_types[0] || 'card',
+          transactionId: session.payment_intent || session.id.substring(0, 16),
+          paymentDate: new Date(session.created * 1000).toLocaleString()
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in booking fallback:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default paymentRouter;

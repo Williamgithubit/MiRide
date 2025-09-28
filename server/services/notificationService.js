@@ -37,10 +37,10 @@ class NotificationService {
         priority
       });
       
-      console.log(`✅ Notification created for user ${userId}: ${title}`);
+      console.log(`Notification created for user ${userId}: ${title}`);
       return notification;
     } catch (error) {
-      console.error('❌ Error creating notification:', error);
+      console.error('Error creating notification:', error);
       throw error;
     }
   }
@@ -51,7 +51,7 @@ class NotificationService {
   static async sendEmail({ to, subject, html, text }) {
     try {
       if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-        console.log('📧 Email credentials not configured, skipping email notification');
+        console.log('Email credentials not configured, skipping email notification');
         return { success: false, reason: 'Email not configured' };
       }
 
@@ -66,10 +66,10 @@ class NotificationService {
       };
 
       const result = await transporter.sendMail(mailOptions);
-      console.log(`✅ Email sent successfully to ${to}: ${subject}`);
+      console.log(`Email sent successfully to ${to}: ${subject}`);
       return { success: true, messageId: result.messageId };
     } catch (error) {
-      console.error('❌ Error sending email:', error);
+      console.error('Error sending email:', error);
       return { success: false, error: error.message };
     }
   }
@@ -121,10 +121,10 @@ class NotificationService {
             <p><strong>Total Days:</strong> ${rental.totalDays}</p>
             <p><strong>Total Amount:</strong> $${rental.totalAmount}</p>
             
-            ${rental.hasInsurance ? '<p>✅ Insurance included</p>' : ''}
-            ${rental.hasGPS ? '<p>✅ GPS included</p>' : ''}
-            ${rental.hasChildSeat ? '<p>✅ Child seat included</p>' : ''}
-            ${rental.hasAdditionalDriver ? '<p>✅ Additional driver included</p>' : ''}
+            ${rental.hasInsurance ? '<p>Insurance included</p>' : ''}
+            ${rental.hasGPS ? '<p>GPS included</p>' : ''}
+            ${rental.hasChildSeat ? '<p>Child seat included</p>' : ''}
+            ${rental.hasAdditionalDriver ? '<p>Additional driver included</p>' : ''}
             
             ${rental.specialRequests ? `<p><strong>Special Requests:</strong> ${rental.specialRequests}</p>` : ''}
           </div>
@@ -155,11 +155,11 @@ class NotificationService {
         text: `New booking request from ${customer.name} for your ${car.year} ${car.brand} ${car.model}. Please check your dashboard to review.`
       });
 
-      console.log(`✅ Owner notification sent for rental ${rental.id}`);
+      console.log(`Owner notification sent for rental ${rental.id}`);
       return { success: true };
 
     } catch (error) {
-      console.error('❌ Error notifying owner:', error);
+      console.error(' Error notifying owner:', error);
       return { success: false, error: error.message };
     }
   }
@@ -258,11 +258,11 @@ class NotificationService {
         text: message
       });
 
-      console.log(`✅ Customer notification sent for rental ${rental.id} - status: ${status}`);
+      console.log(`Customer notification sent for rental ${rental.id} - status: ${status}`);
       return { success: true };
 
     } catch (error) {
-      console.error('❌ Error notifying customer:', error);
+      console.error(' Error notifying customer:', error);
       return { success: false, error: error.message };
     }
   }
@@ -340,11 +340,110 @@ class NotificationService {
         text: `Booking cancelled by ${customer.name} for your ${car.year} ${car.brand} ${car.model}. ${reason ? `Reason: ${reason}` : ''}`
       });
 
-      console.log(`✅ Owner cancellation notification sent for rental ${rental.id}`);
+      console.log(`Owner cancellation notification sent for rental ${rental.id}`);
       return { success: true };
 
     } catch (error) {
-      console.error('❌ Error notifying owner about cancellation:', error);
+      console.error(' Error notifying owner about cancellation:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Notify owner about new car review
+   */
+  static async notifyOwnerNewReview(review) {
+    try {
+      // Get car details to find the owner
+      const car = await db.Car.findByPk(review.carId, {
+        include: [{
+          model: db.User,
+          as: 'owner',
+          attributes: ['id', 'name', 'email']
+        }]
+      });
+
+      if (!car || !car.owner) {
+        throw new Error('Car or owner not found for review notification');
+      }
+
+      // Get customer details
+      const customer = await db.User.findByPk(review.customerId, {
+        attributes: ['id', 'name', 'email']
+      });
+
+      if (!customer) {
+        throw new Error('Customer not found for review notification');
+      }
+
+      // Create in-app notification
+      const notificationData = {
+        reviewId: review.id,
+        carId: review.carId,
+        customerId: review.customerId,
+        rating: review.rating,
+        title: review.title,
+        comment: review.comment
+      };
+
+      await this.createNotification({
+        userId: car.owner.id,
+        type: 'customer_review',
+        title: 'New Review Received',
+        message: `${customer.name} left a ${review.rating}-star review for your ${car.year || ''} ${car.brand || ''} ${car.model || ''}${review.title ? `: "${review.title}"` : ''}`,
+        data: notificationData,
+        priority: 'medium'
+      });
+
+      // Send email notification
+      const emailSubject = `New ${review.rating}-Star Review - ${car.year || ''} ${car.brand || ''} ${car.model || ''}`;
+      const stars = '⭐'.repeat(review.rating);
+      
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2563eb;">New Review Received! ${stars}</h2>
+          
+          <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0;">Review Details</h3>
+            <p><strong>Customer:</strong> ${customer.name}</p>
+            <p><strong>Vehicle:</strong> ${car.year || ''} ${car.brand || ''} ${car.model || ''}</p>
+            <p><strong>Rating:</strong> ${stars} (${review.rating}/5)</p>
+            ${review.title ? `<p><strong>Title:</strong> ${review.title}</p>` : ''}
+            ${review.comment ? `<p><strong>Review:</strong></p><div style="background-color: #ffffff; padding: 15px; border-left: 4px solid #2563eb; margin: 10px 0; font-style: italic;">"${review.comment}"</div>` : ''}
+            <p><strong>Review Date:</strong> ${new Date(review.createdAt).toLocaleDateString()}</p>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <p style="color: #059669; font-weight: bold;">🎉 Great job! Customer feedback helps improve your service.</p>
+            <p>You can respond to this review from your dashboard.</p>
+          </div>
+          
+          <div style="text-align: center;">
+            <a href="${process.env.CLIENT_URL}/owner-dashboard?section=reviews" 
+               style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              View & Respond to Review
+            </a>
+          </div>
+          
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
+          <p style="color: #6b7280; font-size: 14px;">
+            This is an automated notification from MiRide. Customer reviews help build trust and improve your rental business.
+          </p>
+        </div>
+      `;
+
+      await this.sendEmail({
+        to: car.owner.email,
+        subject: emailSubject,
+        html: emailHtml,
+        text: `${customer.name} left a ${review.rating}-star review for your ${car.year || ''} ${car.brand || ''} ${car.model || ''}. ${review.title ? `Title: ${review.title}. ` : ''}${review.comment ? `Comment: ${review.comment}` : ''}`
+      });
+
+      console.log(`Owner review notification sent for review ${review.id}`);
+      return { success: true };
+
+    } catch (error) {
+      console.error('Error notifying owner about new review:', error);
       return { success: false, error: error.message };
     }
   }
@@ -368,7 +467,7 @@ class NotificationService {
 
       return notifications;
     } catch (error) {
-      console.error('❌ Error fetching notifications:', error);
+      console.error(' Error fetching notifications:', error);
       throw error;
     }
   }
@@ -390,7 +489,7 @@ class NotificationService {
 
       return updatedRows > 0;
     } catch (error) {
-      console.error('❌ Error marking notification as read:', error);
+      console.error(' Error marking notification as read:', error);
       throw error;
     }
   }
@@ -412,7 +511,7 @@ class NotificationService {
 
       return updatedRows;
     } catch (error) {
-      console.error('❌ Error marking all notifications as read:', error);
+      console.error(' Error marking all notifications as read:', error);
       throw error;
     }
   }
@@ -434,7 +533,7 @@ class NotificationService {
 
       return updatedRows > 0;
     } catch (error) {
-      console.error('❌ Error marking notification as unread:', error);
+      console.error(' Error marking notification as unread:', error);
       throw error;
     }
   }
@@ -453,7 +552,7 @@ class NotificationService {
 
       return deletedRows > 0;
     } catch (error) {
-      console.error('❌ Error deleting notification:', error);
+      console.error(' Error deleting notification:', error);
       throw error;
     }
   }
@@ -469,7 +568,7 @@ class NotificationService {
 
       return deletedRows;
     } catch (error) {
-      console.error('❌ Error clearing all notifications:', error);
+      console.error(' Error clearing all notifications:', error);
       throw error;
     }
   }
@@ -527,7 +626,7 @@ class NotificationService {
 
       return notifications;
     } catch (error) {
-      console.error('❌ Error fetching notifications with filters:', error);
+      console.error(' Error fetching notifications with filters:', error);
       throw error;
     }
   }

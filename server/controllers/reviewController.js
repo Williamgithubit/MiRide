@@ -1,18 +1,53 @@
 // server/controllers/reviewController.js
 import db from '../models/index.js';
 import { Op } from 'sequelize';
+import NotificationService from '../services/notificationService.js';
 
-// Get all reviews for owner's cars
+// Get all reviews for owner's cars with pagination and filtering
 export const getReviewsByOwner = async (req, res) => {
   try {
     const ownerId = req.userId || req.params.ownerId;
     
-    const reviews = await db.Review.findAll({
+    // Parse query parameters
+    const {
+      search,
+      carId,
+      customerId,
+      rating,
+      status = 'all',
+      limit = 20,
+      offset = 0
+    } = req.query;
+
+    // Build where clause for filtering
+    const whereClause = {};
+    if (rating) whereClause.rating = rating;
+    if (customerId) whereClause.customerId = customerId;
+    
+    // Add search functionality
+    const searchClause = {};
+    if (search) {
+      const { Op } = await import('sequelize');
+      searchClause[Op.or] = [
+        { comment: { [Op.iLike]: `%${search}%` } },
+        { title: { [Op.iLike]: `%${search}%` } }
+      ];
+    }
+
+    // Combine where clauses
+    const finalWhereClause = { ...whereClause, ...searchClause };
+
+    // Build car filter
+    const carWhereClause = { ownerId };
+    if (carId) carWhereClause.id = carId;
+
+    const { count, rows: reviews } = await db.Review.findAndCountAll({
+      where: finalWhereClause,
       include: [
         {
           model: db.Car,
           as: 'car',
-          where: { ownerId },
+          where: carWhereClause,
           attributes: ['id', 'name', 'model', 'brand', 'year', 'imageUrl'],
         },
         {
@@ -28,9 +63,25 @@ export const getReviewsByOwner = async (req, res) => {
         },
       ],
       order: [['createdAt', 'DESC']],
+      limit: parseInt(limit),
+      offset: parseInt(offset),
     });
 
-    res.json(reviews);
+    // Add status field (for now, all reviews are 'published' since we don't have moderation)
+    const reviewsWithStatus = reviews.map(review => ({
+      ...review.toJSON(),
+      status: 'published' // Default status since we don't have moderation system yet
+    }));
+
+    const totalPages = Math.ceil(count / parseInt(limit));
+
+    res.json({
+      reviews: reviewsWithStatus,
+      total: count,
+      totalPages,
+      currentPage: Math.floor(parseInt(offset) / parseInt(limit)) + 1,
+      limit: parseInt(limit)
+    });
   } catch (error) {
     console.error('Error fetching reviews:', error);
     res.status(500).json({ message: 'Internal server error' });
@@ -182,6 +233,19 @@ export const createReview = async (req, res) => {
         },
       ],
     });
+
+    // Send notification to car owner about new review
+    try {
+      const notificationResult = await NotificationService.notifyOwnerNewReview(reviewWithDetails);
+      if (notificationResult.success) {
+        console.log(`✅ Owner notification sent successfully for review ${review.id}`);
+      } else {
+        console.error(`❌ Failed to send owner notification: ${notificationResult.error}`);
+      }
+    } catch (notifError) {
+      console.error('Error sending review notification:', notifError);
+      // Don't fail the review creation if notification fails
+    }
 
     res.status(201).json(reviewWithDetails);
   } catch (error) {
@@ -443,6 +507,9 @@ export const getReviewStats = async (req, res) => {
     res.json({
       totalReviews,
       averageRating: parseFloat(averageRating?.avgRating || 0),
+      publishedReviews: totalReviews, // For now, all reviews are published
+      pendingReviews: 0, // No moderation system yet
+      hiddenReviews: 0, // No moderation system yet
       ratingDistribution: formattedRatingDistribution,
       recentReviews,
       pendingResponses,
