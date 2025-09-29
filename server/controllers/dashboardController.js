@@ -577,9 +577,21 @@ export const updatePlatformSettings = async (req, res) => {
 // Get comprehensive owner analytics data
 export const getOwnerAnalytics = async (req, res) => {
   try {
-    // Verify user has owner role
-    if (req.userRole !== 'owner') {
-      return res.status(403).json({ message: 'Access denied. Owner privileges required.' });
+    console.log('getOwnerAnalytics - Request details:', {
+      userId: req.userId,
+      userRole: req.userRole,
+      userFromToken: req.user?.role,
+      headers: req.headers.authorization ? 'Token present' : 'No token'
+    });
+
+    // Verify user has owner role (check both req.userRole and req.user.role)
+    const userRole = req.userRole || req.user?.role;
+    if (userRole !== 'owner' && userRole !== 'admin') {
+      console.log('getOwnerAnalytics - Access denied. User role:', userRole);
+      return res.status(403).json({ 
+        message: 'Access denied. Owner or admin privileges required.',
+        userRole: userRole
+      });
     }
 
     const ownerId = req.userId;
@@ -612,7 +624,7 @@ export const getOwnerAnalytics = async (req, res) => {
     // Get owner's cars
     const ownerCars = await db.Car.findAll({
       where: { ownerId },
-      attributes: ['id', 'make', 'model', 'year', 'imageUrl', 'isAvailable']
+      attributes: ['id', 'brand', 'model', 'year', 'imageUrl', 'isAvailable']
     });
 
     const carIds = ownerCars.map(car => car.id);
@@ -642,16 +654,16 @@ export const getOwnerAnalytics = async (req, res) => {
       WITH owner_rentals AS (
         SELECT 
           r.*,
-          c.make,
+          c.brand,
           c.model,
           c.year,
-          c.image_url,
+          c."imageUrl" as image_url,
           u.name as customer_name,
           u.email as customer_email
         FROM rentals r
         INNER JOIN cars c ON r.car_id = c.id
         INNER JOIN users u ON r.customer_id = u.id
-        WHERE c.owner_id = :ownerId
+        WHERE c."ownerId" = :ownerId
       ),
       monthly_stats AS (
         SELECT 
@@ -665,11 +677,11 @@ export const getOwnerAnalytics = async (req, res) => {
       ),
       car_stats AS (
         SELECT 
-          COUNT(CASE WHEN is_available = true THEN 1 END) as active_cars,
-          COUNT(CASE WHEN is_available = false THEN 1 END) as inactive_cars,
+          COUNT(CASE WHEN "isAvailable" = true THEN 1 END) as active_cars,
+          COUNT(CASE WHEN "isAvailable" = false THEN 1 END) as inactive_cars,
           COUNT(*) as total_cars
         FROM cars 
-        WHERE owner_id = :ownerId
+        WHERE "ownerId" = :ownerId
       ),
       status_distribution AS (
         SELECT 
@@ -682,15 +694,15 @@ export const getOwnerAnalytics = async (req, res) => {
       top_cars AS (
         SELECT 
           car_id,
-          CONCAT(make, ' ', model, ' ', year) as car_name,
-          make,
+          CONCAT(brand, ' ', model, ' ', year) as car_name,
+          brand,
           model,
           year,
           image_url,
           COUNT(*) as rental_count,
           SUM(total_cost) as total_revenue
         FROM owner_rentals
-        GROUP BY car_id, make, model, year, image_url
+        GROUP BY car_id, brand, model, year, image_url
         ORDER BY rental_count DESC
         LIMIT 10
       )
@@ -714,7 +726,7 @@ export const getOwnerAnalytics = async (req, res) => {
             JSON_BUILD_OBJECT(
               'carId', tc.car_id,
               'carName', tc.car_name,
-              'make', tc.make,
+              'brand', tc.brand,
               'model', tc.model,
               'year', tc.year,
               'imageUrl', tc.image_url,
@@ -756,7 +768,7 @@ export const getOwnerAnalytics = async (req, res) => {
         SUM(total_cost) as revenue
       FROM rentals r
       INNER JOIN cars c ON r.car_id = c.id
-      WHERE c.owner_id = :ownerId 
+      WHERE c."ownerId" = :ownerId 
         AND r.start_date >= :trendStartDate
       GROUP BY ${trendQuery}
       ORDER BY ${trendQuery} ASC
@@ -774,7 +786,7 @@ export const getOwnerAnalytics = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['make', 'model', 'year']
+          attributes: ['brand', 'model', 'year']
         },
         {
           model: db.User,
@@ -796,7 +808,7 @@ export const getOwnerAnalytics = async (req, res) => {
       SELECT AVG(rating) as avg_rating
       FROM reviews r
       INNER JOIN cars c ON r.car_id = c.id
-      WHERE c.owner_id = :ownerId
+      WHERE c."ownerId" = :ownerId
     `, {
       replacements: { ownerId },
       type: db.sequelize.QueryTypes.SELECT
@@ -833,7 +845,7 @@ export const getOwnerAnalytics = async (req, res) => {
         id: booking.id,
         customerName: booking.customer?.name || 'Unknown',
         customerEmail: booking.customer?.email || 'Unknown',
-        carName: `${booking.car?.year} ${booking.car?.make} ${booking.car?.model}`,
+        carName: `${booking.car?.year} ${booking.car?.brand} ${booking.car?.model}`,
         startDate: booking.startDate,
         endDate: booking.endDate,
         totalAmount: parseFloat(booking.totalCost),

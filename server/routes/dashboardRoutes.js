@@ -28,6 +28,21 @@ router.get('/owner-stats', authorize(['owner', 'admin']), getOwnerStats);
 router.get('/stats/owner', authorize(['owner', 'admin']), getOwnerStats);
 router.get('/owner/:ownerId', authorize(['owner', 'admin']), getOwnerStats);
 
+// Debug route to test authentication
+router.get('/debug/auth', authenticate, (req, res) => {
+  res.json({
+    userId: req.userId,
+    userRole: req.userRole,
+    userFromToken: req.user?.role,
+    userObject: req.user ? {
+      id: req.user.id,
+      name: req.user.name,
+      email: req.user.email,
+      role: req.user.role
+    } : null
+  });
+});
+
 // Owner analytics route
 router.get('/owner/analytics', authorize(['owner', 'admin']), getOwnerAnalytics);
 
