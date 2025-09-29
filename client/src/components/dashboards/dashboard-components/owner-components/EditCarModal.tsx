@@ -18,7 +18,7 @@ const EditCarModal: React.FC<EditCarModalProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     name: "",
-    make: "",
+    brand: "",
     model: "",
     year: new Date().getFullYear(),
     rentalPricePerDay: 0,
@@ -35,7 +35,7 @@ const EditCarModal: React.FC<EditCarModalProps> = ({
     if (car) {
       setFormData({
         name: car.name || "",
-        make: car.make || "",
+        brand: car.brand || "",
         model: car.model || "",
         year: car.year || new Date().getFullYear(),
         rentalPricePerDay: car.rentalPricePerDay || 0,
@@ -76,7 +76,7 @@ const EditCarModal: React.FC<EditCarModalProps> = ({
 
     if (
       !formData.name ||
-      !formData.make ||
+      !formData.brand ||
       !formData.model ||
       !formData.rentalPricePerDay
     ) {
@@ -127,18 +127,16 @@ const EditCarModal: React.FC<EditCarModalProps> = ({
                 value={formData.name}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                required
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Brand *
               </label>
               <input
                 type="text"
-                name="make"
-                value={formData.make}
+                name="brand"
+                value={formData.brand}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 required

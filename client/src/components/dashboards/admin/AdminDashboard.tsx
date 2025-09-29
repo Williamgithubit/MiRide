@@ -6,7 +6,7 @@ import DashboardCard from '../shared/DashboardCard';
 import Table from '../shared/Table';
 import Chart from '../shared/Chart';
 import Modal from '../shared/Modal';
-import { mockUsers, mockCars, mockRentals, mockAnalytics, revenueChartData, bookingTrendsData } from '../shared/mockData';
+import { mockUsers, mockCars, mockAnalytics, revenueChartData, bookingTrendsData } from '../shared/mockData';
 
 const AdminDashboard: React.FC = () => {
   const [activeSection, setActiveSection] = useState('overview');

@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 
 interface CreateCarData {
   name: string;
-  make: string;
+  brand: string;
   model: string;
   year: number;
   rentalPricePerDay: number;
@@ -29,7 +29,7 @@ const AddCarModal: React.FC<AddCarModalProps> = ({
 }) => {
   const [formData, setFormData] = useState<CreateCarData>({
     name: "",
-    make: "",
+    brand: "",
     model: "",
     year: new Date().getFullYear(),
     rentalPricePerDay: 0,
@@ -62,7 +62,7 @@ const AddCarModal: React.FC<AddCarModalProps> = ({
     try {
       // Generate car name if not provided
       const carName =
-        formData.name || `${formData.year} ${formData.make} ${formData.model}`;
+        formData.name || `${formData.year} ${formData.brand} ${formData.model}`;
 
       const carData = {
         ...formData,
@@ -75,7 +75,7 @@ const AddCarModal: React.FC<AddCarModalProps> = ({
       // Reset form
       setFormData({
         name: "",
-        make: "",
+        brand: "",
         model: "",
         year: new Date().getFullYear(),
         rentalPricePerDay: 0,
@@ -106,11 +106,11 @@ const AddCarModal: React.FC<AddCarModalProps> = ({
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Make</label>
+            <label className="block text-sm font-medium mb-2">Brand</label>
             <input
               type="text"
-              name="make"
-              value={formData.make}
+              name="brand"
+              value={formData.brand}
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700"
               placeholder="Toyota"

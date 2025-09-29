@@ -89,6 +89,7 @@ export const useCustomerData = () => {
     // Data
     customerStats,
     availableCars,
+    carsData: carsData || [], // All cars (available and unavailable)
     customerRentals: customerRentals || [],
     activeRentalsData: activeRentalsData || [],
     customer: customer || user, // Fallback to user from auth if customer data not available

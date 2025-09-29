@@ -3,6 +3,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, Calendar, Car, CreditCard, ArrowRight, Download, MapPin, Clock, DollarSign, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
+import { useDispatch } from 'react-redux';
+import { carApi } from '../../store/Car/carApi';
 
 interface BookingDetails {
   sessionId: string;
@@ -45,6 +47,7 @@ const BookingSuccess: React.FC = () => {
   console.log('BookingSuccess component rendered');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(true);
   const [bookingDetails, setBookingDetails] = useState<BookingDetails | null>(null);
   const sessionId = searchParams.get('session_id');
@@ -118,6 +121,11 @@ const BookingSuccess: React.FC = () => {
 
         console.log('Setting booking details from API:', bookingDetails);
         setBookingDetails(bookingDetails);
+        
+        // Invalidate car cache to refresh availability status
+        dispatch(carApi.util.invalidateTags([{ type: 'Car', id: 'LIST' }]));
+        console.log('Car cache invalidated - availability should refresh');
+        
         setIsLoading(false);
         toast.success('Payment successful! Your booking has been confirmed.');
       } else {

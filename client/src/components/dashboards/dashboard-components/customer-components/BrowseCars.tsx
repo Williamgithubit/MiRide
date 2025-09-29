@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Search, MapPin, Star, Users, X } from 'lucide-react';
+import { Search, MapPin, Star, Users, X, RefreshCw } from 'lucide-react';
 import Modal from '../../shared/Modal';
 import BookingModal from './BookingModal';
 import { useCustomerData } from './useCustomerData';
+import { useDispatch } from 'react-redux';
+import { carApi } from '../../../../store/Car/carApi';
 
 interface BrowseCarsProps {
   selectedCar: any;
@@ -17,7 +19,8 @@ const BrowseCars: React.FC<BrowseCarsProps> = ({
   showBookingModal, 
   setShowBookingModal
 }) => {
-  const { availableCars } = useCustomerData();
+  const { availableCars, carsData } = useCustomerData();
+  const dispatch = useDispatch();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchFilters, setSearchFilters] = useState({
     location: '',
@@ -26,9 +29,12 @@ const BrowseCars: React.FC<BrowseCarsProps> = ({
     availability: 'available'
   });
 
+  // Get all cars (not just available ones) for better UX
+  const allCars = carsData || [];
+
   // Filter cars based on search criteria
   const filteredCars = useMemo(() => {
-    return availableCars.filter(car => {
+    return allCars.filter(car => {
       // Search term filter (brand, model, year)
       const matchesSearch = searchTerm === '' || 
         car.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -70,9 +76,14 @@ const BrowseCars: React.FC<BrowseCarsProps> = ({
         }
       })();
 
-      return matchesSearch && matchesLocation && matchesCarType && matchesPriceRange;
+      // Availability filter
+      const matchesAvailability = searchFilters.availability === 'all' || 
+        (searchFilters.availability === 'available' && car.isAvailable) ||
+        (searchFilters.availability === 'unavailable' && !car.isAvailable);
+
+      return matchesSearch && matchesLocation && matchesCarType && matchesPriceRange && matchesAvailability;
     });
-  }, [availableCars, searchTerm, searchFilters]);
+  }, [allCars, searchTerm, searchFilters]);
 
   const handleSearch = () => {
     // Search is handled automatically by the useMemo hook
@@ -90,46 +101,82 @@ const BrowseCars: React.FC<BrowseCarsProps> = ({
     });
   };
 
-  const renderCarCard = (car: any) => (
-    <div key={car.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-      <img src={car.imageUrl} alt={car.model} className="w-full h-48 object-cover" />
-      <div className="p-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          {car.year} {car.brand} {car.model}
-        </h3>
-        <div className="flex items-center mt-2 text-sm text-gray-600 dark:text-gray-400">
-          <MapPin className="w-4 h-4 mr-1" />
-          {car.location}
+  const refreshCarList = () => {
+    // Invalidate car cache to refresh availability status
+    dispatch(carApi.util.invalidateTags([{ type: 'Car', id: 'LIST' }]));
+    console.log('Car list refreshed - checking for availability updates');
+  };
+
+  const renderCarCard = (car: any) => {
+    const isAvailable = car.isAvailable;
+    
+    return (
+      <div key={car.id} className={`bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow ${!isAvailable ? 'opacity-75' : ''}`}>
+        <div className="relative">
+          <img src={car.imageUrl} alt={car.model} className={`w-full h-48 object-cover ${!isAvailable ? 'brightness-50' : ''}`} />
+          {!isAvailable && (
+            <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+              <span className="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-medium shadow-lg">
+                Currently Booked
+              </span>
+            </div>
+          )}
         </div>
-        <div className="flex items-center mt-1 text-sm text-gray-600 dark:text-gray-400">
-          <Star className="w-4 h-4 mr-1 text-yellow-500" />
-          {car.rating} ({car.totalRentals} rentals)
-        </div>
-        <div className="mt-4">
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-2xl font-bold text-blue-600">${car.rentalPricePerDay}/day</span>
+        <div className="p-4">
+          <h3 className={`text-lg font-semibold ${isAvailable ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+            {car.year} {car.brand} {car.model}
+          </h3>
+          <div className={`flex items-center mt-2 text-sm ${isAvailable ? 'text-gray-600 dark:text-gray-400' : 'text-gray-400 dark:text-gray-500'}`}>
+            <MapPin className="w-4 h-4 mr-1" />
+            {car.location}
           </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <button
-              onClick={() => setSelectedCar(car)}
-              className="flex-1 px-4 py-2 text-sm text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors font-medium"
-            >
-              View Details
-            </button>
-            <button
-              onClick={() => {
-                setSelectedCar(car);
-                setShowBookingModal(true);
-              }}
-              className="flex-1 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-            >
-              Book Now
-            </button>
+          <div className={`flex items-center mt-1 text-sm ${isAvailable ? 'text-gray-600 dark:text-gray-400' : 'text-gray-400 dark:text-gray-500'}`}>
+            <Star className="w-4 h-4 mr-1 text-yellow-500" />
+            {car.rating} ({car.reviews || 0} reviews)
+          </div>
+          <div className="mt-4">
+            <div className="flex justify-between items-center mb-3">
+              <span className={`text-2xl font-bold ${isAvailable ? 'text-blue-600' : 'text-gray-400'}`}>
+                ${car.rentalPricePerDay}/day
+              </span>
+              {!isAvailable && (
+                <span className="text-sm text-red-600 font-medium">Unavailable</span>
+              )}
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                onClick={() => setSelectedCar(car)}
+                className={`flex-1 px-4 py-2 text-sm border rounded-lg transition-colors font-medium ${
+                  isAvailable 
+                    ? 'text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20' 
+                    : 'text-gray-400 border-gray-300 cursor-not-allowed'
+                }`}
+                disabled={!isAvailable}
+              >
+                View Details
+              </button>
+              <button
+                onClick={() => {
+                  if (isAvailable) {
+                    setSelectedCar(car);
+                    setShowBookingModal(true);
+                  }
+                }}
+                className={`flex-1 px-4 py-2 text-sm rounded-lg transition-colors font-medium ${
+                  isAvailable 
+                    ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+                disabled={!isAvailable}
+              >
+                {isAvailable ? 'Book Now' : 'Unavailable'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -142,7 +189,7 @@ const BrowseCars: React.FC<BrowseCarsProps> = ({
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              placeholder="Search by make, model, or year..."
+              placeholder="Search by brand, model, or year..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700"
@@ -151,7 +198,7 @@ const BrowseCars: React.FC<BrowseCarsProps> = ({
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2">Location</label>
             <div className="relative">
@@ -191,6 +238,18 @@ const BrowseCars: React.FC<BrowseCarsProps> = ({
               <option value="Hatchback">Hatchback</option>
             </select>
           </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Availability</label>
+            <select 
+              value={searchFilters.availability}
+              onChange={(e) => setSearchFilters({...searchFilters, availability: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700"
+            >
+              <option value="available">Available Only</option>
+              <option value="all">All Cars</option>
+              <option value="unavailable">Unavailable Only</option>
+            </select>
+          </div>
           <div className="flex items-end">
             <button 
               onClick={handleSearch}
@@ -207,6 +266,16 @@ const BrowseCars: React.FC<BrowseCarsProps> = ({
             >
               <X className="w-4 h-4 mr-2" />
               Clear
+            </button>
+          </div>
+          <div className="flex items-end">
+            <button 
+              onClick={refreshCarList}
+              className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center transition-colors"
+              title="Refresh car availability"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
             </button>
           </div>
         </div>
