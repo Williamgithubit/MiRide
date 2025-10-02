@@ -272,9 +272,9 @@ paymentRouter.post('/webhook', express.raw({ type: 'application/json' }), async 
       // Send notification to car owner
       const notificationResult = await NotificationService.notifyOwnerNewBooking(rental);
       if (notificationResult.success) {
-        console.log(`✅ Owner notification sent successfully for rental ${rental.id}`);
+        console.log(`Owner notification sent successfully for rental ${rental.id}`);
       } else {
-        console.error(`❌ Failed to send owner notification: ${notificationResult.error}`);
+        console.error(`Failed to send owner notification: ${notificationResult.error}`);
       }
       
     } catch (error) {
@@ -419,9 +419,9 @@ paymentRouter.post('/create-booking-fallback', auth(), async (req, res) => {
     try {
       const notificationResult = await NotificationService.notifyOwnerNewBooking(rental);
       if (notificationResult.success) {
-        console.log(`✅ Owner notification sent successfully for rental ${rental.id}`);
+        console.log(`Owner notification sent successfully for rental ${rental.id}`);
       } else {
-        console.error(`❌ Failed to send owner notification: ${notificationResult.error}`);
+        console.error(`Failed to send owner notification: ${notificationResult.error}`);
       }
     } catch (notifError) {
       console.error('Error sending notification:', notifError);

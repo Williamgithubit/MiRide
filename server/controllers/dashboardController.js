@@ -78,8 +78,16 @@ export const getCustomerStats = async (req, res) => {
 // Get admin dashboard stats
 export const getAdminStats = async (req, res) => {
   try {
+    console.log('getAdminStats - Request details:', {
+      userId: req.userId,
+      userRole: req.userRole,
+      userFromToken: req.user?.role,
+      headers: req.headers.authorization ? 'Token present' : 'No token'
+    });
+
     // Verify user is admin
     if (req.userRole !== 'admin') {
+      console.log('getAdminStats - Access denied. User role:', req.userRole);
       return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
     }
 
@@ -131,8 +139,8 @@ export const getAdminStats = async (req, res) => {
       limit: 10,
       order: [['startDate', 'DESC']],
       include: [
-        { model: db.User, as: 'Customer', attributes: ['id', 'name', 'email'] },
-        { model: db.Car, as: 'Car', attributes: ['id', 'brand', 'model', 'year'] }
+        { model: db.User, as: 'customer', attributes: ['id', 'name', 'email'] },
+        { model: db.Car, as: 'car', attributes: ['id', 'brand', 'model', 'year'] }
       ]
     });
 
@@ -166,6 +174,14 @@ export const getAdminStats = async (req, res) => {
       customersByRole,
       recentRentals
     };
+
+    console.log('getAdminStats - Success. Stats summary:', {
+      totalCustomers,
+      totalCars,
+      totalRentals,
+      activeRentals,
+      recentRentalsCount: recentRentals.length
+    });
 
     return res.status(200).json(stats);
   } catch (error) {

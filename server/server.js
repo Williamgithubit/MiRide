@@ -15,6 +15,7 @@ import maintenanceRoutes from './routes/maintenanceRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import userManagementRoutes from './routes/userManagementRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -44,6 +45,7 @@ app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin/users', userManagementRoutes);
 
 // Default route
 app.get('/', (req, res) => {
