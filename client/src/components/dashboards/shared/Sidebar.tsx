@@ -148,6 +148,12 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     // Admin Items
     {
+      id: "overview",
+      label: "Overview",
+      icon: <FaHome />,
+      roles: ["admin"],
+    },
+    {
       id: "user-management",
       label: "User Management",
       icon: <FaUsers />,
@@ -160,7 +166,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       roles: ["admin"],
     },
     {
-      id: "bookings-overview",
+      id: "bookings-management",
       label: "Bookings",
       icon: <FaCalendarAlt />,
       roles: ["admin"],
@@ -169,6 +175,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       id: "revenue",
       label: "Revenue",
       icon: <FaMoneyBillWave />,
+      roles: ["admin"],
+    },
+    {
+      id: "notifications",
+      label: "Notifications",
+      icon: <FaEnvelope />,
       roles: ["admin"],
     },
     {

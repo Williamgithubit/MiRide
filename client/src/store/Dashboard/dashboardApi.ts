@@ -84,13 +84,37 @@ export interface AnalyticsData {
 }
 
 export interface AdminStats {
-  totalUsers: number;
+  totalCustomers: number;
   totalCars: number;
-  totalBookings: number;
-  totalRevenue: number;
-  revenueByMonth: RevenueData[];
-  usersByRole: { [key: string]: number };
-  carsByStatus: { [key: string]: number };
+  totalRentals: number;
+  activeRentals: number;
+  availableCars: number;
+  unavailableCars: number;
+  newCustomersThisMonth: number;
+  revenueThisMonth: number;
+  revenuePreviousMonth: number;
+  revenueGrowth: number;
+  customersByRole: Array<{
+    role: string;
+    count: number;
+  }>;
+  recentRentals: Array<{
+    id: number;
+    customer: {
+      id: number;
+      name: string;
+      email: string;
+    };
+    car: {
+      id: number;
+      brand: string;
+      model: string;
+      year: number;
+    };
+    startDate: string;
+    endDate: string;
+    totalCost: number;
+  }>;
 }
 
 export interface RevenueData {

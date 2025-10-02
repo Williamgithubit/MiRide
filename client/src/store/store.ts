@@ -11,7 +11,7 @@ import storage from 'redux-persist/lib/storage';
 // Import the auth middleware
 import { authMiddleware } from './middleware/authMiddleware';
 // Import the auth reducer and API
-import authReducer, { AuthState } from './Auth/authSlice';
+import authReducer from './Auth/authSlice';
 // Import the auth API
 import { authApi } from './Auth/authApi';
 // Import other APIs
@@ -39,6 +39,13 @@ import bookingReducer from './Booking/bookingSlice';
 import { bookingApi } from './Booking/bookingApi';
 // Import the payment API
 import { paymentApi } from './Payment/paymentApi';
+// Import the user management API
+import { userManagementApi } from './User/userManagementApi';
+// Import the car management API
+import { carManagementApi } from './Car/carManagementApi';
+// Import admin bookings slice and API
+import adminBookingsReducer from './Admin/adminBookingsSlice';
+import { adminBookingsApi } from './Admin/bookingsService';
 
 // Define the root state type
 // Note: _persist property removed since we're temporarily bypassing persistence
@@ -66,6 +73,8 @@ const persistConfig = {
     ownerReviewApi.reducerPath,
     bookingApi.reducerPath,
     paymentApi.reducerPath,
+    userManagementApi.reducerPath,
+    carManagementApi.reducerPath,
   ],
 };
 
@@ -73,6 +82,7 @@ const persistConfig = {
 const appReducer = {
   auth: authReducer,
   booking: bookingReducer,
+  adminBookings: adminBookingsReducer,
   [authApi.reducerPath]: authApi.reducer,
   [carApi.reducerPath]: carApi.reducer,
   [rentalApi.reducerPath]: rentalApi.reducer,
@@ -86,6 +96,9 @@ const appReducer = {
   [ownerReviewApi.reducerPath]: ownerReviewApi.reducer,
   [bookingApi.reducerPath]: bookingApi.reducer,
   [paymentApi.reducerPath]: paymentApi.reducer,
+  [userManagementApi.reducerPath]: userManagementApi.reducer,
+  [carManagementApi.reducerPath]: carManagementApi.reducer,
+  [adminBookingsApi.reducerPath]: adminBookingsApi.reducer,
 };
 // Create the root reducer
 const rootReducer = combineReducers(appReducer);
@@ -95,7 +108,7 @@ const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 // Create the store with the persisted reducer and middleware
 export const store = configureStore({
-  reducer: rootReducer, // Temporarily use rootReducer directly to bypass persistence
+  reducer: persistedReducer, // Use persisted reducer to enable persistence
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
@@ -115,6 +128,9 @@ export const store = configureStore({
       .concat(ownerReviewApi.middleware)
       .concat(bookingApi.middleware)
       .concat(paymentApi.middleware)
+      .concat(userManagementApi.middleware)
+      .concat(carManagementApi.middleware)
+      .concat(adminBookingsApi.middleware)
       .concat(authMiddleware),
   devTools: process.env.NODE_ENV !== 'production',
 });

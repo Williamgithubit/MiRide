@@ -53,7 +53,8 @@ const Login: React.FC = () => {
     setError("");
     try {
       // Use the login function from Redux auth hook
-      await login({ email, password });
+      // Trim inputs before sending to backend
+      await login({ email: email.trim(), password: password.trim() });
 
       // Handle remember me functionality
       if (rememberMe) {
@@ -83,8 +84,8 @@ const Login: React.FC = () => {
   };
 
   const handleForgotPassword = () => {
-    // Optional: navigate to your forgot password page
-    navigate("");
+    // Navigate to forgot-password page (endpoint exists on server as reset-password-request)
+    navigate("/forgot-password");
   };
 
   useEffect(() => {
@@ -149,7 +150,9 @@ const Login: React.FC = () => {
               onClick={() => setShowPassword(!showPassword)}
               disabled={loading}
               className={`absolute right-3 top-9 text-gray-500 transition-colors ${
-                loading ? "cursor-not-allowed opacity-50" : "hover:text-gray-700"
+                loading
+                  ? "cursor-not-allowed opacity-50"
+                  : "hover:text-gray-700"
               }`}
             >
               {showPassword ? <FaEyeSlash /> : <FaEye />}
@@ -183,9 +186,7 @@ const Login: React.FC = () => {
                 : "bg-green-800 hover:bg-green-700"
             }`}
           >
-            {loading && (
-              <FaSpinner className="animate-spin mr-2 h-4 w-4" />
-            )}
+            {loading && <FaSpinner className="animate-spin mr-2 h-4 w-4" />}
             {loading ? "Logging in..." : "Login"}
           </button>
 

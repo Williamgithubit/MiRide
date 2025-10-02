@@ -379,11 +379,11 @@ const BookingFlow: React.FC = () => {
                 <div className="space-y-4">
                   <img
                     src={car.imageUrl || "/car-placeholder.jpg"}
-                    alt={`${car.make} ${car.model}`}
+                    alt={`${car.brand} ${car.model}`}
                     className="w-full h-32 object-cover rounded-lg"
                   />
                   <div>
-                    <h4 className="font-medium text-gray-800">{car.make} {car.model}</h4>
+                    <h4 className="font-medium text-gray-800">{car.brand} {car.model}</h4>
                     <p className="text-sm text-gray-600">{car.year}</p>
                   </div>
                   <div className="flex items-center justify-between text-sm">

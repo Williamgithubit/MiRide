@@ -13,14 +13,18 @@ const baseQuery = fetchBaseQuery({
   prepareHeaders: (headers, { getState }) => {
     // Get the token from the state or localStorage as fallback
     const token = (getState() as RootState).auth.token || localStorage.getItem('token');
-    
-    // If we have a token, add it to the headers and axios instance
-    if (token) {
-      console.log('Adding token to request headers:', token.substring(0, 10) + '...');
+
+    // Only set the header when token is a non-empty string
+    if (token && typeof token === 'string' && token.trim() !== '') {
+      try {
+        console.log('Adding token to request headers:', token.substring(0, 10) + '...');
+      } catch {
+          console.log('Adding token to request headers');
+        }
       headers.set('authorization', `Bearer ${token}`);
       setAuthToken(token); // Ensure axios instance has the token
     } else {
-      console.log('No token available for request');
+      if (process.env.NODE_ENV !== 'production') console.log('No token available for request');
       setAuthToken(null); // Clear token from axios instance
     }
     
@@ -156,15 +160,18 @@ export const authApi = createApi({
       query: () => {
         // Get token from localStorage
         const token = localStorage.getItem('token');
-        console.log('Getting current user with token:', token ? 'Token exists' : 'No token');
-        
+
+        // Only include Authorization header when a token exists
+        const headers: Record<string, string> = {};
+        if (token && token.trim() !== '') {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
         // Always return a valid request configuration
         return {
           url: '/auth/me',
           method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token || ''}` // Empty string if no token
-          },
+          headers,
           validateStatus: (response: Response, result: any) => {
             // Return false for 401 Unauthorized to trigger error handling
             return response.status < 400;
