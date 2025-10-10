@@ -139,7 +139,11 @@ paymentRouter.post('/create-checkout-session', auth(), async (req, res) => {
     });
 
     console.log('Stripe session created successfully:', session.id);
-    res.json({ sessionId: session.id });
+    console.log('Stripe checkout URL:', session.url);
+    res.json({ 
+      sessionId: session.id,
+      url: session.url // Return the checkout URL for direct redirect
+    });
   } catch (error) {
     console.error('Error creating checkout session:', error);
     res.status(500).json({ error: error.message });

@@ -1,6 +1,8 @@
 import jwt from "jsonwebtoken";
 import db from "../models/index.js";
 
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
+
 const auth = (roles = []) => {
   return async (req, res, next) => {
     console.log('AuthMiddleware - Request received:', {
@@ -30,7 +32,7 @@ const auth = (roles = []) => {
       // Verify token
       let decoded;
       try {
-        decoded = jwt.verify(token, process.env.JWT_SECRET);
+        decoded = jwt.verify(token, JWT_SECRET);
         if (process.env.NODE_ENV !== "production") {
           console.log("AuthMiddleware - Token decoded:", {
             id: decoded.id,
