@@ -8,14 +8,13 @@ export const useCustomerData = () => {
   const { user, isAuthenticated, token } = useReduxAuth();
   const customerId = user?.id;
   
-  // Emergency logging to debug the issue
-  console.error('useCustomerData - EMERGENCY DEBUG:', {
-    user,
-    customerId,
-    userType: typeof customerId,
-    isAuthenticated,
-    hasToken: !!token
-  });
+  // Debug logging only in development
+  if (process.env.NODE_ENV === 'development' && !customerId) {
+    console.warn('useCustomerData - No customer ID available:', {
+      isAuthenticated,
+      hasToken: !!token
+    });
+  }
   
   // Validate user ID - must be a valid UUID format
   const isValidUUID = (id: string | undefined): boolean => {
@@ -58,10 +57,12 @@ export const useCustomerData = () => {
   const { data: activeRentalsData, isLoading: activeRentalsLoading } = useGetActiveRentalsQuery();
   
   // Only make the API call if we have a valid UUID and user is authenticated
+  // Use a stable value to prevent RTK Query hook errors
+  const queryArg = hasValidUserId && customerId ? customerId : '';
   const { data: customer, isLoading: customerLoading, error: customerError } = useGetCustomerByIdQuery(
-    customerId || 'invalid', // Provide fallback to prevent undefined
+    queryArg,
     {
-      skip: shouldSkipCustomerQuery
+      skip: !hasValidUserId || !customerId
     }
   );
 

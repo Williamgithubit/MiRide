@@ -19,9 +19,9 @@ const baseQuery = fetchBaseQuery({
       try {
         console.log('Adding token to request headers:', token.substring(0, 10) + '...');
       } catch {
-          console.log('Adding token to request headers');
-        }
-      headers.set('authorization', `Bearer ${token}`);
+        console.log('Adding token to request headers');
+      }
+      headers.set('Authorization', `Bearer ${token}`);
       setAuthToken(token); // Ensure axios instance has the token
     } else {
       if (process.env.NODE_ENV !== 'production') console.log('No token available for request');

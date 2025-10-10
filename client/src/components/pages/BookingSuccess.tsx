@@ -139,7 +139,7 @@ const BookingSuccess: React.FC = () => {
   };
 
   const handleGoToDashboard = () => {
-    navigate('/customer-dashboard');
+    navigate('/dashboard');
   };
 
   const generatePDFReceipt = () => {

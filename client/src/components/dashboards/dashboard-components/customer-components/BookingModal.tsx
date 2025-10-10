@@ -236,7 +236,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedCa
           }
         }).unwrap();
 
-        const { sessionId } = result;
+        const { sessionId, url } = result;
         
         // Dismiss loading toast
         toast.dismiss(loadingToast);
@@ -247,25 +247,26 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedCa
         // Show redirecting message
         toast.success('Redirecting to secure payment...', { duration: 2000 });
         
-        // Add a small delay to ensure UI updates
+        // Small delay to ensure state updates and toast are visible
         await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Set a timeout for the redirect in case it fails
-        const redirectTimeout = setTimeout(() => {
-          setIsRedirectingToStripe(false);
-          toast.error('Redirect is taking longer than expected. Please try again.');
-        }, 10000); // 10 second timeout
-
-        // Redirect to Stripe Checkout
-        const checkoutResult = await stripe.redirectToCheckout({ sessionId });
         
-        // Clear timeout if redirect was successful
-        clearTimeout(redirectTimeout);
-
-        // This should not execute if redirect is successful
-        if (checkoutResult.error) {
-          setIsRedirectingToStripe(false);
-          throw new Error(checkoutResult.error.message);
+        // Use the checkout URL if available (modern approach), otherwise fall back to sessionId
+        if (url) {
+          // Direct redirect to Stripe Checkout URL (modern, faster approach)
+          // This will navigate away from the page, so no code after this will execute
+          window.location.href = url;
+          // Return to prevent any further execution
+          return;
+        } else if (sessionId) {
+          // Fallback to legacy redirectToCheckout method
+          const checkoutResult = await stripe.redirectToCheckout({ sessionId });
+          
+          if (checkoutResult.error) {
+            setIsRedirectingToStripe(false);
+            throw new Error(checkoutResult.error.message);
+          }
+        } else {
+          throw new Error('No checkout session URL or ID received');
         }
       } catch (sessionError) {
         toast.dismiss(loadingToast);
