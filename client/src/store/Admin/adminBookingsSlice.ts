@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from '../store';
+import tokenStorage from '../../utils/tokenStorage';
 
 export interface Booking {
   id: string;
@@ -69,11 +70,26 @@ export const fetchBookings = createAsyncThunk(
   'adminBookings/fetchBookings',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/admin/bookings');
-      if (!response.ok) throw new Error('Failed to fetch bookings');
-      return await response.json();
+      const token = tokenStorage.getToken();
+      if (!token) {
+        return rejectWithValue('No authentication token found');
+      }
+
+      const response = await fetch('/api/admin/bookings', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to fetch bookings');
+      }
+      const data = await response.json();
+      // Backend returns { bookings: [...], totalCount, ... }
+      return data.bookings || data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue((error as Error).message || 'An error occurred');
     }
   }
 );
@@ -82,15 +98,23 @@ export const updateBookingStatus = createAsyncThunk(
   'adminBookings/updateStatus',
   async ({ bookingId, status }: { bookingId: string; status: string }, { rejectWithValue }) => {
     try {
+      const token = tokenStorage.getToken();
+      if (!token) {
+        return rejectWithValue('No authentication token found');
+      }
+
       const response = await fetch(`/api/admin/bookings/${bookingId}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ status }),
       });
       if (!response.ok) throw new Error('Failed to update booking status');
       return await response.json();
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue((error as Error).message || 'An error occurred');
     }
   }
 );

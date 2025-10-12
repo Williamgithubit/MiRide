@@ -476,7 +476,18 @@ const CarManagement: React.FC = () => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center">
-                          <div className="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-lg flex items-center justify-center">
+                          {car.imageUrl ? (
+                            <img 
+                              src={car.imageUrl} 
+                              alt={car.name}
+                              className="w-12 h-12 object-cover rounded-lg"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                              }}
+                            />
+                          ) : null}
+                          <div className={`w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-lg flex items-center justify-center ${car.imageUrl ? 'hidden' : ''}`}>
                             <CarIcon className="w-6 h-6 text-gray-500 dark:text-gray-400" />
                           </div>
                           <div className="ml-3">
@@ -558,7 +569,18 @@ const CarManagement: React.FC = () => {
                           <Square className="w-4 h-4" />
                         )}
                       </button>
-                      <div className="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-lg flex items-center justify-center">
+                      {car.imageUrl ? (
+                        <img 
+                          src={car.imageUrl} 
+                          alt={car.name}
+                          className="w-12 h-12 object-cover rounded-lg"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <div className={`w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-lg flex items-center justify-center ${car.imageUrl ? 'hidden' : ''}`}>
                         <CarIcon className="w-6 h-6 text-gray-500 dark:text-gray-400" />
                       </div>
                       <div className="ml-3">

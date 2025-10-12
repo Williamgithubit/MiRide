@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -17,8 +18,8 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed z-50 inset-0 overflow-y-auto">
+  const modalContent = (
+    <div className="fixed inset-0 z-60 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div
           className="fixed inset-0 transition-opacity"
@@ -88,4 +89,6 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       </div>
     </div>
   );
+
+  return ReactDOM.createPortal(modalContent, document.body);
 };
