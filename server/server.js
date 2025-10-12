@@ -24,7 +24,10 @@ const app = express();
 const PORT = process.env.PORT || 3000; // Set default port to 3000 to match client requests
 
 // Middleware ++
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:4000',
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

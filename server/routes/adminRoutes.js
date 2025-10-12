@@ -28,6 +28,12 @@ import {
   getCarStats,
   getOwners
 } from '../controllers/carManagementController.js';
+import {
+  getPaymentStats,
+  getTransactions,
+  getTransaction,
+  exportTransactions
+} from '../controllers/adminPaymentsController.js';
 
 // Middleware to ensure user is an admin
 const ensureAdmin = (req, res, next) => {
@@ -115,5 +121,11 @@ router.get('/dashboard/stats', authenticate, ensureAdmin, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+// Admin Payment Management Routes
+router.get('/payments/stats', authenticate, ensureAdmin, getPaymentStats);
+router.get('/payments/transactions', authenticate, ensureAdmin, getTransactions);
+router.get('/payments/transactions/:id', authenticate, ensureAdmin, getTransaction);
+router.get('/payments/export', authenticate, ensureAdmin, exportTransactions);
 
 export default router;

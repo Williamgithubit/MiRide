@@ -1,5 +1,5 @@
 import db from '../models/index.js';
-import { Op } from 'sequelize';
+import { Op, fn, col } from 'sequelize';
 
 // Get paginated cars list with filters for admin
 export const getCars = async (req, res) => {
@@ -97,11 +97,21 @@ export const getCars = async (req, res) => {
       carsCount: cars.length
     });
 
+    // Transform cars to include status field
+    const transformedCars = cars.map(car => {
+      const carData = car.toJSON();
+      // Map isAvailable to status field for frontend
+      // Check both camelCase and snake_case versions (Sequelize with underscored: true)
+      const availabilityStatus = carData.isAvailable !== undefined ? carData.isAvailable : carData.is_available;
+      carData.status = availabilityStatus ? 'available' : 'rented';
+      return carData;
+    });
+
     // Calculate pagination info
     const totalPages = Math.ceil(count / parseInt(limit));
 
     res.status(200).json({
-      cars,
+      cars: transformedCars,
       totalCount: count,
       currentPage: parseInt(page),
       totalPages,
@@ -141,7 +151,12 @@ export const getCarById = async (req, res) => {
       return res.status(404).json({ message: 'Car not found' });
     }
 
-    res.status(200).json(car);
+    // Transform car to include status field
+    const carData = car.toJSON();
+    const availabilityStatus = carData.isAvailable !== undefined ? carData.isAvailable : carData.is_available;
+    carData.status = availabilityStatus ? 'available' : 'rented';
+
+    res.status(200).json(carData);
 
   } catch (error) {
     console.error('Error fetching car:', error);
@@ -167,9 +182,9 @@ export const updateCar = async (req, res) => {
     }
 
     // Map status to isAvailable field
-    let isAvailable = car.isAvailable;
+    let carAvailability = car.isAvailable;
     if (status) {
-      isAvailable = status === 'available';
+      carAvailability = status === 'available';
     }
 
     // Update car (only fields that exist in the model)
@@ -179,7 +194,7 @@ export const updateCar = async (req, res) => {
       brand: brand || car.brand,
       year: year || car.year,
       rentalPricePerDay: rentalPricePerDay || car.rentalPricePerDay,
-      isAvailable: isAvailable,
+      isAvailable: carAvailability,
       features: features || car.features
     });
 
@@ -194,7 +209,13 @@ export const updateCar = async (req, res) => {
         }
       ]
     });
-    res.status(200).json(carWithOwner);
+
+    // Transform car to include status field
+    const carData = carWithOwner.toJSON();
+    const availabilityStatus = carData.isAvailable !== undefined ? carData.isAvailable : carData.is_available;
+    carData.status = availabilityStatus ? 'available' : 'rented';
+
+    res.status(200).json(carData);
   } catch (error) {
     console.error('Error updating car:', error);
     res.status(500).json({ message: 'Internal server error', error: error.message });
@@ -263,10 +284,10 @@ export const updateCarStatus = async (req, res) => {
     }
 
     // Map status to isAvailable field (since status field doesn't exist in model)
-    const isAvailable = status === 'available';
+    const carAvailability = status === 'available';
     
     // Update car availability (we can't store rejection reason since field doesn't exist)
-    const updatedCar = await car.update({ isAvailable });
+    const updatedCar = await car.update({ isAvailable: carAvailability });
 
     // Return updated car with owner info
     const carWithOwner = await db.Car.findByPk(updatedCar.id, {
@@ -280,7 +301,12 @@ export const updateCarStatus = async (req, res) => {
       ]
     });
 
-    res.status(200).json(carWithOwner);
+    // Transform car to include status field
+    const carData = carWithOwner.toJSON();
+    const availabilityStatus = carData.isAvailable !== undefined ? carData.isAvailable : carData.is_available;
+    carData.status = availabilityStatus ? 'available' : 'rented';
+
+    res.status(200).json(carData);
 
   } catch (error) {
     console.error('Error updating car status:', error);
@@ -373,14 +399,21 @@ export const bulkCarAction = async (req, res) => {
 // Get car statistics for admin dashboard
 export const getCarStats = async (req, res) => {
   try {
+    console.log('getCarStats - Request details:', {
+      userId: req.userId,
+      userRole: req.userRole
+    });
+
     // Verify user is admin
     if (req.userRole !== 'admin') {
+      console.log('getCarStats - Access denied. User role:', req.userRole);
       return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
     }
 
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
+    console.log('getCarStats - Fetching car counts...');
     // Get car counts by availability (since we don't have status field)
     const totalCars = await db.Car.count();
     const availableCars = await db.Car.count({ where: { isAvailable: true } });
@@ -390,21 +423,30 @@ export const getCarStats = async (req, res) => {
     const rejectedCars = 0; // Not tracked in current model
     const inactiveCars = await db.Car.count({ where: { isAvailable: false } });
 
+    console.log('getCarStats - Car counts:', { totalCars, availableCars, rentedCars });
+
     // Get new cars this month
+    console.log('getCarStats - Fetching new cars this month...');
     const newCarsThisMonth = await db.Car.count({
       where: {
         createdAt: { [Op.gte]: startOfMonth }
       }
     });
 
+    console.log('getCarStats - New cars this month:', newCarsThisMonth);
+
     // Get average rental price
+    console.log('getCarStats - Fetching average rental price...');
     const avgRentalPrice = await db.Car.findOne({
       attributes: [
-        [db.sequelize.fn('AVG', db.sequelize.col('rentalPricePerDay')), 'avgPrice']
-      ]
+        [fn('AVG', col('rental_price_per_day')), 'avgPrice']
+      ],
+      raw: true
     });
 
-    res.status(200).json({
+    console.log('getCarStats - Average rental price result:', avgRentalPrice);
+
+    const stats = {
       totalCars,
       availableCars,
       rentedCars,
@@ -413,11 +455,15 @@ export const getCarStats = async (req, res) => {
       rejectedCars,
       inactiveCars,
       newCarsThisMonth,
-      averageRentalPrice: parseFloat(avgRentalPrice?.dataValues?.avgPrice || 0)
-    });
+      averageRentalPrice: parseFloat(avgRentalPrice?.avgPrice || 0)
+    };
+
+    console.log('getCarStats - Sending response:', stats);
+    res.status(200).json(stats);
 
   } catch (error) {
-    console.error('Error fetching car stats:', error);
+    console.error('Error fetching car stats - Full error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 };
