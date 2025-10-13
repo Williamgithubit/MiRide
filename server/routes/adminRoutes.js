@@ -34,6 +34,25 @@ import {
   getTransaction,
   exportTransactions
 } from '../controllers/adminPaymentsController.js';
+import {
+  getAllNotifications,
+  sendNotification,
+  markNotificationAsRead,
+  markNotificationAsUnread,
+  deleteNotification,
+  bulkDeleteNotifications,
+  clearAllNotifications,
+  getNotificationStats
+} from '../controllers/adminNotificationsController.js';
+import {
+  getUserReport,
+  getCarReport,
+  getBookingReport,
+  getRevenueReport,
+  getActivityLogs,
+  getGeneratedReports,
+  exportReport
+} from '../controllers/adminReportsController.js';
 
 // Middleware to ensure user is an admin
 const ensureAdmin = (req, res, next) => {
@@ -70,30 +89,15 @@ router.get('/bookings', authenticate, ensureAdmin, getAllBookings);
 router.get('/bookings/:bookingId', authenticate, ensureAdmin, getBookingById);
 router.patch('/bookings/:bookingId/status', authenticate, ensureAdmin, updateAdminBookingStatus);
 
-// Get notifications (admin only)
-router.get('/notifications', authenticate, ensureAdmin, async (req, res) => {
-  try {
-    // Check if Notification model exists, if not return empty array
-    if (!Notification) {
-      return res.json([]);
-    }
-    
-    const notifications = await Notification.findAll({
-      order: [['createdAt', 'DESC']],
-      limit: 50
-    });
-    
-    res.json(notifications);
-  } catch (error) {
-    console.error('Error fetching notifications:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// Admin Booking Management Routes
-router.get('/bookings', authenticate, ensureAdmin, getAllBookings);
-router.get('/bookings/:bookingId', authenticate, ensureAdmin, getBookingById);
-router.patch('/bookings/:bookingId/status', authenticate, ensureAdmin, updateAdminBookingStatus);
+// Admin Notification Management Routes
+router.get('/notifications', authenticate, ensureAdmin, getAllNotifications);
+router.get('/notifications/stats', authenticate, ensureAdmin, getNotificationStats);
+router.post('/notifications/send', authenticate, ensureAdmin, sendNotification);
+router.patch('/notifications/:id/read', authenticate, ensureAdmin, markNotificationAsRead);
+router.patch('/notifications/:id/unread', authenticate, ensureAdmin, markNotificationAsUnread);
+router.delete('/notifications/:id', authenticate, ensureAdmin, deleteNotification);
+router.post('/notifications/bulk-delete', authenticate, ensureAdmin, bulkDeleteNotifications);
+router.delete('/notifications/clear-all', authenticate, ensureAdmin, clearAllNotifications);
 
 // Get admin dashboard stats
 router.get('/dashboard/stats', authenticate, ensureAdmin, async (req, res) => {
@@ -127,5 +131,14 @@ router.get('/payments/stats', authenticate, ensureAdmin, getPaymentStats);
 router.get('/payments/transactions', authenticate, ensureAdmin, getTransactions);
 router.get('/payments/transactions/:id', authenticate, ensureAdmin, getTransaction);
 router.get('/payments/export', authenticate, ensureAdmin, exportTransactions);
+
+// Admin Reports Routes
+router.get('/reports/users', authenticate, ensureAdmin, getUserReport);
+router.get('/reports/cars', authenticate, ensureAdmin, getCarReport);
+router.get('/reports/bookings', authenticate, ensureAdmin, getBookingReport);
+router.get('/reports/revenue', authenticate, ensureAdmin, getRevenueReport);
+router.get('/reports/activity', authenticate, ensureAdmin, getActivityLogs);
+router.get('/reports/generated', authenticate, ensureAdmin, getGeneratedReports);
+router.post('/reports/export', authenticate, ensureAdmin, exportReport);
 
 export default router;
