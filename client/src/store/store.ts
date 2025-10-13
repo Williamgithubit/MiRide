@@ -63,6 +63,10 @@ import { carManagementApi } from "./Car/carManagementApi";
 // Import admin bookings slice and API
 import adminBookingsReducer from "./Admin/adminBookingsSlice";
 import { adminBookingsApi } from "./Admin/bookingsService";
+// Import admin notifications slice
+import adminNotificationsReducer from "./Admin/adminNotificationsSlice";
+// Import admin reports slice
+import adminReportsReducer from "./Admin/adminReportsSlice";
 
 // Define the root state type
 // Note: _persist property removed since we're temporarily bypassing persistence
@@ -100,6 +104,8 @@ const appReducer = {
   auth: authReducer,
   booking: bookingReducer,
   adminBookings: adminBookingsReducer,
+  adminNotifications: adminNotificationsReducer,
+  adminReports: adminReportsReducer,
   [authApi.reducerPath]: authApi.reducer,
   [carApi.reducerPath]: carApi.reducer,
   [rentalApi.reducerPath]: rentalApi.reducer,

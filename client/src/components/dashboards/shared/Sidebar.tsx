@@ -16,11 +16,15 @@ import {
   FaUserCircle,
 } from "react-icons/fa";
 import useReduxAuth from "../../../store/hooks/useReduxAuth";
+import { useSelector } from "react-redux";
+import { RootState } from "../../../store/store";
 
 interface SidebarProps {
   role: "customer" | "owner" | "admin";
   activeSection: string;
   onSectionChange: (section: string) => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 interface SidebarItem {
@@ -34,22 +38,34 @@ const Sidebar: React.FC<SidebarProps> = ({
   role,
   activeSection,
   onSectionChange,
+  isOpen = false,
+  onClose,
 }) => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(isOpen);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const { user, logout } = useReduxAuth();
+  
+  // Get unread notification count for admin
+  const adminUnreadCount = useSelector((state: RootState) => 
+    role === 'admin' ? state.adminNotifications?.unreadCount || 0 : 0
+  );
+
+  useEffect(() => {
+    setIsMobileMenuOpen(isOpen);
+  }, [isOpen]);
 
   useEffect(() => {
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
       if (window.innerWidth >= 768) {
         setIsMobileMenuOpen(false);
+        if (onClose) onClose();
       }
     };
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [onClose]);
 
   const sidebarItems: SidebarItem[] = [
     // Customer Items
@@ -201,46 +217,57 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
+    const newState = !isMobileMenuOpen;
+    setIsMobileMenuOpen(newState);
+    if (!newState && onClose) {
+      onClose();
+    }
   };
 
   return (
     <>
-      {/* Mobile menu button */}
-      <div className="md:hidden fixed top-4 left-4 z-50">
-        <button
-          onClick={toggleMobileMenu}
-          className="p-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-        >
-          {isMobileMenuOpen ? <FaTimes size={20} /> : <FaBars size={20} />}
-        </button>
-      </div>
-
       {/* Overlay for mobile */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
-          onClick={() => setIsMobileMenuOpen(false)}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity"
+          onClick={() => {
+            setIsMobileMenuOpen(false);
+            if (onClose) onClose();
+          }}
         />
       )}
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-full bg-gray-800 text-white w-64 shadow-lg transform transition-transform duration-300 ease-in-out z-40 ${
+        className={`fixed top-0 left-0 h-full bg-gray-800 dark:bg-gray-900 text-white w-64 shadow-2xl transform transition-transform duration-300 ease-in-out overflow-y-auto ${
           isMobileMenuOpen || windowWidth >= 768
             ? "translate-x-0"
             : "-translate-x-full"
-        }`}
+        } ${windowWidth < 768 ? 'z-50' : 'z-30'}`}
       >
-        <div className="p-5 border-b border-gray-700">
-          <h2 className="text-xl font-bold">
-            {role.charAt(0).toUpperCase() + role.slice(1)} Dashboard
-          </h2>
-          <p className="text-sm text-gray-400">Welcome, {user?.name}</p>
+        {/* Header with close button on mobile */}
+        <div className="p-4 sm:p-5 border-b border-gray-700 dark:border-gray-800">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg sm:text-xl font-bold">
+              {role.charAt(0).toUpperCase() + role.slice(1)} Dashboard
+            </h2>
+            {/* Close button for mobile */}
+            <button
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                if (onClose) onClose();
+              }}
+              className="md:hidden p-1.5 hover:bg-gray-700 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              aria-label="Close menu"
+            >
+              <FaTimes size={18} />
+            </button>
+          </div>
+          <p className="text-xs sm:text-sm text-gray-400 truncate">Welcome, {user?.name}</p>
         </div>
 
-        <nav className="mt-5">
-          <ul className="space-y-2 px-4">
+        <nav className="mt-3 sm:mt-5 pb-4">
+          <ul className="space-y-1 sm:space-y-2 px-3 sm:px-4">
             {filteredItems.map((item) => (
               <li key={item.id}>
                 <button
@@ -248,27 +275,35 @@ const Sidebar: React.FC<SidebarProps> = ({
                     onSectionChange(item.id);
                     if (windowWidth < 768) {
                       setIsMobileMenuOpen(false);
+                      if (onClose) onClose();
                     }
                   }}
-                  className={`flex items-center w-full p-3 rounded-md transition-colors ${
+                  className={`flex items-center justify-between w-full p-2.5 sm:p-3 rounded-lg transition-all duration-200 ${
                     activeSection === item.id
-                      ? "bg-blue-600 text-white"
-                      : "text-gray-300 hover:bg-gray-700"
+                      ? "bg-blue-600 text-white shadow-lg scale-[1.02]"
+                      : "text-gray-300 hover:bg-gray-700 dark:hover:bg-gray-800 hover:scale-[1.01]"
                   }`}
                 >
-                  <span className="mr-3">{item.icon}</span>
-                  {item.label}
+                  <div className="flex items-center gap-3">
+                    <span className="text-base sm:text-lg">{item.icon}</span>
+                    <span className="text-sm sm:text-base font-medium">{item.label}</span>
+                  </div>
+                  {item.id === "notifications" && role === "admin" && adminUnreadCount > 0 && (
+                    <span className="bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center animate-pulse">
+                      {adminUnreadCount > 99 ? '99+' : adminUnreadCount}
+                    </span>
+                  )}
                 </button>
               </li>
             ))}
 
-            <li className="mt-8">
+            <li className="mt-6 sm:mt-8 pt-4 border-t border-gray-700 dark:border-gray-800">
               <button
                 onClick={handleLogout}
-                className="flex items-center w-full p-3 rounded-md text-gray-300 hover:bg-red-600 hover:text-white transition-colors"
+                className="flex items-center gap-3 w-full p-2.5 sm:p-3 rounded-lg text-gray-300 hover:bg-red-600 hover:text-white transition-all duration-200 hover:scale-[1.01]"
               >
-                <FaSignOutAlt className="mr-3" />
-                Logout
+                <FaSignOutAlt className="text-base sm:text-lg" />
+                <span className="text-sm sm:text-base font-medium">Logout</span>
               </button>
             </li>
           </ul>

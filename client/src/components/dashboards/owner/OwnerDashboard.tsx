@@ -35,6 +35,7 @@ const OwnerDashboard: React.FC = () => {
   const [editingCar, setEditingCar] = useState<Car | null>(null);
   const [deletingCar, setDeletingCar] = useState<Car | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Use RTK Query hooks
   const {
@@ -464,12 +465,17 @@ const OwnerDashboard: React.FC = () => {
         role="owner"
         activeSection={activeSection}
         onSectionChange={setActiveSection}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
 
-      <div className="flex-1 flex flex-col md:ml-64">
-        <TopNavbar title="Owner Dashboard" />
+      <div className="flex-1 flex flex-col w-full md:ml-64">
+        <TopNavbar 
+          title="Owner Dashboard" 
+          onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        />
 
-        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 w-full">
           {renderContent()}
         </main>
       </div>

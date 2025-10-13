@@ -19,6 +19,7 @@ const CustomerDashboard: React.FC = () => {
   const [activeSection, setActiveSection] = useState('overview');
   const [selectedCar, setSelectedCar] = useState<any>(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const { logout } = useReduxAuth();
   const { 
@@ -44,10 +45,19 @@ const CustomerDashboard: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-        <Sidebar role="customer" activeSection={activeSection} onSectionChange={setActiveSection} />
-        <div className="flex-1 flex flex-col md:ml-64">
-          <TopNavbar title="Customer Dashboard" />
-          <main className="flex-1 overflow-y-auto p-6">
+        <Sidebar 
+          role="customer" 
+          activeSection={activeSection} 
+          onSectionChange={setActiveSection}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+        />
+        <div className="flex-1 flex flex-col w-full md:ml-64">
+          <TopNavbar 
+            title="Customer Dashboard" 
+            onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          />
+          <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 w-full">
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
             </div>
@@ -58,13 +68,22 @@ const CustomerDashboard: React.FC = () => {
   }
 
   // Authentication/Error state - show error message if there are auth issues
-  if (!hasValidUserId || !isAuthenticated || customerError || statsError) {
+  if (!isAuthenticated || !hasValidUserId) {
     return (
       <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-        <Sidebar role="customer" activeSection={activeSection} onSectionChange={setActiveSection} />
-        <div className="flex-1 flex flex-col md:ml-64">
-          <TopNavbar title="Customer Dashboard" />
-          <main className="flex-1 overflow-y-auto p-6">
+        <Sidebar 
+          role="customer" 
+          activeSection={activeSection} 
+          onSectionChange={setActiveSection}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+        />
+        <div className="flex-1 flex flex-col w-full md:ml-64">
+          <TopNavbar 
+            title="Customer Dashboard" 
+            onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          />
+          <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 w-full">
             <AuthErrorMessage
               hasValidUserId={hasValidUserId}
               isAuthenticated={isAuthenticated}
@@ -123,11 +142,20 @@ const CustomerDashboard: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-      <Sidebar role="customer" activeSection={activeSection} onSectionChange={setActiveSection} />
+      <Sidebar 
+        role="customer" 
+        activeSection={activeSection} 
+        onSectionChange={setActiveSection}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
       
-      <div className="flex-1 flex flex-col md:ml-64">
-        <TopNavbar title="Customer Dashboard" />
-        <main className="flex-1 overflow-y-auto p-6">{renderContent()}</main>
+      <div className="flex-1 flex flex-col w-full md:ml-64">
+        <TopNavbar 
+          title="Customer Dashboard" 
+          onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        />
+        <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 w-full">{renderContent()}</main>
       </div>
 
     </div>

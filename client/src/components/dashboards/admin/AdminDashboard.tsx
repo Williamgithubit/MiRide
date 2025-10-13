@@ -6,6 +6,8 @@ import {
   UserManagement,
   CarManagement,
   AdminModals,
+  AdminNotifications,
+  AdminReports,
 } from "../dashboard-components/admin-components";
 import RevenuePayments from "../dashboard-components/admin-components/RevenuePayments/RevenuePayments";
 import { BookingsManagement } from "../dashboard-components/admin-components/BookingsManagement";
@@ -14,6 +16,7 @@ const AdminDashboard: React.FC = () => {
   const [activeSection, setActiveSection] = useState("overview");
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedCar, setSelectedCar] = useState<any>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Handler functions for modal interactions
   // const handleViewUser = (user: any) => {
@@ -49,6 +52,12 @@ const AdminDashboard: React.FC = () => {
       case "revenue":
         return <RevenuePayments />;
 
+      case "notifications":
+        return <AdminNotifications />;
+
+      case "reports":
+        return <AdminReports />;
+
       default:
         return (
           <div className="text-center py-12">
@@ -66,11 +75,16 @@ const AdminDashboard: React.FC = () => {
         role="admin"
         activeSection={activeSection}
         onSectionChange={setActiveSection}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
 
-      <div className="flex-1 flex flex-col md:ml-64">
-        <TopNavbar title="Admin Dashboard" />
-        <main className="flex-1 overflow-y-auto p-6">{renderContent()}</main>
+      <div className="flex-1 flex flex-col w-full md:ml-64">
+        <TopNavbar 
+          title="Admin Dashboard" 
+          onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        />
+        <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 w-full">{renderContent()}</main>
       </div>
 
       <AdminModals
