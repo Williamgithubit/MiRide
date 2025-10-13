@@ -5,3 +5,4 @@ export { default as AdminModals } from "./AdminModals";
 export { default as RevenuePayments } from "./RevenuePayments/RevenuePayments";
 export { default as AdminNotifications } from "./Notifications/AdminNotifications";
 export { AdminReports } from "./Reports";
+export { AdminSettings } from "./Settings";

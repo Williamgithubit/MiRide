@@ -8,6 +8,7 @@ import {
   AdminModals,
   AdminNotifications,
   AdminReports,
+  AdminSettings,
 } from "../dashboard-components/admin-components";
 import RevenuePayments from "../dashboard-components/admin-components/RevenuePayments/RevenuePayments";
 import { BookingsManagement } from "../dashboard-components/admin-components/BookingsManagement";
@@ -57,6 +58,9 @@ const AdminDashboard: React.FC = () => {
 
       case "reports":
         return <AdminReports />;
+
+      case "settings":
+        return <AdminSettings />;
 
       default:
         return (

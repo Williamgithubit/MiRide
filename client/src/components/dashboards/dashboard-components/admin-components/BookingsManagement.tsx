@@ -90,7 +90,7 @@ export const BookingsManagement: React.FC = () => {
 
   return (
     <div className="p-4 space-y-4">
-      <h1 className="text-2xl font-bold text-gray-800">Bookings Management</h1>
+      <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Bookings Management</h1>
       
       <FilterBar
         filters={filters}
