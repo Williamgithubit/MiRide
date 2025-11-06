@@ -1,8 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import db from './models/index.js';
 // import { createApiUser, generateAccessToken, generateApiKey } from './utils/momo.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -30,6 +35,9 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from public directory (at root level, not in server folder)
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // Log all requests
 app.use((req, res, next) => {

@@ -31,12 +31,37 @@ paymentRouter.post('/create-checkout-session', auth(), async (req, res) => {
     } = req.body;
 
     console.log('Extracted data:', {
-      carId, startDate, endDate, totalDays, totalPrice, selectedCar: selectedCar ? 'present' : 'missing'
+      carId, startDate, endDate, totalDays, totalPrice, 
+      selectedCar: selectedCar ? {
+        id: selectedCar.id,
+        brand: selectedCar.brand,
+        model: selectedCar.model,
+        year: selectedCar.year,
+        imageUrl: selectedCar.imageUrl,
+        rentalPricePerDay: selectedCar.rentalPricePerDay
+      } : 'missing'
     });
 
     if (!carId || !startDate || !endDate || !totalPrice || !selectedCar) {
       console.log('Missing required fields validation failed');
       return res.status(400).json({ error: 'Missing required booking information' });
+    }
+
+    // Validate selectedCar has required fields
+    if (!selectedCar.brand || !selectedCar.model || !selectedCar.year || !selectedCar.rentalPricePerDay) {
+      console.log('Selected car missing required fields:', selectedCar);
+      return res.status(400).json({ error: 'Invalid car information' });
+    }
+
+    // Prepare image URL - ensure it's a full URL if provided
+    let imageUrls = [];
+    if (selectedCar.imageUrl) {
+      // Check if it's a relative URL and convert to absolute
+      const imageUrl = selectedCar.imageUrl.startsWith('http') 
+        ? selectedCar.imageUrl 
+        : `${process.env.CLIENT_URL || 'http://localhost:4000'}${selectedCar.imageUrl}`;
+      imageUrls = [imageUrl];
+      console.log('Using image URL:', imageUrl);
     }
 
     // Create line items for the booking
@@ -47,7 +72,7 @@ paymentRouter.post('/create-checkout-session', auth(), async (req, res) => {
           product_data: {
             name: `${selectedCar.year} ${selectedCar.brand} ${selectedCar.model}`,
             description: `Car rental from ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}`,
-            images: selectedCar.imageUrl ? [selectedCar.imageUrl] : [],
+            images: imageUrls,
           },
           unit_amount: Math.round(selectedCar.rentalPricePerDay * totalDays * 100), // Convert to cents
         },
@@ -113,40 +138,60 @@ paymentRouter.post('/create-checkout-session', auth(), async (req, res) => {
     }
 
     // Create the checkout session
-    console.log('Creating Stripe session with line items:', lineItems);
+    console.log('Creating Stripe session with line items:', JSON.stringify(lineItems, null, 2));
     console.log('Using CLIENT_URL:', process.env.CLIENT_URL || 'http://localhost:5173');
+    console.log('Stripe API Key configured:', !!process.env.STRIPE_SECRET_KEY);
     
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: lineItems,
-      mode: 'payment',
-      success_url: `${process.env.CLIENT_URL || 'http://localhost:5173'}/booking-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.CLIENT_URL || 'http://localhost:5173'}/booking-cancelled`,
-      metadata: {
-        carId: carId.toString(),
-        customerId: req.user.id, // Add authenticated user ID
-        startDate,
-        endDate,
-        totalDays: totalDays.toString(),
-        insurance: insurance.toString(),
-        gps: gps.toString(),
-        childSeat: childSeat.toString(),
-        additionalDriver: additionalDriver.toString(),
-        pickupLocation,
-        dropoffLocation,
-        specialRequests: specialRequests || '',
-      },
-    });
+    try {
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: lineItems,
+        mode: 'payment',
+        success_url: `${process.env.CLIENT_URL || 'http://localhost:5173'}/booking-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.CLIENT_URL || 'http://localhost:5173'}/booking-cancelled`,
+        metadata: {
+          carId: carId.toString(),
+          customerId: req.user.id, // Add authenticated user ID
+          startDate,
+          endDate,
+          totalDays: totalDays.toString(),
+          insurance: insurance.toString(),
+          gps: gps.toString(),
+          childSeat: childSeat.toString(),
+          additionalDriver: additionalDriver.toString(),
+          pickupLocation: pickupLocation || '',
+          dropoffLocation: dropoffLocation || '',
+          specialRequests: specialRequests || '',
+        },
+      });
 
-    console.log('Stripe session created successfully:', session.id);
-    console.log('Stripe checkout URL:', session.url);
-    res.json({ 
-      sessionId: session.id,
-      url: session.url // Return the checkout URL for direct redirect
-    });
+      console.log('Stripe session created successfully:', session.id);
+      console.log('Stripe checkout URL:', session.url);
+      res.json({ 
+        sessionId: session.id,
+        url: session.url // Return the checkout URL for direct redirect
+      });
+    } catch (stripeError) {
+      console.error('Stripe API Error:', {
+        message: stripeError.message,
+        type: stripeError.type,
+        code: stripeError.code,
+        statusCode: stripeError.statusCode,
+        raw: stripeError.raw
+      });
+      throw stripeError;
+    }
   } catch (error) {
-    console.error('Error creating checkout session:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Error creating checkout session:', {
+      message: error.message,
+      stack: error.stack,
+      type: error.type,
+      code: error.code
+    });
+    res.status(500).json({ 
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 

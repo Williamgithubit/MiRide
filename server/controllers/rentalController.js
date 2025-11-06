@@ -24,9 +24,16 @@ export const getStats = async (req, res) => {
       include: [{
         model: db.Car,
         as: 'car',
-        attributes: ['id', 'name', 'model', 'imageUrl', 'rentalPricePerDay']
+        attributes: ['id', 'name', 'model', 'rentalPricePerDay'],
+        include: [{
+          model: db.CarImage,
+          as: 'images',
+          attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
+          limit: 1,
+          order: [['isPrimary', 'DESC'], ['order', 'ASC']]
+        }]
       }],
-      group: ['carId', 'car.id', 'car.name', 'car.model'],
+      group: ['carId', 'car.id', 'car.name', 'car.model', 'car.rentalPricePerDay'],
       order: [[db.sequelize.fn('COUNT', 'carId'), 'DESC']],
       limit: 5
     });
@@ -50,10 +57,12 @@ export const getStats = async (req, res) => {
 export const getActive = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
+      console.error('getActive - No user found in request');
       return res.status(401).json({ message: 'Authentication required' });
     }
 
     const userId = req.user.id;
+    console.log('getActive - Fetching active rentals for user:', userId);
 
     const rentals = await db.Rental.findAll({
       where: {
@@ -65,7 +74,14 @@ export const getActive = async (req, res) => {
         { 
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'rentalPricePerDay', 'brand', 'year', 'imageUrl']
+          attributes: ['id', 'name', 'model', 'rentalPricePerDay', 'brand', 'year'],
+          include: [{
+            model: db.CarImage,
+            as: 'images',
+            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
+            limit: 1,
+            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
+          }]
         },
         {
           model: db.User,
@@ -76,10 +92,11 @@ export const getActive = async (req, res) => {
       order: [['endDate', 'ASC']]
     });
 
-    // Return single active booking or null
-    const activeBooking = rentals.length > 0 ? rentals[0] : null;
-    res.json(activeBooking);
+    console.log(`getActive - Found ${rentals.length} active rentals`);
+    // Return array of active bookings (for consistency with client expectations)
+    res.json(rentals);
   } catch (error) {
+    console.error('getActive - Error:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -88,10 +105,12 @@ export const getActive = async (req, res) => {
 export const getCurrentBookings = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
+      console.error('getCurrentBookings - No user found in request');
       return res.status(401).json({ message: 'Authentication required' });
     }
 
     const userId = req.user.id;
+    console.log('getCurrentBookings - Fetching bookings for user:', userId);
 
     const rentals = await db.Rental.findAll({
       where: {
@@ -105,7 +124,14 @@ export const getCurrentBookings = async (req, res) => {
         { 
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'rentalPricePerDay', 'brand', 'year', 'imageUrl']
+          attributes: ['id', 'name', 'model', 'rentalPricePerDay', 'brand', 'year'],
+          include: [{
+            model: db.CarImage,
+            as: 'images',
+            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
+            limit: 1,
+            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
+          }]
         },
         {
           model: db.User,
@@ -116,8 +142,10 @@ export const getCurrentBookings = async (req, res) => {
       order: [['startDate', 'ASC']]
     });
 
+    console.log(`getCurrentBookings - Found ${rentals.length} current bookings`);
     res.json(rentals);
   } catch (error) {
+    console.error('getCurrentBookings - Error:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -126,10 +154,12 @@ export const getCurrentBookings = async (req, res) => {
 export const getBookingHistory = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
+      console.error('getBookingHistory - No user found in request');
       return res.status(401).json({ message: 'Authentication required' });
     }
 
     const userId = req.user.id;
+    console.log('getBookingHistory - Fetching history for user:', userId);
 
     const rentals = await db.Rental.findAll({
       where: {
@@ -146,7 +176,14 @@ export const getBookingHistory = async (req, res) => {
         { 
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'rentalPricePerDay', 'brand', 'year', 'imageUrl']
+          attributes: ['id', 'name', 'model', 'rentalPricePerDay', 'brand', 'year'],
+          include: [{
+            model: db.CarImage,
+            as: 'images',
+            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
+            limit: 1,
+            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
+          }]
         },
         {
           model: db.User,
@@ -157,8 +194,10 @@ export const getBookingHistory = async (req, res) => {
       order: [['endDate', 'DESC']]
     });
 
+    console.log(`getBookingHistory - Found ${rentals.length} historical bookings`);
     res.json(rentals);
   } catch (error) {
+    console.error('getBookingHistory - Error:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -217,10 +256,12 @@ export const getCustomerBookingStats = async (req, res) => {
 export const getCustomerRentals = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
+      console.error('getCustomerRentals - No user found in request');
       return res.status(401).json({ message: 'Authentication required' });
     }
 
     const userId = req.user.id;
+    console.log('getCustomerRentals - Fetching rentals for user:', userId);
 
     const rentals = await db.Rental.findAll({
       where: {
@@ -230,7 +271,14 @@ export const getCustomerRentals = async (req, res) => {
         { 
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'rentalPricePerDay', 'brand', 'year', 'imageUrl']
+          attributes: ['id', 'name', 'model', 'rentalPricePerDay', 'brand', 'year'],
+          include: [{
+            model: db.CarImage,
+            as: 'images',
+            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
+            limit: 1,
+            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
+          }]
         },
         {
           model: db.User,
@@ -241,8 +289,10 @@ export const getCustomerRentals = async (req, res) => {
       order: [['startDate', 'DESC']]
     });
 
+    console.log(`getCustomerRentals - Found ${rentals.length} rentals`);
     res.json(rentals);
   } catch (error) {
+    console.error('getCustomerRentals - Error:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -328,22 +378,37 @@ export const getOwnerRentals = async (req, res) => {
         { 
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'brand', 'year', 'rentalPricePerDay', 'imageUrl']
+          attributes: ['id', 'name', 'model', 'brand', 'year', 'rentalPricePerDay'],
+          required: false, // LEFT JOIN instead of INNER JOIN
+          include: [{
+            model: db.CarImage,
+            as: 'images',
+            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
+            required: false,
+            separate: false
+          }]
         },
         {
           model: db.User,
           as: 'customer',
-          attributes: ['id', 'name', 'email']
+          attributes: ['id', 'name', 'email'],
+          required: false // LEFT JOIN instead of INNER JOIN
         }
       ],
       order: [['createdAt', 'DESC']]
     });
     
     console.log(`Found ${rentals.length} rentals for owner ${ownerIdToUse}`);
-    res.json(rentals);
+    
+    // Always return an array, even if empty
+    res.json(rentals || []);
   } catch (error) {
     console.error('Error getting owner rentals:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 
@@ -363,7 +428,14 @@ export const updateRentalStatus = async (req, res) => {
         { 
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'rentalPricePerDay', 'imageUrl']
+          attributes: ['id', 'name', 'model', 'rentalPricePerDay'],
+          include: [{
+            model: db.CarImage,
+            as: 'images',
+            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
+            limit: 1,
+            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
+          }]
         },
         {
           model: db.User,
@@ -489,7 +561,14 @@ export const getPendingBookings = async (req, res) => {
         { 
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'brand', 'year', 'rentalPricePerDay', 'imageUrl']
+          attributes: ['id', 'name', 'model', 'brand', 'year', 'rentalPricePerDay'],
+          include: [{
+            model: db.CarImage,
+            as: 'images',
+            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
+            limit: 1,
+            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
+          }]
         },
         {
           model: db.User,

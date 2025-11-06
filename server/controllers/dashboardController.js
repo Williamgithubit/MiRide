@@ -38,10 +38,25 @@ export const getCustomerStats = async (req, res) => {
     const totalBookings = customerRentals.length;
     const totalSpent = customerRentals.reduce((sum, rental) => sum + rental.totalCost, 0);
 
-    // Get available cars count
-    const availableCars = await db.Car.count({
-      where: { isAvailable: true }
+    // Get available cars count - using raw query to ensure proper column name handling
+    const availableCarsResult = await db.sequelize.query(
+      'SELECT COUNT(*) as count FROM cars WHERE is_available = true',
+      { type: db.sequelize.QueryTypes.SELECT }
+    );
+    const availableCars = parseInt(availableCarsResult[0]?.count) || 0;
+    
+    console.log('getCustomerStats - Available cars count:', availableCars);
+    
+    // Debug: Get total cars to compare
+    const totalCars = await db.Car.count();
+    console.log('getCustomerStats - Total cars in database:', totalCars);
+    
+    // Debug: Get sample of cars to check isAvailable status
+    const sampleCars = await db.Car.findAll({
+      attributes: ['id', 'name', 'brand', 'model', 'isAvailable'],
+      limit: 5
     });
+    console.log('getCustomerStats - Sample cars:', JSON.stringify(sampleCars, null, 2));
 
     // Get recent bookings (last 5)
     const recentBookings = customerRentals.slice(0, 5).map(rental => {

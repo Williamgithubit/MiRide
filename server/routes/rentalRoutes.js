@@ -45,14 +45,15 @@ rentalRouter.put('/:id/approve', auth(['owner', 'admin']), approveBooking);
 rentalRouter.put('/:id/reject', auth(['owner', 'admin']), rejectBooking);
 rentalRouter.put('/:id/status', auth(['owner', 'admin']), updateRentalStatus);
 
-// Customer routes
-rentalRouter.post('/', auth(['customer']), createRental);
-rentalRouter.post('/checkout', auth(['customer']), createRental);
+// Customer routes - specific routes must come before generic ones
+rentalRouter.get('/customer/active', auth(['customer']), getActive);
 rentalRouter.get('/customer/current', auth(['customer']), getCurrentBookings);
 rentalRouter.get('/customer/history', auth(['customer']), getBookingHistory);
-rentalRouter.get('/customer/active', auth(['customer']), getActive);
 rentalRouter.get('/customer/stats', auth(['customer']), getCustomerBookingStats);
 rentalRouter.get('/customer', auth(['customer']), getCustomerRentals);
+rentalRouter.get('/active', auth(['customer']), getActive); // Keep for backward compatibility
+rentalRouter.post('/', auth(['customer']), createRental);
+rentalRouter.post('/checkout', auth(['customer']), createRental);
 rentalRouter.get('/:id', auth(['customer']), verifyRentalOwnership, getRental);
 rentalRouter.put('/:id/cancel', auth(['customer']), cancelBooking);
 rentalRouter.delete('/:id', auth(['customer']), verifyRentalOwnership, deleteRental);

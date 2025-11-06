@@ -87,12 +87,6 @@ const Car = (sequelize, DataTypes) => {
       defaultValue: true,
       field: 'is_available',
     },
-    imageUrl: {
-      type: DataTypes.STRING,
-      allowNull: true,
-      defaultValue: 'https://via.placeholder.com/200x150?text=Car',
-      field: 'image_url'
-    },
     ownerId: {
       type: DataTypes.UUID,
       allowNull: true,
@@ -107,6 +101,21 @@ const Car = (sequelize, DataTypes) => {
     timestamps: true,
     underscored: true
   });
+
+  // Add virtual field for imageUrl that gets the primary image from the images array
+  Car.prototype.toJSON = function() {
+    const values = Object.assign({}, this.get());
+    
+    // Add imageUrl as a computed property from images array
+    if (this.images && this.images.length > 0) {
+      const primaryImage = this.images.find(img => img.isPrimary);
+      values.imageUrl = primaryImage ? primaryImage.imageUrl : this.images[0].imageUrl;
+    } else {
+      values.imageUrl = null;
+    }
+    
+    return values;
+  };
 
   Car.associate = (models) => {
     Car.belongsTo(models.User, {
@@ -127,6 +136,12 @@ const Car = (sequelize, DataTypes) => {
     Car.hasMany(models.Review, {
       foreignKey: 'carId',
       as: 'carReviews',
+      onDelete: 'CASCADE'
+    });
+    
+    Car.hasMany(models.CarImage, {
+      foreignKey: 'carId',
+      as: 'images',
       onDelete: 'CASCADE'
     });
   };
