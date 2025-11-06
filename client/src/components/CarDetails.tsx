@@ -3,54 +3,56 @@ import { useParams, useNavigate } from "react-router-dom";
 import Header from "./Header";
 import toast from "react-hot-toast";
 import useReduxAuth from "../store/hooks/useReduxAuth";
-import useCars from "../store/hooks/useCars";
+import { useGetCarByIdQuery } from "../store/Car/carApi";
 import useRentals from "../store/hooks/useRentals";
 import { CarCardProps } from "./CarList";
+import { Car, CarImage } from "../types/index";
 
 const CarDetails: React.FC = () => {
   const { carId } = useParams<{ carId: string }>();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useReduxAuth();
-  const [car, setCar] = useState<CarCardProps | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isRenting, setIsRenting] = useState(false);
 
+  // Fetch car by ID directly from API
   const {
-    cars: carData,
-    isLoading: isLoadingCars,
-    error: carsError,
-  } = useCars({});
+    data: carData,
+    isLoading: isLoadingCar,
+    error: carError,
+  } = useGetCarByIdQuery(parseInt(carId || "0"), {
+    skip: !carId,
+  });
 
   const { addRental } = useRentals();
 
-  useEffect(() => {
-    if (carData && carId) {
-      const foundCar = carData.find((c) => c.id === parseInt(carId));
-      if (foundCar) {
-        const mappedCar = {
-          ...foundCar,
-          id: foundCar.id ?? 0,
-          isLiked: false,
-          isAvailable: Boolean(foundCar.isAvailable),
-          name: (foundCar as any).brand || "Unnamed Vehicle",
-          make: (foundCar as any).brand || "Unknown",
-          model: foundCar.model || "Unknown",
-          year: foundCar.year ?? new Date().getFullYear(),
-          seats: foundCar.seats ?? 5,
-          fuelType: (foundCar.fuelType as any) || "Petrol",
-          location: foundCar.location || "Local",
-          features: foundCar.features || [],
-          rating: Number(foundCar.rating) || 4.5,
-          reviews: foundCar.reviews ?? 0,
-          rentalPricePerDay: Number((foundCar as any).rentalPricePerDay) || foundCar.dailyRate || 0,
-          description:
-            foundCar.description ||
-            `${foundCar.year || ""} ${(foundCar as any).brand || ""} ${foundCar.model || ""}`.trim(),
-        };
-        setCar(mappedCar as CarCardProps);
-      }
+  // Helper function to get image URL
+  const getImageUrl = (imageUrl: string | undefined): string => {
+    if (!imageUrl) return "/car-placeholder.jpg";
+    if (imageUrl.startsWith('http')) return imageUrl;
+    if (imageUrl.startsWith('/uploads')) return `http://localhost:3000${imageUrl}`;
+    return imageUrl;
+  };
+
+  // Get car images array
+  const carImages: string[] = React.useMemo(() => {
+    if (!carData) return [];
+    
+    // If car has images array, use those
+    if (carData.images && Array.isArray(carData.images) && carData.images.length > 0) {
+      // Create a copy of the array before sorting to avoid mutating the original
+      return [...carData.images]
+        .sort((a, b) => (a.order || 0) - (b.order || 0))
+        .map((img: CarImage) => getImageUrl(img.imageUrl));
     }
-  }, [carData, carId]);
+    
+    // Fallback to imageUrl if available
+    if (carData.imageUrl) {
+      return [getImageUrl(carData.imageUrl)];
+    }
+    
+    return ["/car-placeholder.jpg"];
+  }, [carData]);
 
   const handleRentCar = async () => {
     if (!isAuthenticated || !user || user.id === "0" || user.id === "") {
@@ -72,7 +74,7 @@ const CarDetails: React.FC = () => {
     });
   };
 
-  if (isLoadingCars) {
+  if (isLoadingCar) {
     return (
       <>
         <Header />
@@ -83,7 +85,35 @@ const CarDetails: React.FC = () => {
     );
   }
 
-  if (!car) {
+  if (carError) {
+    console.error("Error fetching car:", carError);
+    console.error("Error details:", JSON.stringify(carError, null, 2));
+    return (
+      <>
+        <Header />
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Error loading car details</h2>
+          <p className="text-gray-600 mb-4">
+            {(carError as any)?.data?.message || (carError as any)?.message || "Failed to load car information"}
+          </p>
+          <details className="mt-4 text-sm text-gray-500">
+            <summary className="cursor-pointer">Technical Details</summary>
+            <pre className="mt-2 p-4 bg-gray-100 rounded overflow-auto max-w-2xl">
+              {JSON.stringify(carError, null, 2)}
+            </pre>
+          </details>
+          <button
+            onClick={() => navigate("/browse-cars")}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mt-4"
+          >
+            Back to Browse Cars
+          </button>
+        </div>
+      </>
+    );
+  }
+
+  if (!carData) {
     return (
       <>
         <Header />
@@ -100,13 +130,8 @@ const CarDetails: React.FC = () => {
     );
   }
 
-  // Mock images for the carousel
-  const carImages = [
-    car.imageUrl || "https://source.unsplash.com/800x600/?car",
-    "https://source.unsplash.com/800x600/?car,interior",
-    "https://source.unsplash.com/800x600/?car,dashboard",
-    "https://source.unsplash.com/800x600/?car,engine",
-  ];
+  // Map car data to display format
+  const car = carData;
 
   const features = [
     "Air Conditioning",
@@ -159,9 +184,12 @@ const CarDetails: React.FC = () => {
                 {/* Main Image */}
                 <div className="relative">
                   <img
-                    src={carImages[currentImageIndex]}
-                    alt={`${car.make} ${car.model}`}
+                    src={carImages[currentImageIndex] || "/car-placeholder.jpg"}
+                    alt={`${car.brand} ${car.model}`}
                     className="w-full h-96 object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/car-placeholder.jpg";
+                    }}
                   />
                   
                   {/* Image Navigation */}
@@ -207,7 +235,7 @@ const CarDetails: React.FC = () => {
               {/* Car Details */}
               <div className="bg-white rounded-xl shadow-lg p-6 mt-6">
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  {car.make} {car.model} ({car.year})
+                  {car.brand} {car.model} ({car.year})
                 </h1>
                 
                 {car.isAvailable ? (
@@ -258,9 +286,7 @@ const CarDetails: React.FC = () => {
                 <div className="mb-6">
                   <h3 className="text-xl font-bold text-gray-900 mb-3">About This Car</h3>
                   <p className="text-gray-600 leading-relaxed">
-                    Clean and reliable {car.make} {car.model} perfect for city driving and short trips around Monrovia and beyond. 
-                    The car is well-maintained and comes with air conditioning, comfortable seating, and good fuel efficiency. 
-                    Perfect for business trips, family outings, or exploring beautiful Liberia.
+                    {car.description || `Clean and reliable ${car.brand} ${car.model} perfect for city driving and short trips around Monrovia and beyond.`} 
                   </p>
                 </div>
 

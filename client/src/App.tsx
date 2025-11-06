@@ -13,7 +13,7 @@ import Home from './pages/Home';
 const Login = lazy(() => import('./components/Login'));
 const Signup = lazy(() => import('./components/Signup'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
-const DashboardRouter = lazy(() => import('./components/DashboardRouter'));
+// Old DashboardRouter import removed - using NewDashboardRouter instead
 const ProtectedRoute = lazy(() => import('./components/ProtectedRoute'));
 const RoleProtectedRoute = lazy(() => import('./components/RoleProtectedRoute'));
 const BrowseCars = lazy(() => import('./components/BrowseCars'));

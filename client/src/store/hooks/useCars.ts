@@ -25,7 +25,7 @@ export interface CarFormData {
   transmission?: string;
   description?: string;
   seats?: number;
-  fuelType?: string;
+  fuelType?: 'Petrol' | 'Diesel' | 'Electric' | 'Hybrid';
 }
 
 export const useCars = (options?: { page?: number; limit?: number }) => {
@@ -33,18 +33,18 @@ export const useCars = (options?: { page?: number; limit?: number }) => {
 
   // RTK Query hooks
   const {
-    data: cars,
+    data: carsData,
     isLoading: isLoadingCars,
     error: carsError,
     refetch: refetchCars,
-  } = useGetCarsQuery();
+  } = useGetCarsQuery(options || {});
 
-  // Note: pagination and extra metadata may be returned by a custom endpoint
-  // callers expect a `pagination` object sometimes; expose a best-effort shim
-  const pagination =
-    cars && (cars as any).pagination
-      ? (cars as any).pagination
-      : { totalPages: 1, total: Array.isArray(cars) ? cars.length : 0 };
+  // Extract cars and pagination from response
+  const cars = Array.isArray(carsData) ? carsData : (carsData as any)?.cars || [];
+  const pagination = (carsData as any)?.pagination || { 
+    totalPages: 1, 
+    total: Array.isArray(carsData) ? carsData.length : cars.length 
+  };
 
   const { data: selectedCar, isLoading: isLoadingSelectedCar } =
     useGetCarByIdQuery(selectedCarId || 0, {
@@ -84,7 +84,7 @@ export const useCars = (options?: { page?: number; limit?: number }) => {
         transmission: carData.transmission || "Automatic",
         description: carData.description || "No description provided",
         seats: carData.seats ?? 5,
-        fuelType: carData.fuelType || "Gasoline",
+        fuelType: carData.fuelType || "Petrol",
       };
 
       const result = await addCar(payload).unwrap();

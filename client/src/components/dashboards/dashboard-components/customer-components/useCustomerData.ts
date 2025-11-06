@@ -52,9 +52,14 @@ export const useCustomerData = () => {
 
   // Fetch real-time data from API
   const { data: customerStats, isLoading: statsLoading, error: statsError } = useGetCustomerStatsQuery();
-  const { data: carsData, isLoading: carsLoading } = useGetCarsQuery();
-  const { data: customerRentals, isLoading: rentalsLoading } = useGetCustomerRentalsQuery();
-  const { data: activeRentalsData, isLoading: activeRentalsLoading } = useGetActiveRentalsQuery();
+  const { data: carsDataRaw, isLoading: carsLoading } = useGetCarsQuery();
+  const { data: customerRentalsRaw, isLoading: rentalsLoading } = useGetCustomerRentalsQuery();
+  const { data: activeRentalsDataRaw, isLoading: activeRentalsLoading } = useGetActiveRentalsQuery();
+  
+  // Ensure all data is always an array (handle pagination response or single object)
+  const carsData = Array.isArray(carsDataRaw) ? carsDataRaw : [];
+  const customerRentals = Array.isArray(customerRentalsRaw) ? customerRentalsRaw : [];
+  const activeRentalsData = Array.isArray(activeRentalsDataRaw) ? activeRentalsDataRaw : (activeRentalsDataRaw ? [activeRentalsDataRaw] : []);
   
   // Only make the API call if we have a valid UUID and user is authenticated
   // Use a stable value to prevent RTK Query hook errors
@@ -90,9 +95,9 @@ export const useCustomerData = () => {
     // Data
     customerStats,
     availableCars,
-    carsData: carsData || [], // All cars (available and unavailable)
-    customerRentals: customerRentals || [],
-    activeRentalsData: activeRentalsData || [],
+    carsData, // All cars (available and unavailable) - already ensured to be an array
+    customerRentals, // Already ensured to be an array
+    activeRentalsData, // Already ensured to be an array
     customer: customer || user, // Fallback to user from auth if customer data not available
     activeRentals,
     totalSpent,

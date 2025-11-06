@@ -3,6 +3,15 @@ import type { RootState } from '../store';
 import { setAuthToken } from '../Auth/authUtils';
 
 // Car Management API types
+export interface CarImage {
+  id: string;
+  imageUrl: string;
+  isPrimary: boolean;
+  carId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Car {
   id: string;
   name: string;
@@ -13,6 +22,7 @@ export interface Car {
   isAvailable: boolean;
   features?: string[];
   imageUrl?: string;
+  images?: CarImage[];
   description?: string;
   createdAt: string;
   updatedAt: string;
@@ -21,8 +31,23 @@ export interface Car {
     name: string;
     email: string;
   };
+  // Car specifications
+  color?: string;
+  transmission?: string;
+  fuelType?: 'Petrol' | 'Diesel' | 'Electric' | 'Hybrid';
+  seats?: number;
+  location?: string;
   // Enhanced status types for admin management
   status: 'available' | 'rented' | 'maintenance' | 'pending_approval' | 'rejected' | 'inactive';
+  // Additional fields
+  licensePlate?: string;
+  mileage?: number;
+  insuranceProvider?: string;
+  insuranceNumber?: string;
+  insuranceExpiry?: string;
+  lastServiceDate?: string;
+  nextServiceDate?: string;
+  notes?: string;
 }
 
 export interface CarListResponse {

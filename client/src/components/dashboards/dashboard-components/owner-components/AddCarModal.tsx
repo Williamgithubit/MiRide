@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import Modal from "../../shared/Modal";
-import { useAddCarMutation } from "../../../../store/Car/carApi";
+import { useAddCarMutation, useUploadCarImagesMutation } from "../../../../store/Car/carApi";
 import toast from "react-hot-toast";
+import { ImageUpload } from "../../../common/ImageUpload";
 
 interface CreateCarData {
   name: string;
@@ -10,10 +11,13 @@ interface CreateCarData {
   year: number;
   rentalPricePerDay: number;
   seats: number;
-  fuelType: string;
+  fuelType: 'Petrol' | 'Diesel' | 'Electric' | 'Hybrid';
   location: string;
   features: string[];
-  imageUrl: string;
+  rating: number;
+  reviews: number;
+  isLiked: boolean;
+  isAvailable: boolean;
 }
 
 interface AddCarModalProps {
@@ -37,10 +41,17 @@ const AddCarModal: React.FC<AddCarModalProps> = ({
     fuelType: "Petrol",
     location: "",
     features: [],
-    imageUrl: "",
+    rating: 0,
+    reviews: 0,
+    isLiked: false,
+    isAvailable: true,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [addCar] = useAddCarMutation();
+  const [uploadCarImages] = useUploadCarImagesMutation();
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -53,6 +64,10 @@ const AddCarModal: React.FC<AddCarModalProps> = ({
           ? parseInt(value) || 0
           : value,
     }));
+  };
+
+  const handleImageUpload = async (files: File[]): Promise<void> => {
+    setSelectedImages(files);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,9 +84,30 @@ const AddCarModal: React.FC<AddCarModalProps> = ({
         name: carName,
       };
 
-      await addCar(carData).unwrap();
-      toast.success("Car added successfully!");
+      // Create the car first
+      const newCar = await addCar(carData).unwrap();
+      
+      // Upload images if any were selected
+      if (selectedImages.length > 0 && newCar.id) {
+        setIsUploading(true);
+        const formData = new FormData();
+        selectedImages.forEach((file) => {
+          formData.append('images', file);
+        });
 
+        try {
+          await uploadCarImages({ carId: newCar.id, formData }).unwrap();
+          toast.success(`Car added successfully with ${selectedImages.length} image(s)!`);
+        } catch (uploadError) {
+          console.error('Error uploading images:', uploadError);
+          toast.error('Car added but some images failed to upload');
+        } finally {
+          setIsUploading(false);
+        }
+      } else {
+        toast.success("Car added successfully!");
+      }
+      
       // Reset form
       setFormData({
         name: "",
@@ -83,9 +119,14 @@ const AddCarModal: React.FC<AddCarModalProps> = ({
         fuelType: "Petrol",
         location: "",
         features: [],
-        imageUrl: "",
+        rating: 0,
+        reviews: 0,
+        isLiked: false,
+        isAvailable: true,
       });
+      setSelectedImages([]);
 
+      // Trigger refetch of car list after everything is done
       onCarAdded?.();
       onClose();
     } catch (error) {
@@ -216,32 +257,32 @@ const AddCarModal: React.FC<AddCarModalProps> = ({
         </div>
         <div>
           <label className="block text-sm font-medium mb-2">
-            Image URL (Optional)
+            Car Images (Optional - Up to 4 images)
           </label>
-          <input
-            type="url"
-            name="imageUrl"
-            value={formData.imageUrl}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700"
-            placeholder="https://example.com/car-image.jpg"
+          <ImageUpload
+            maxFiles={4}
+            maxSize={5}
+            onUpload={handleImageUpload}
+            uploadProgress={uploadProgress}
+            isUploading={isUploading}
+            autoUpload={false}
           />
         </div>
         <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
           <button
             type="button"
             onClick={handleClose}
-            disabled={isLoading}
+            disabled={isLoading || isUploading}
             className="w-full sm:w-auto px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 order-2 sm:order-1"
           >
             Cancel
           </button>
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || isUploading}
             className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed order-1 sm:order-2 flex items-center justify-center gap-2"
           >
-            {isLoading && (
+            {(isLoading || isUploading) && (
               <svg
                 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
                 xmlns="http://www.w3.org/2000/svg"
@@ -263,7 +304,7 @@ const AddCarModal: React.FC<AddCarModalProps> = ({
                 ></path>
               </svg>
             )}
-            {isLoading ? "Adding..." : "Add Car"}
+            {isUploading ? "Uploading Images..." : isLoading ? "Adding Car..." : "Add Car"}
           </button>
         </div>
       </form>

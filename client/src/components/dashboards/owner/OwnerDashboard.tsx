@@ -55,9 +55,9 @@ const OwnerDashboard: React.FC = () => {
   const [deleteCar] = useDeleteCarMutation();
 
   // Memoize expensive calculations and derived data
-  const totalCars = React.useMemo(() => ownerCars.length, [ownerCars]);
+  const totalCars = React.useMemo(() => Array.isArray(ownerCars) ? ownerCars.length : 0, [ownerCars]);
   const availableCars = React.useMemo(
-    () => ownerCars.filter((car) => car.isAvailable).length,
+    () => Array.isArray(ownerCars) ? ownerCars.filter((car) => car.isAvailable).length : 0,
     [ownerCars]
   );
   const rentedCars = React.useMemo(
@@ -66,7 +66,7 @@ const OwnerDashboard: React.FC = () => {
   );
   const avgRating = React.useMemo(
     () => {
-      if (ownerCars.length === 0) return 0;
+      if (!Array.isArray(ownerCars) || ownerCars.length === 0) return 0;
       
       const validRatings = ownerCars
         .map(car => Number(car.rating) || 0)
@@ -84,21 +84,23 @@ const OwnerDashboard: React.FC = () => {
 
   // Calculate real earnings from actual rental data
   const totalEarnings = React.useMemo(
-    () =>
-      ownerRentalsData.reduce((sum, rental) => {
+    () => {
+      if (!Array.isArray(ownerRentalsData)) return 0;
+      return ownerRentalsData.reduce((sum, rental) => {
         // Only count completed rentals for earnings
         if (rental.status === 'completed') {
           const amount = Number(rental.totalAmount) || Number(rental.totalCost) || 0;
           return sum + (isNaN(amount) ? 0 : amount);
         }
         return sum;
-      }, 0),
+      }, 0);
+    },
     [ownerRentalsData]
   );
 
   // Count total rentals from real data
   const totalRentals = React.useMemo(
-    () => ownerRentalsData.length,
+    () => Array.isArray(ownerRentalsData) ? ownerRentalsData.length : 0,
     [ownerRentalsData]
   );
 
@@ -108,7 +110,7 @@ const OwnerDashboard: React.FC = () => {
       datasets: [
         {
           label: "Revenue",
-          data: ownerCars.map((_, index) =>
+          data: Array.from({ length: 6 }, (_, index) =>
             Math.floor((totalEarnings / 6) * (1 + Math.sin(index) * 0.3))
           ),
           borderColor: "#104911",
@@ -117,7 +119,7 @@ const OwnerDashboard: React.FC = () => {
         },
       ],
     }),
-    [ownerCars, totalEarnings]
+    [totalEarnings]
   );
 
   const carStatusChartData = React.useMemo(
@@ -135,8 +137,9 @@ const OwnerDashboard: React.FC = () => {
 
   // Process real rental data for display
   const ownerRentals = React.useMemo(
-    () =>
-      ownerRentalsData.slice(0, 5).map((rental) => ({
+    () => {
+      if (!Array.isArray(ownerRentalsData)) return [];
+      return ownerRentalsData.slice(0, 5).map((rental) => ({
         id: rental.id,
         carId: rental.carId,
         carDetails: rental.car 
@@ -147,7 +150,8 @@ const OwnerDashboard: React.FC = () => {
         endDate: new Date(rental.endDate).toLocaleDateString(),
         totalCost: Number(rental.totalAmount) || Number(rental.totalCost) || 0,
         status: rental.status,
-      })),
+      }));
+    },
     [ownerRentalsData]
   );
 
@@ -304,7 +308,7 @@ const OwnerDashboard: React.FC = () => {
 
   // Ensure ownerCars items have defined ids for downstream components
   const sanitizedOwnerCars = React.useMemo(
-    () => ownerCars.map((c, idx) => ({ ...c, id: c.id ?? idx })),
+    () => Array.isArray(ownerCars) ? ownerCars.map((c, idx) => ({ ...c, id: c.id ?? idx })) : [],
     [ownerCars]
   );
 

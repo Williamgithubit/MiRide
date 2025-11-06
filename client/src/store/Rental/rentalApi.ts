@@ -88,6 +88,11 @@ export const rentalApi = createApi({
     }),
     getCustomerRentals: builder.query<Rental[], void>({
       query: () => `/rentals/customer`,
+      transformResponse: (response: any) => {
+        // Ensure we always return an array
+        if (!response) return [];
+        return Array.isArray(response) ? response : [response];
+      },
       providesTags: (result) =>
         result
           ? [
@@ -98,6 +103,11 @@ export const rentalApi = createApi({
     }),
     getActiveRentals: builder.query<Rental[], void>({
       query: () => `/rentals/active`,
+      transformResponse: (response: any) => {
+        // Handle single object or array response
+        if (!response) return [];
+        return Array.isArray(response) ? response : [response];
+      },
       providesTags: (result) =>
         result
           ? [

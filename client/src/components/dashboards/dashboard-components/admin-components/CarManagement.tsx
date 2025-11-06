@@ -59,6 +59,7 @@ const CarManagement: React.FC = () => {
   const [statusData, setStatusData] = useState<UpdateCarStatusData>({
     status: 'available'
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // API queries and mutations
   const { data: carsData, isLoading, error, refetch } = useGetCarsQuery(filters);
@@ -68,6 +69,9 @@ const CarManagement: React.FC = () => {
   const [deleteCar] = useDeleteCarMutation();
   const [updateCarStatus] = useUpdateCarStatusMutation();
   const [bulkCarAction] = useBulkCarActionMutation();
+  const [uploadCarImages] = useUploadCarImagesMutation();
+  const [deleteCarImage] = useDeleteCarImageMutation();
+  const [setPrimaryImage] = useSetPrimaryImageMutation();
 
   // Debounced search effect
   useEffect(() => {
@@ -129,17 +133,91 @@ const CarManagement: React.FC = () => {
     }
   };
 
-  const handleEditCar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!showEditModal) return;
+  const handleEditCar = async (data: any) => {
+    if (!showEditModal) return false;
     
     try {
-      await updateCar({ carId: showEditModal.id, data: editCarData }).unwrap();
+      setIsSubmitting(true);
+      
+      // Process features if it's a string (from the form)
+      const processedData = {
+        ...data,
+        features: typeof data.features === 'string' 
+          ? data.features.split(',').map((f: string) => f.trim()).filter(Boolean)
+          : data.features
+      };
+      
+      await updateCar({ 
+        carId: showEditModal.id, 
+        data: processedData 
+      }).unwrap();
+      
       toast.success('Car updated successfully');
       setShowEditModal(null);
       setEditCarData({});
+      return true;
     } catch (error: any) {
+      console.error('Error updating car:', error);
       toast.error(error?.data?.message || 'Failed to update car');
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleImageUpload = async (carId: number, files: File[]) => {
+    try {
+      const formData = new FormData();
+      files.forEach(file => {
+        formData.append('images', file);
+      });
+      
+      const result = await uploadCarImages({
+        carId,
+        formData
+      }).unwrap();
+      
+      if (result.success) {
+        toast.success('Images uploaded successfully');
+        refetch();
+      }
+      return result;
+    } catch (error: any) {
+      console.error('Error uploading images:', error);
+      toast.error(error?.data?.message || 'Failed to upload images');
+      throw error;
+    }
+  };
+
+  const handleDeleteImage = async (carId: number, imageId: string) => {
+    try {
+      await deleteCarImage({
+        carId,
+        imageId
+      }).unwrap();
+      
+      toast.success('Image deleted successfully');
+      refetch();
+    } catch (error: any) {
+      console.error('Error deleting image:', error);
+      toast.error(error?.data?.message || 'Failed to delete image');
+      throw error;
+    }
+  };
+
+  const handleSetPrimaryImage = async (carId: number, imageId: string) => {
+    try {
+      await setPrimaryImage({
+        carId,
+        imageId
+      }).unwrap();
+      
+      toast.success('Primary image updated');
+      refetch();
+    } catch (error: any) {
+      console.error('Error setting primary image:', error);
+      toast.error(error?.data?.message || 'Failed to set primary image');
+      throw error;
     }
   };
 

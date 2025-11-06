@@ -43,19 +43,24 @@ export const MaintenanceSection = () => {
   const {
     data: maintenanceRecords = [],
     isLoading: recordsLoading,
+    isError: recordsIsError,
     error: recordsError,
+    refetch: refetchRecords,
   } = useGetMaintenanceByOwnerQuery();
 
   const {
     data: stats,
     isLoading: statsLoading,
+    isError: statsIsError,
     error: statsError,
+    refetch: refetchStats,
   } = useGetMaintenanceStatsQuery();
 
   const [updateMaintenance] = useUpdateMaintenanceMutation();
   const [deleteMaintenance] = useDeleteMaintenanceMutation();
 
   const loading = recordsLoading || statsLoading;
+  const hasError = recordsIsError || statsIsError;
 
   // Handle errors
   useEffect(() => {
@@ -297,6 +302,34 @@ export const MaintenanceSection = () => {
           Add Maintenance
         </Button>
       </div>
+
+      {/* Error Display */}
+      {hasError && (
+        <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-red-400 font-semibold mb-1">Error Loading Data</h3>
+              <p className="text-red-300 text-sm mb-3">
+                {recordsIsError && 'Failed to load maintenance records. '}
+                {statsIsError && 'Failed to load statistics. '}
+                Please try again.
+              </p>
+              <Button
+                onClick={() => {
+                  refetchRecords();
+                  refetchStats();
+                }}
+                variant="outline"
+                size="sm"
+                className="text-red-400 border-red-500 hover:bg-red-900/30"
+              >
+                Retry
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       {stats && (

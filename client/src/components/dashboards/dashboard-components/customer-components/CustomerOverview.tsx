@@ -14,7 +14,8 @@ const CustomerOverview: React.FC<CustomerOverviewProps> = ({ onSectionChange }) 
     totalBookings, 
     totalSpent, 
     customerStats, 
-    recentBookings 
+    recentBookings,
+    availableCars // Get the calculated available cars from the hook
   } = useCustomerData();
 
   return (
@@ -48,7 +49,7 @@ const CustomerOverview: React.FC<CustomerOverviewProps> = ({ onSectionChange }) 
         />
         <DashboardCard
           title="Available Cars"
-          value={customerStats?.availableCars || 0}
+          value={availableCars?.length || 0}
           icon={Car}
         />
       </div>

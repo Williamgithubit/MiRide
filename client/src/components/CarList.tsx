@@ -154,7 +154,22 @@ const CarList: React.FC<CarListProps> = ({
         searchTerm
       )}`;
     }
-    return car.imageUrl || "/car-placeholder.jpg";
+    
+    // If car has imageUrl, handle it properly
+    if (car.imageUrl) {
+      // If it's already a full URL, return as is
+      if (car.imageUrl.startsWith('http')) {
+        return car.imageUrl;
+      }
+      // If it's a relative path starting with /uploads, prepend the API server URL
+      if (car.imageUrl.startsWith('/uploads')) {
+        return `http://localhost:3000${car.imageUrl}`;
+      }
+      // Otherwise, return as is (might be a data URL or other format)
+      return car.imageUrl;
+    }
+    
+    return "/car-placeholder.jpg";
   };
 
   if (isLoading) {

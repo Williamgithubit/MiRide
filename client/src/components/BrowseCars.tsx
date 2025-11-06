@@ -1,6 +1,6 @@
 import React, { useEffect, useState, Suspense } from "react";
 import CarList, { CarCardProps } from "./CarList";
-import { Car } from "../types";
+import { Car } from "../types/index";
 import { Rental } from "../store/Rental/rentalApi";
 import { useNavigate } from "react-router-dom";
 import useReduxAuth from "../store/hooks/useReduxAuth";
@@ -79,26 +79,38 @@ const BrowseCars: React.FC = () => {
   useEffect(() => {
     // Set cars from Redux state with pagination
     if (carData) {
-      const mappedCars = carData.map((car) => ({
-        ...car,
-        id: car.id ?? 0,
-        isLiked: false,
-        isAvailable: Boolean(car.isAvailable),
-        name: (car as any).brand || "Unnamed Vehicle",
-        make: (car as any).brand || "Unknown",
-        model: car.model || "Unknown",
-        year: car.year ?? new Date().getFullYear(),
-        seats: car.seats ?? 5,
-        fuelType: (car.fuelType as any) || "Petrol",
-        location: car.location || "Local",
-        features: car.features || [],
-        rating: Number(car.rating) || 4.5,
-        reviews: car.reviews ?? 0,
-        rentalPricePerDay: Number((car as any).rentalPricePerDay) || car.dailyRate || 0,
-        description:
-          car.description ||
-          `${car.year || ""} ${(car as any).brand || ""} ${car.model || ""}`.trim(),
-      }));
+      const mappedCars = carData.map((car: Car) => {
+        // Extract the primary image or first image from the images array
+        let primaryImage: string | null = null;
+        
+        if (car.images && Array.isArray(car.images) && car.images.length > 0) {
+          // Find primary image first
+          const primary = car.images.find((img) => img.isPrimary);
+          primaryImage = primary ? primary.imageUrl : car.images[0].imageUrl;
+        }
+        
+        return {
+          ...car,
+          id: car.id ?? 0,
+          isLiked: false,
+          isAvailable: Boolean(car.isAvailable),
+          name: car.brand || "Unnamed Vehicle",
+          make: car.brand || "Unknown",
+          model: car.model || "Unknown",
+          year: car.year ?? new Date().getFullYear(),
+          seats: car.seats ?? 5,
+          fuelType: car.fuelType || "Petrol",
+          location: car.location || "Local",
+          features: car.features || [],
+          rating: Number(car.rating) || 4.5,
+          reviews: car.reviews ?? 0,
+          rentalPricePerDay: Number(car.rentalPricePerDay) || 0,
+          description:
+            car.description ||
+            `${car.year || ""} ${car.brand || ""} ${car.model || ""}`.trim(),
+          imageUrl: primaryImage, // Add the extracted image URL
+        };
+      });
 
       setCars(mappedCars as any);
     }
@@ -108,7 +120,7 @@ const BrowseCars: React.FC = () => {
     if (pagination) {
       setTotalPages(pagination.totalPages || 1);
     }
-  }, [pagination?.totalPages]);
+  }, [pagination]);
 
   useEffect(() => {
     // Set rentals if user is authenticated
@@ -142,7 +154,7 @@ const BrowseCars: React.FC = () => {
     }
 
     // Find the selected car
-    const selectedCar = cars.find(car => car.id === carId);
+    const selectedCar = cars.find((car) => car.id === carId);
     if (!selectedCar) {
       toast.error("Car not found");
       return;

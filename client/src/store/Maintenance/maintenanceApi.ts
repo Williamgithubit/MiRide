@@ -98,9 +98,9 @@ export const maintenanceApi = createApi({
     }),
 
     // Get maintenance records by owner
-    getMaintenanceByOwner: builder.query<CarMaintenanceRecord[], number | void>({
-      query: (ownerId) => ({
-        url: ownerId ? `/maintenance/owner/${ownerId}` : '/maintenance/owner',
+    getMaintenanceByOwner: builder.query<CarMaintenanceRecord[], void>({
+      query: () => ({
+        url: '/maintenance/owner',
         method: 'GET',
       }),
       providesTags: ['Maintenance'],

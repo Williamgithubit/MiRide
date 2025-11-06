@@ -37,9 +37,21 @@ const Maintenance: React.FC = () => {
   // API hooks
   const { 
     data: maintenanceRecords = [], 
-    isLoading, 
+    isLoading,
+    isError,
+    error,
     refetch 
   } = useGetMaintenanceByOwnerQuery();
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('Maintenance Query State:', {
+      isLoading,
+      isError,
+      error,
+      recordsCount: maintenanceRecords.length
+    });
+  }, [isLoading, isError, error, maintenanceRecords]);
   
   const [createMaintenance, { isLoading: isCreating }] = useCreateMaintenanceMutation();
   const [updateMaintenance, { isLoading: isUpdating }] = useUpdateMaintenanceMutation();
@@ -160,6 +172,45 @@ const Maintenance: React.FC = () => {
     refetch();
     toast.success('Maintenance data refreshed');
   };
+
+  // Show error state
+  if (isError) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Maintenance Management
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Track and manage vehicle maintenance schedules
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+          <div className="flex items-start space-x-3">
+            <FaExclamationTriangle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-red-900 dark:text-red-100 mb-2">
+                Failed to Load Maintenance Records
+              </h3>
+              <p className="text-red-700 dark:text-red-300 mb-4">
+                {(error as any)?.data?.message || (error as any)?.message || 'An error occurred while fetching maintenance data. Please try again.'}
+              </p>
+              <button
+                onClick={() => refetch()}
+                className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+              >
+                <FaSyncAlt className="w-4 h-4" />
+                <span>Retry</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
