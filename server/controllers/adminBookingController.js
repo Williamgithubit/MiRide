@@ -60,12 +60,18 @@ export const getAllBookings = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'brand', 'year', 'imageUrl'],
+          attributes: ['id', 'name', 'model', 'brand', 'year'],
           include: [
             {
               model: db.User,
               as: 'owner',
               attributes: ['id', 'name', 'email']
+            },
+            {
+              model: db.CarImage,
+              as: 'images',
+              attributes: ['id', 'imageUrl', 'isPrimary'],
+              required: false
             }
           ]
         },

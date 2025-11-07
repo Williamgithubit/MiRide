@@ -376,21 +376,18 @@ class NotificationService {
         throw new Error('Customer not found for review notification');
       }
 
-      // Create in-app notification
+      // Create in-app notification with user-friendly data
       const notificationData = {
-        reviewId: review.id,
-        carId: review.carId,
-        customerId: review.customerId,
-        rating: review.rating,
-        title: review.title,
-        comment: review.comment
+        'Customer Name': customer.name,
+        'Rating': `${review.rating} stars`,
+        'Comment': review.comment || 'No comment provided'
       };
 
       await this.createNotification({
         userId: car.owner.id,
         type: 'customer_review',
         title: 'New Review Received',
-        message: `${customer.name} left a ${review.rating}-star review for your ${car.year || ''} ${car.brand || ''} ${car.model || ''}${review.title ? `: "${review.title}"` : ''}`,
+        message: `${customer.name} left a ${review.rating}-star review for your ${car.year || ''} ${car.brand || ''} ${car.model || ''}`,
         data: notificationData,
         priority: 'medium'
       });
@@ -408,7 +405,6 @@ class NotificationService {
             <p><strong>Customer:</strong> ${customer.name}</p>
             <p><strong>Vehicle:</strong> ${car.year || ''} ${car.brand || ''} ${car.model || ''}</p>
             <p><strong>Rating:</strong> ${stars} (${review.rating}/5)</p>
-            ${review.title ? `<p><strong>Title:</strong> ${review.title}</p>` : ''}
             ${review.comment ? `<p><strong>Review:</strong></p><div style="background-color: #ffffff; padding: 15px; border-left: 4px solid #2563eb; margin: 10px 0; font-style: italic;">"${review.comment}"</div>` : ''}
             <p><strong>Review Date:</strong> ${new Date(review.createdAt).toLocaleDateString()}</p>
           </div>
@@ -436,7 +432,7 @@ class NotificationService {
         to: car.owner.email,
         subject: emailSubject,
         html: emailHtml,
-        text: `${customer.name} left a ${review.rating}-star review for your ${car.year || ''} ${car.brand || ''} ${car.model || ''}. ${review.title ? `Title: ${review.title}. ` : ''}${review.comment ? `Comment: ${review.comment}` : ''}`
+        text: `${customer.name} left a ${review.rating}-star review for your ${car.year || ''} ${car.brand || ''} ${car.model || ''}. ${review.comment ? `Comment: ${review.comment}` : ''}`
       });
 
       console.log(`Owner review notification sent for review ${review.id}`);

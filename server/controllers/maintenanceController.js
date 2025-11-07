@@ -40,7 +40,13 @@ export const getMaintenanceByOwner = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'make', 'year', 'imageUrl'],
+          attributes: ['id', 'name', 'model', 'make', 'year'],
+          include: [{
+            model: db.CarImage,
+            as: 'images',
+            attributes: ['id', 'imageUrl', 'isPrimary'],
+            required: false
+          }]
         },
       ],
       order: [['createdAt', 'DESC']],
@@ -69,7 +75,13 @@ export const getMaintenanceByCar = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'make', 'year', 'imageUrl'],
+          attributes: ['id', 'name', 'model', 'make', 'year'],
+          include: [{
+            model: db.CarImage,
+            as: 'images',
+            attributes: ['id', 'imageUrl', 'isPrimary'],
+            required: false
+          }]
         },
       ],
       order: [['createdAt', 'DESC']],
@@ -134,7 +146,13 @@ export const createMaintenance = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'make', 'year', 'imageUrl'],
+          attributes: ['id', 'name', 'model', 'make', 'year'],
+          include: [{
+            model: db.CarImage,
+            as: 'images',
+            attributes: ['id', 'imageUrl', 'isPrimary'],
+            required: false
+          }]
         },
       ],
     });
@@ -178,7 +196,13 @@ export const updateMaintenance = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'make', 'year', 'imageUrl'],
+          attributes: ['id', 'name', 'model', 'make', 'year'],
+          include: [{
+            model: db.CarImage,
+            as: 'images',
+            attributes: ['id', 'imageUrl', 'isPrimary'],
+            required: false
+          }]
         },
       ],
     });

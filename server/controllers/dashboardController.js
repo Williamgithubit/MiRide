@@ -24,7 +24,13 @@ export const getCustomerStats = async (req, res) => {
         { 
           model: db.Car, 
           as: 'car', 
-          attributes: ['id', 'brand', 'model', 'year', 'imageUrl'] 
+          attributes: ['id', 'brand', 'model', 'year'],
+          include: [{
+            model: db.CarImage,
+            as: 'images',
+            attributes: ['id', 'imageUrl', 'isPrimary'],
+            required: false
+          }]
         }
       ],
       order: [['startDate', 'DESC']]
@@ -655,7 +661,13 @@ export const getOwnerAnalytics = async (req, res) => {
     // Get owner's cars
     const ownerCars = await db.Car.findAll({
       where: { ownerId },
-      attributes: ['id', 'brand', 'model', 'year', 'imageUrl', 'isAvailable']
+      attributes: ['id', 'brand', 'model', 'year', 'isAvailable'],
+      include: [{
+        model: db.CarImage,
+        as: 'images',
+        attributes: ['id', 'imageUrl', 'isPrimary'],
+        required: false
+      }]
     });
 
     const carIds = ownerCars.map(car => car.id);
@@ -688,7 +700,13 @@ export const getOwnerAnalytics = async (req, res) => {
           c.brand,
           c.model,
           c.year,
-          c."imageUrl" as image_url,
+          (
+            SELECT ci.image_url 
+            FROM car_images ci 
+            WHERE ci.car_id = c.id 
+            ORDER BY ci.is_primary DESC, ci."order" ASC 
+            LIMIT 1
+          ) as image_url,
           u.name as customer_name,
           u.email as customer_email
         FROM rentals r
