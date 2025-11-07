@@ -48,7 +48,14 @@ export const getReviewsByOwner = async (req, res) => {
           model: db.Car,
           as: 'car',
           where: carWhereClause,
-          attributes: ['id', 'name', 'model', 'brand', 'year', 'imageUrl'],
+          attributes: ['id', 'name', 'model', 'brand', 'year'],
+          include: [{
+            model: db.CarImage,
+            as: 'images',
+            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
+            limit: 1,
+            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
+          }]
         },
         {
           model: db.User,
@@ -92,6 +99,7 @@ export const getReviewsByOwner = async (req, res) => {
 export const getReviewsByCustomer = async (req, res) => {
   try {
     const customerId = req.params.customerId || req.userId;
+    console.log('getReviewsByCustomer - Fetching reviews for customer:', customerId);
     
     const reviews = await db.Review.findAll({
       where: { customerId },
@@ -99,7 +107,14 @@ export const getReviewsByCustomer = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'brand', 'year', 'imageUrl'],
+          attributes: ['id', 'name', 'model', 'brand', 'year'],
+          include: [{
+            model: db.CarImage,
+            as: 'images',
+            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
+            limit: 1,
+            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
+          }]
         },
         {
           model: db.User,
@@ -116,10 +131,11 @@ export const getReviewsByCustomer = async (req, res) => {
       order: [['createdAt', 'DESC']],
     });
 
+    console.log(`getReviewsByCustomer - Found ${reviews.length} reviews`);
     res.json(reviews);
   } catch (error) {
-    console.error('Error fetching customer reviews:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('getReviewsByCustomer - Error:', error);
+    res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 };
 
@@ -134,7 +150,14 @@ export const getReviewsByCar = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'brand', 'year', 'imageUrl'],
+          attributes: ['id', 'name', 'model', 'brand', 'year'],
+          include: [{
+            model: db.CarImage,
+            as: 'images',
+            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
+            limit: 1,
+            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
+          }]
         },
         {
           model: db.User,
@@ -218,7 +241,14 @@ export const createReview = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'brand', 'year', 'imageUrl'],
+          attributes: ['id', 'name', 'model', 'brand', 'year'],
+          include: [{
+            model: db.CarImage,
+            as: 'images',
+            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
+            limit: 1,
+            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
+          }]
         },
         {
           model: db.User,
@@ -270,7 +300,14 @@ export const updateReview = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'brand', 'year', 'imageUrl'],
+          attributes: ['id', 'name', 'model', 'brand', 'year'],
+          include: [{
+            model: db.CarImage,
+            as: 'images',
+            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
+            limit: 1,
+            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
+          }]
         },
         {
           model: db.User,
@@ -306,7 +343,14 @@ export const updateReview = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'brand', 'year', 'imageUrl'],
+          attributes: ['id', 'name', 'model', 'brand', 'year'],
+          include: [{
+            model: db.CarImage,
+            as: 'images',
+            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
+            limit: 1,
+            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
+          }]
         },
         {
           model: db.User,
@@ -359,7 +403,14 @@ export const updateReviewResponse = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'brand', 'year', 'imageUrl'],
+          attributes: ['id', 'name', 'model', 'brand', 'year'],
+          include: [{
+            model: db.CarImage,
+            as: 'images',
+            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
+            limit: 1,
+            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
+          }]
         },
         {
           model: db.User,

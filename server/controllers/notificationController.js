@@ -229,8 +229,12 @@ export const deleteOwnerNotification = async (req, res) => {
 export const clearAllOwnerNotifications = async (req, res) => {
   try {
     const userId = req.user.id;
+    
+    console.log('Clearing all notifications for user:', userId);
 
     const deletedCount = await NotificationService.clearAllNotifications(userId);
+    
+    console.log('Successfully deleted notifications:', deletedCount);
     
     res.json({ 
       message: 'All notifications cleared',
@@ -238,6 +242,7 @@ export const clearAllOwnerNotifications = async (req, res) => {
     });
   } catch (error) {
     console.error('Error clearing all owner notifications:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ error: error.message });
   }
 };

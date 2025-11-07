@@ -562,13 +562,19 @@ class NotificationService {
    */
   static async clearAllNotifications(userId) {
     try {
+      console.log('NotificationService.clearAllNotifications called for userId:', userId);
+      console.log('db.Notification exists:', !!db.Notification);
+      
       const deletedRows = await db.Notification.destroy({
         where: { userId }
       });
 
+      console.log('Deleted rows:', deletedRows);
       return deletedRows;
     } catch (error) {
       console.error(' Error clearing all notifications:', error);
+      console.error(' Error details:', error.message);
+      console.error(' Error stack:', error.stack);
       throw error;
     }
   }
