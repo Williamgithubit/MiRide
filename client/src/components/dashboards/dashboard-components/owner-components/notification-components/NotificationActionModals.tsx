@@ -214,6 +214,36 @@ export const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> =
     }
   };
 
+  // Helper function to render additional data in a readable format
+  const renderAdditionalData = (data: any) => {
+    if (!data) return null;
+
+    // If it's already a string, return it
+    if (typeof data === 'string') {
+      return <p className="text-sm text-gray-900 dark:text-white">{data}</p>;
+    }
+
+    // If it's an object, render it in a user-friendly way
+    if (typeof data === 'object') {
+      return (
+        <div className="space-y-2">
+          {Object.entries(data).map(([key, value]) => (
+            <div key={key}>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
+                {key.replace(/_/g, ' ')}:{' '}
+              </span>
+              <span className="text-sm text-gray-900 dark:text-white">
+                {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+              </span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return <p className="text-sm text-gray-900 dark:text-white">{String(data)}</p>;
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -280,10 +310,8 @@ export const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> =
                     {notification.relatedItem.type}: {notification.relatedItem.name}
                   </div>
                   {notification.relatedItem.details && (
-                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                      <pre className="whitespace-pre-wrap">
-                        {JSON.stringify(notification.relatedItem.details, null, 2)}
-                      </pre>
+                    <div className="mt-2">
+                      {renderAdditionalData(notification.relatedItem.details)}
                     </div>
                   )}
                 </div>
@@ -293,11 +321,11 @@ export const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> =
             {/* Additional Data */}
             {notification.data && (
               <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Additional Data</label>
-                <div className="mt-1 bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                  <pre className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
-                    {JSON.stringify(notification.data, null, 2)}
-                  </pre>
+                <label className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2 block">
+                  Additional Information
+                </label>
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                  {renderAdditionalData(notification.data)}
                 </div>
               </div>
             )}

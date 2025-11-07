@@ -1,5 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
+import { Car as CarIcon } from 'lucide-react';
 import { Booking } from '../../../../store/Admin/adminBookingsSlice';
 
 interface BookingTableProps {
@@ -47,11 +48,11 @@ export const BookingTable: React.FC<BookingTableProps> = ({
       case 'Paid':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       case 'Pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
       case 'Failed':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
     }
   };
 
@@ -109,7 +110,20 @@ export const BookingTable: React.FC<BookingTableProps> = ({
                 <td className="px-6 py-4">
                   <div className="flex items-center">
                     <div className="h-10 w-10 flex-shrink-0">
-                      <img className="h-10 w-10 rounded-full" src={booking.car.imageUrl} alt="" />
+                      {booking.car.imageUrl ? (
+                        <img 
+                          className="h-10 w-10 rounded-lg object-cover" 
+                          src={booking.car.imageUrl} 
+                          alt={booking.car.name}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <div className={`h-10 w-10 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center ${booking.car.imageUrl ? 'hidden' : ''}`}>
+                        <CarIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                      </div>
                     </div>
                     <div className="ml-4">
                       <div className="text-sm font-medium text-gray-900 dark:text-white">{booking.car.name}</div>
@@ -183,7 +197,22 @@ export const BookingTable: React.FC<BookingTableProps> = ({
               </div>
 
               <div className="flex items-center mb-2">
-                <img className="h-10 w-10 rounded-full mr-3" src={booking.car.imageUrl} alt="" />
+                <div className="h-10 w-10 flex-shrink-0 mr-3">
+                  {booking.car.imageUrl ? (
+                    <img 
+                      className="h-10 w-10 rounded-lg object-cover" 
+                      src={booking.car.imageUrl} 
+                      alt={booking.car.name}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
+                  <div className={`h-10 w-10 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center ${booking.car.imageUrl ? 'hidden' : ''}`}>
+                    <CarIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  </div>
+                </div>
                 <div>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">{booking.car.name}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">{booking.car.model}</p>

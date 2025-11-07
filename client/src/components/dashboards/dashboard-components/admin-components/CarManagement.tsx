@@ -32,6 +32,11 @@ import {
   type UpdateCarData,
   type UpdateCarStatusData
 } from '../../../../store/Car/carManagementApi';
+import {
+  useUploadCarImagesMutation,
+  useDeleteCarImageMutation,
+  useSetPrimaryImageMutation
+} from '../../../../store/Car/carApi';
 import CarActionModals from './car-management-components/CarActionModals';
 
 const CarManagement: React.FC = () => {
@@ -55,10 +60,10 @@ const CarManagement: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState<Car | null>(null);
   const [showStatusModal, setShowStatusModal] = useState<Car | null>(null);
   const [showBulkModal, setShowBulkModal] = useState(false);
-  const [editCarData, setEditCarData] = useState<UpdateCarData>({});
   const [statusData, setStatusData] = useState<UpdateCarStatusData>({
     status: 'available'
   });
+  const [editCarData, setEditCarData] = useState<Partial<UpdateCarData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // API queries and mutations
@@ -785,8 +790,6 @@ const CarManagement: React.FC = () => {
         setShowDetailsModal={setShowDetailsModal}
         showEditModal={showEditModal}
         setShowEditModal={setShowEditModal}
-        editCarData={editCarData}
-        setEditCarData={setEditCarData}
         showDeleteModal={showDeleteModal}
         setShowDeleteModal={setShowDeleteModal}
         showStatusModal={showStatusModal}

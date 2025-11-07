@@ -14,9 +14,16 @@ export interface OwnerReview {
     id: number;
     name: string;
     make: string;
+    brand: string;
     model: string;
     year: number;
     imageUrl?: string;
+    images?: Array<{
+      id: number;
+      imageUrl: string;
+      isPrimary: boolean;
+      order: number;
+    }>;
   };
   customer: {
     id: number;

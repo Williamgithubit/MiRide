@@ -10,7 +10,8 @@ import {
   FaTools,
   FaTrash,
   FaEye,
-  FaEyeSlash
+  FaEyeSlash,
+  FaInfoCircle
 } from 'react-icons/fa';
 import { Notification } from '../../../../../store/Notification/notificationApi';
 
@@ -18,12 +19,14 @@ interface NotificationCardProps {
   notification: Notification;
   onMarkAsRead: (id: number) => void;
   onDelete: (id: number) => void;
+  onView: (notification: Notification) => void;
 }
 
 const NotificationCard: React.FC<NotificationCardProps> = ({
   notification,
   onMarkAsRead,
   onDelete,
+  onView,
 }) => {
   // Get icon based on notification type
   const getNotificationIcon = (type: string) => {
@@ -131,19 +134,26 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
             {/* Actions */}
             <div className="flex items-center space-x-2 ml-4">
               <button
+                onClick={() => onView(notification)}
+                className="p-1.5 text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                title="View details"
+              >
+                <FaEye className="w-4 h-4" />
+              </button>
+              <button
                 onClick={() => onMarkAsRead(notification.id)}
-                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                className="p-1.5 text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
                 title={notification.isRead ? 'Mark as unread' : 'Mark as read'}
               >
                 {notification.isRead ? (
                   <FaEyeSlash className="w-4 h-4" />
                 ) : (
-                  <FaEye className="w-4 h-4" />
+                  <FaCheckCircle className="w-4 h-4" />
                 )}
               </button>
               <button
                 onClick={() => onDelete(notification.id)}
-                className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                className="p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                 title="Delete notification"
               >
                 <FaTrash className="w-4 h-4" />

@@ -60,16 +60,57 @@ const MyReviews: React.FC = () => {
 
   // Get completed rentals that can be reviewed
   const completedRentals = useMemo(() => {
-    if (!rentals || !Array.isArray(rentals)) return [];
+    if (!rentals || !Array.isArray(rentals)) {
+      console.log('MyReviews - No rentals data or not an array:', rentals);
+      return [];
+    }
+    
+    console.log('MyReviews - Total rentals:', rentals.length);
+    console.log('MyReviews - Rentals data:', rentals);
     
     const reviewedRentalIds = new Set(reviews.map(review => review.rentalId));
+    const now = new Date();
+    // Set to start of today for proper date comparison
+    now.setHours(0, 0, 0, 0);
     
-    return rentals.filter(rental => 
-      rental && 
-      rental.status === 'completed' && 
-      rental.id &&
-      !reviewedRentalIds.has(rental.id)
-    );
+    const reviewableRentals = rentals.filter(rental => {
+      if (!rental || !rental.id) return false;
+      
+      // Check if rental has already been reviewed
+      if (reviewedRentalIds.has(rental.id)) {
+        console.log(`MyReviews - Rental ${rental.id} already reviewed`);
+        return false;
+      }
+      
+      // Don't allow reviews for cancelled or rejected rentals
+      if (rental.status === 'cancelled' || rental.status === 'rejected') {
+        console.log(`MyReviews - Rental ${rental.id} is ${rental.status}, not reviewable`);
+        return false;
+      }
+      
+      // A rental is reviewable if:
+      // 1. It has status 'completed', OR
+      // 2. Its endDate has passed (regardless of status being 'active' or 'approved')
+      const endDate = new Date(rental.endDate);
+      endDate.setHours(23, 59, 59, 999); // Set to end of the day
+      const isCompleted = rental.status === 'completed';
+      const hasEnded = endDate < now;
+      
+      console.log(`MyReviews - Rental ${rental.id}:`, {
+        status: rental.status,
+        endDate: rental.endDate,
+        endDateObj: endDate,
+        nowObj: now,
+        isCompleted,
+        hasEnded,
+        isReviewable: isCompleted || hasEnded
+      });
+      
+      return isCompleted || hasEnded;
+    });
+    
+    console.log('MyReviews - Reviewable rentals:', reviewableRentals.length);
+    return reviewableRentals;
   }, [rentals, reviews]);
 
   // Filter and search reviews

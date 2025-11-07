@@ -22,6 +22,7 @@ import {
 } from '../../../../store/Notification/notificationApi';
 import NotificationCard from './notification-components/NotificationCard';
 import ConfirmationModal from './notification-components/ConfirmationModal';
+import NotificationDetailsModal from './notification-components/NotificationDetailsModal';
 
 const Notifications: React.FC = () => {
   // State management
@@ -33,7 +34,9 @@ const Notifications: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [showClearAllModal, setShowClearAllModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedNotificationId, setSelectedNotificationId] = useState<number | null>(null);
+  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const [isClearing, setIsClearing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   
@@ -153,6 +156,20 @@ const Notifications: React.FC = () => {
   const handleRefresh = () => {
     refetch();
     toast.info('Notifications refreshed');
+  };
+
+  const handleView = async (notification: Notification) => {
+    setSelectedNotification(notification);
+    setShowDetailsModal(true);
+    
+    // Mark as read when viewing
+    if (!notification.isRead) {
+      try {
+        await markAsRead(notification.id).unwrap();
+      } catch (error) {
+        console.error('Failed to mark notification as read:', error);
+      }
+    }
   };
 
   // Notification type options
@@ -359,6 +376,7 @@ const Notifications: React.FC = () => {
                 notification={notification}
                 onMarkAsRead={handleMarkAsRead}
                 onDelete={handleDelete}
+                onView={handleView}
               />
             ))}
           </div>
@@ -427,6 +445,16 @@ const Notifications: React.FC = () => {
         cancelText="Cancel"
         type="danger"
         isLoading={isDeleting}
+      />
+
+      {/* Notification Details Modal */}
+      <NotificationDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => {
+          setShowDetailsModal(false);
+          setSelectedNotification(null);
+        }}
+        notification={selectedNotification}
       />
     </div>
   );

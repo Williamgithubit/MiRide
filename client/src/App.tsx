@@ -5,6 +5,7 @@ import useReduxAuth from './store/hooks/useReduxAuth';
 import { Toaster } from 'react-hot-toast';
 import Header from './components/Header';
 import { DarkModeProvider } from './contexts/DarkModeContext';
+import ScrollToTop from './components/common/ScrollToTop';
 
 // Import Home directly (not lazy) to test
 import Home from './pages/Home';
@@ -133,6 +134,7 @@ const App: React.FC = () => {
         {!isAuthPage && !isDashboardPage && <Header />}
         <AppContent />
         <Toaster position="top-center" />
+        <ScrollToTop />
       </div>
     </DarkModeProvider>
   );
