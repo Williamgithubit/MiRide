@@ -362,7 +362,11 @@ const CarActionModals: React.FC<CarActionModalsProps> = ({
                     // Convert features string back to array before saving
                     const carData = {
                       ...data,
-                      features: data.features ? data.features.split(',').map(f => f.trim()).filter(Boolean) : []
+                      features: data.features 
+                        ? (typeof data.features === 'string' 
+                            ? data.features.split(',').map((f: string) => f.trim()).filter(Boolean) 
+                            : data.features)
+                        : []
                     };
                     const success = await onEditCar(carData);
                     if (success) {

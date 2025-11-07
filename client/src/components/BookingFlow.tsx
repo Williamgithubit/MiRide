@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import useReduxAuth from "../store/hooks/useReduxAuth";
 import useCars from "../store/hooks/useCars";
 import useRentals from "../store/hooks/useRentals";
+import { Car } from "../types";
 
 interface BookingData {
   carId: number;
@@ -42,7 +43,7 @@ const BookingFlow: React.FC = () => {
     cardholderName: "",
   });
 
-  const car = cars?.find(c => c.id === parseInt(carId || "0"));
+  const car = cars?.find((c: Car) => c.id === parseInt(carId || "0"));
 
   useEffect(() => {
     if (!isAuthenticated) {

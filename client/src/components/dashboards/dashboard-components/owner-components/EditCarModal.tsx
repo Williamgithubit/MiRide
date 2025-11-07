@@ -23,7 +23,7 @@ const EditCarModal: React.FC<EditCarModalProps> = ({
     year: new Date().getFullYear(),
     rentalPricePerDay: 0,
     seats: 5,
-    fuelType: "Petrol",
+    fuelType: "Petrol" as "Petrol" | "Diesel" | "Electric" | "Hybrid",
     location: "",
     features: [] as string[],
     imageUrl: "",
@@ -59,6 +59,8 @@ const EditCarModal: React.FC<EditCarModalProps> = ({
       [name]:
         name === "year" || name === "rentalPricePerDay" || name === "seats"
           ? parseInt(value) || 0
+          : name === "fuelType"
+          ? (value as "Petrol" | "Diesel" | "Electric" | "Hybrid")
           : value,
     }));
   };

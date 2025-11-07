@@ -151,14 +151,14 @@ const CarReports: React.FC = () => {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ status, count, percent }) =>
-                    `${status}: ${count} (${(percent * 100).toFixed(0)}%)`
+                  label={(props: any) =>
+                    `${props.status}: ${props.count} (${props.percent ? (props.percent * 100).toFixed(0) : 0}%)`
                   }
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="count"
                 >
-                  {report.carsByStatus.map((entry, index) => (
+                  {report.carsByStatus.map((entry, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -198,7 +198,7 @@ const CarReports: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {report.carsByCategory.map((item, index) => (
+                  {report.carsByCategory.map((item: { category: string; count: number }, index: number) => (
                     <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white capitalize">
                         {item.category}
@@ -235,7 +235,7 @@ const CarReports: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {report.carsByStatus.map((item, index) => (
+                  {report.carsByStatus.map((item: { status: string; count: number }, index: number) => (
                     <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white capitalize">
                         {item.status}

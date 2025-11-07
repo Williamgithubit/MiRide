@@ -41,6 +41,12 @@ export interface Car {
   images?: CarImage[];
   createdAt?: string;
   updatedAt?: string;
+  // Additional properties for backward compatibility
+  type?: string;
+  make?: string; // Alias for brand
+  dailyRate?: number; // Alias for rentalPricePerDay
+  color?: string;
+  licensePlate?: string;
 }
 
 export interface ImageUploadResponse {

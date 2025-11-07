@@ -158,8 +158,8 @@ const UserReports: React.FC = () => {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ role, count, percent }) =>
-                    `${role}: ${count} (${(percent * 100).toFixed(0)}%)`
+                  label={(props: any) =>
+                    `${props.role}: ${props.count} (${props.percent ? (props.percent * 100).toFixed(0) : 0}%)`
                   }
                   outerRadius={100}
                   fill="#8884d8"

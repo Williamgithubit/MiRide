@@ -42,7 +42,7 @@ const Dashboard: React.FC = () => {
     // Set cars and rentals from Redux state
     if (carData) {
       // Map Car data to match CarCardProps expected by CarList
-      const mappedCars: CarCardProps[] = carData.map((car) => ({
+      const mappedCars: CarCardProps[] = carData.map((car: any) => ({
         ...car,
         id: car.id ?? 0,
         isLiked: false,

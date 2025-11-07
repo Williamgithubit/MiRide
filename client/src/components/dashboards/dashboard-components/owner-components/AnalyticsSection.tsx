@@ -66,7 +66,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
         <Chart
           type="bar"
           data={{
-            labels: ownerCars.map((car) => `${car.make} ${car.model}`),
+            labels: ownerCars.map((car) => `${car.brand} ${car.model}`),
             datasets: [
               {
                 label: "Rentals",
