@@ -47,7 +47,10 @@ const CurrentBookingCard: React.FC<CurrentBookingCardProps> = ({ booking }) => {
   const canCancel = booking.status !== 'completed' && booking.status !== 'cancelled';
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return date.toLocaleDateString('en-US', {
       weekday: 'short',
       year: 'numeric',
       month: 'short',
@@ -56,7 +59,10 @@ const CurrentBookingCard: React.FC<CurrentBookingCardProps> = ({ booking }) => {
   };
 
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('en-US', {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid Time';
+    return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -67,9 +73,9 @@ const CurrentBookingCard: React.FC<CurrentBookingCardProps> = ({ booking }) => {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Car Image */}
         <div className="relative h-48 bg-gray-200 dark:bg-gray-700">
-          {booking.car?.imageUrl ? (
+          {(booking.car?.images?.[0]?.imageUrl || booking.car?.imageUrl) ? (
             <img
-              src={booking.car.imageUrl}
+              src={booking.car?.images?.[0]?.imageUrl || booking.car?.imageUrl}
               alt={`${booking.car.name} ${booking.car.model}`}
               className="w-full h-full object-cover"
             />
@@ -83,8 +89,8 @@ const CurrentBookingCard: React.FC<CurrentBookingCardProps> = ({ booking }) => {
           
           {/* Status Badges */}
           <div className="absolute top-3 left-3 flex gap-2">
-            <BookingStatusBadge status={booking.status} />
-            <PaymentStatusBadge status={booking.paymentStatus} />
+            {booking.status && <BookingStatusBadge status={booking.status} />}
+            {booking.paymentStatus && <PaymentStatusBadge status={booking.paymentStatus} />}
           </div>
         </div>
 
@@ -96,7 +102,7 @@ const CurrentBookingCard: React.FC<CurrentBookingCardProps> = ({ booking }) => {
               {booking.car?.name} {booking.car?.model}
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {booking.car?.make} • {booking.car?.year}
+              {booking.car?.brand} • {booking.car?.year}
             </p>
           </div>
 

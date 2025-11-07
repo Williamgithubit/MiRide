@@ -14,7 +14,7 @@ interface ReviewFormProps {
     id: number;
     name: string;
     model: string;
-    make: string;
+    brand: string;
     year: number;
     imageUrl?: string;
   };
@@ -137,7 +137,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
               <div className="flex items-center space-x-3">
                 <img
                   src={carInfo.imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K'}
-                  alt={`${carInfo.make} ${carInfo.model}`}
+                  alt={`${carInfo.brand} ${carInfo.model}`}
                   className="w-16 h-16 rounded-lg object-cover"
                   onError={(e) => {
                     e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K';
@@ -145,7 +145,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
                 />
                 <div>
                   <div className="font-medium text-gray-900 dark:text-white">
-                    {carInfo.make} {carInfo.model}
+                    {carInfo.brand} {carInfo.model}
                   </div>
                   <div className="text-sm text-gray-500 dark:text-gray-400">
                     {carInfo.year} • Rented: {formatDate(rentalInfo.startDate)} - {formatDate(rentalInfo.endDate)}

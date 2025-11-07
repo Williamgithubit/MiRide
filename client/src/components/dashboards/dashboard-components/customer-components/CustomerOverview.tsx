@@ -1,5 +1,5 @@
 import React from 'react';
-import { Car, Calendar, CreditCard, User } from 'lucide-react';
+import { Car, Calendar, CreditCard, User, Star } from 'lucide-react';
 import DashboardCard from '../../shared/DashboardCard';
 import { useCustomerData } from './useCustomerData';
 
@@ -63,14 +63,14 @@ const CustomerOverview: React.FC<CustomerOverviewProps> = ({ onSectionChange }) 
             {recentBookings.slice(0, 3).map(booking => (
               <div key={booking.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div>
-                  <p className="font-medium text-sm">#{booking.id.toString().padStart(4, '0')}</p>
-                  <p className="text-xs text-gray-500">{booking.carDetails}</p>
-                  <p className="text-xs text-gray-500">{booking.startDate}</p>
+                  <p className="font-medium text-sm text-gray-900 dark:text-white">#{booking.id.toString().padStart(4, '0')}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{booking.carDetails}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{booking.startDate}</p>
                 </div>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  booking.status === 'completed' ? 'bg-green-100 text-green-800' :
-                  booking.status === 'active' ? 'bg-blue-100 text-blue-800' :
-                  'bg-yellow-100 text-yellow-800'
+                  booking.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                  booking.status === 'active' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
+                  'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
                 }`}>
                   {booking.status}
                 </span>
@@ -79,7 +79,7 @@ const CustomerOverview: React.FC<CustomerOverviewProps> = ({ onSectionChange }) 
           </div>
           <button 
             onClick={() => onSectionChange('bookings')}
-            className="mt-4 text-blue-600 hover:text-blue-800 text-sm font-medium"
+            className="mt-4 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium"
           >
             View all bookings →
           </button>
@@ -93,29 +93,36 @@ const CustomerOverview: React.FC<CustomerOverviewProps> = ({ onSectionChange }) 
               onClick={() => onSectionChange('browse-cars')}
               className="w-full flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
             >
-              <Car className="w-5 h-5 text-blue-600 mr-3" />
-              <span className="text-blue-600 font-medium">Browse Available Cars</span>
+              <Car className="w-5 h-5 text-black dark:text-white mr-3" />
+              <span className="text-black dark:text-white font-medium">Browse Available Cars</span>
             </button>
             <button 
               onClick={() => onSectionChange('bookings')}
               className="w-full flex items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
             >
-              <Calendar className="w-5 h-5 text-green-600 mr-3" />
-              <span className="text-green-600 font-medium">Manage Bookings</span>
+              <Calendar className="w-5 h-5 text-green-600 dark:text-green-400 mr-3" />
+              <span className="text-green-600 dark:text-green-400 font-medium">Manage Bookings</span>
             </button>
             <button 
               onClick={() => onSectionChange('payments')}
               className="w-full flex items-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
             >
-              <CreditCard className="w-5 h-5 text-purple-600 mr-3" />
-              <span className="text-purple-600 font-medium">Payment History</span>
+              <CreditCard className="w-5 h-5 text-purple-600 dark:text-purple-400 mr-3" />
+              <span className="text-purple-600 dark:text-purple-400 font-medium">Payment History</span>
+            </button>
+            <button 
+              onClick={() => onSectionChange('reviews')}
+              className="w-full flex items-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors"
+            >
+              <Star className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mr-3" />
+              <span className="text-yellow-600 dark:text-yellow-400 font-medium">My Reviews</span>
             </button>
             <button 
               onClick={() => onSectionChange('profile')}
               className="w-full flex items-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
             >
-              <User className="w-5 h-5 text-orange-600 mr-3" />
-              <span className="text-orange-600 font-medium">Update Profile</span>
+              <User className="w-5 h-5 text-orange-600 dark:text-orange-400 mr-3" />
+              <span className="text-orange-600 dark:text-orange-400 font-medium">Update Profile</span>
             </button>
           </div>
         </div>

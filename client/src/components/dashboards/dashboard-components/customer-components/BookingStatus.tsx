@@ -148,7 +148,7 @@ const BookingStatus: React.FC = () => {
       <BookingStatsOverview stats={bookingStatsData} />
 
       {/* Current/Active Booking */}
-      {activeBooking && (
+      {activeBooking && activeBooking.id && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             Current Booking

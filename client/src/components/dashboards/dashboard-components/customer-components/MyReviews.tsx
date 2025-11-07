@@ -76,7 +76,7 @@ const MyReviews: React.FC = () => {
   const filteredReviews = useMemo(() => {
     return reviews.filter(review => {
       const matchesSearch = searchTerm === '' || 
-        (review.car?.make && review.car.make.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (review.car?.brand && review.car.brand.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (review.car?.model && review.car.model.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (review.comment && review.comment.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -255,8 +255,8 @@ const MyReviews: React.FC = () => {
               >
                 <div className="flex items-center space-x-3 mb-3">
                   <img
-                    src={rental.car?.imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xMiAxOEgzNkwzNCAyN0gzMFYyNEgyN1YyN0gyMlYyNEgxOVYyN0gxNVYyNEgxM1YyN0gxMkwxOCAxOFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K'}
-                    alt={`${rental.car?.make} ${rental.car?.model}`}
+                    src={rental.car?.images?.[0]?.imageUrl || rental.car?.imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xMiAxOEgzNkwzNCAyN0gzMFYyNEgyN1YyN0gyMlYyNEgxOVYyN0gxNVYyNEgxM1YyN0gxMkwxOCAxOFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K'}
+                    alt={`${rental.car?.brand} ${rental.car?.model}`}
                     className="w-12 h-12 rounded-lg object-cover"
                     onError={(e) => {
                       e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xMiAxOEgzNkwzNCAyN0gzMFYyNEgyN1YyN0gyMlYyNEgxOVYyN0gxNVYyNEgxM1YyN0gxMkwxOCAxOFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K';
@@ -264,7 +264,7 @@ const MyReviews: React.FC = () => {
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                      {rental.car?.make} {rental.car?.model}
+                      {rental.car?.brand} {rental.car?.model}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       {formatDate(rental.startDate)} - {formatDate(rental.endDate)}
@@ -395,11 +395,11 @@ const MyReviews: React.FC = () => {
           review={selectedReview}
           carInfo={{
             id: selectedRental.carId || selectedReview?.carId || 0,
-            name: selectedRental.car?.name || `${selectedReview?.car?.make || ''} ${selectedReview?.car?.model || ''}`.trim() || 'Unknown Car',
+            name: selectedRental.car?.name || `${selectedReview?.car?.brand || ''} ${selectedReview?.car?.model || ''}`.trim() || 'Unknown Car',
             model: selectedRental.car?.model || selectedReview?.car?.model || '',
-            make: selectedRental.car?.make || selectedReview?.car?.make || '',
+            brand: selectedRental.car?.brand || selectedReview?.car?.brand || '',
             year: selectedRental.car?.year || selectedReview?.car?.year || new Date().getFullYear(),
-            imageUrl: selectedRental.car?.imageUrl || selectedReview?.car?.imageUrl
+            imageUrl: selectedRental.car?.images?.[0]?.imageUrl || selectedRental.car?.imageUrl || selectedReview?.car?.images?.[0]?.imageUrl || selectedReview?.car?.imageUrl
           }}
           rentalInfo={{
             id: selectedRental.id,

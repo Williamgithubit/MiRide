@@ -88,6 +88,14 @@ export const bookingApi = createApi({
     // Get active booking (currently ongoing rental)
     getActiveBooking: builder.query<BookingStatus | null, void>({
       query: () => '/rentals/customer/active',
+      transformResponse: (response: any) => {
+        // Backend returns an array, we need the first active booking or null
+        if (!response) return null;
+        if (Array.isArray(response)) {
+          return response.length > 0 ? response[0] : null;
+        }
+        return response;
+      },
       providesTags: [{ type: 'Booking', id: 'ACTIVE' }],
     }),
 

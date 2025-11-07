@@ -1,23 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../../../../store/store';
 import { BookingStatus } from '../../../../../store/Booking/bookingSlice';
+import { useGetReviewsByCustomerQuery, useCreateReviewMutation, CreateReview, UpdateReview } from '../../../../../store/Review/reviewApi';
+import { Rental } from '../../../../../store/Rental/rentalApi';
 import BookingStatusBadge from './BookingStatusBadge';
 import PaymentStatusBadge from './PaymentStatusBadge';
+import ReviewForm from '../review-components/ReviewForm';
+import { toast } from 'react-hot-toast';
 
 interface BookingHistoryTableProps {
   bookings: BookingStatus[];
 }
 
 const BookingHistoryTable: React.FC<BookingHistoryTableProps> = ({ bookings }) => {
+  const { user } = useSelector((state: RootState) => state.auth);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [sortField, setSortField] = useState<keyof BookingStatus>('createdAt');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<BookingStatus | null>(null);
+
+  // Get customer reviews to check which bookings have been reviewed
+  const { data: reviews = [] } = useGetReviewsByCustomerQuery(user?.id || '', {
+    skip: !user?.id
+  });
+  const [createReview, { isLoading: createLoading }] = useCreateReviewMutation();
+
+  // Create a set of reviewed booking IDs for quick lookup
+  const reviewedBookingIds = useMemo(() => {
+    return new Set(reviews.map(review => review.rentalId));
+  }, [reviews]);
 
   // Sort bookings
   const sortedBookings = [...bookings].sort((a, b) => {
     const aValue = a[sortField];
     const bValue = b[sortField];
-    
+      
     // Handle undefined/null values - put them at the end
     if (aValue == null && bValue == null) return 0;
     if (aValue == null) return sortDirection === 'asc' ? 1 : -1;
@@ -48,6 +68,31 @@ const BookingHistoryTable: React.FC<BookingHistoryTableProps> = ({ bookings }) =
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const canReview = (booking: BookingStatus) => {
+    return booking.status === 'completed' && !reviewedBookingIds.has(booking.id);
+  };
+
+  const handleWriteReview = (booking: BookingStatus) => {
+    setSelectedBooking(booking);
+    setShowReviewForm(true);
+  };
+
+  const handleCloseReviewForm = () => {
+    setShowReviewForm(false);
+    setSelectedBooking(null);
+  };
+
+  const handleSubmitReview = async (reviewData: CreateReview | UpdateReview) => {
+    try {
+      await createReview(reviewData as CreateReview).unwrap();
+      toast.success('Review submitted successfully!');
+      handleCloseReviewForm();
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      toast.error('Failed to submit review. Please try again.');
+    }
   };
 
   const SortIcon = ({ field }: { field: keyof BookingStatus }) => {
@@ -138,7 +183,7 @@ const BookingHistoryTable: React.FC<BookingHistoryTableProps> = ({ bookings }) =
                         {booking.car?.name} {booking.car?.model}
                       </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {booking.car?.make} • {booking.car?.year}
+                        {booking.car?.brand} • {booking.car?.year}
                       </div>
                     </div>
                   </div>
@@ -161,9 +206,19 @@ const BookingHistoryTable: React.FC<BookingHistoryTableProps> = ({ bookings }) =
                   ${(Number(booking.totalAmount) || 0).toFixed(2)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
-                    View Details
-                  </button>
+                  <div className="flex gap-2">
+                    <button className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                      View Details
+                    </button>
+                    {canReview(booking) && (
+                      <button
+                        onClick={() => handleWriteReview(booking)}
+                        className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                      >
+                        Write Review
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -197,7 +252,7 @@ const BookingHistoryTable: React.FC<BookingHistoryTableProps> = ({ bookings }) =
                     {booking.car?.name} {booking.car?.model}
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">
-                    {booking.car?.make} • {booking.car?.year}
+                    {booking.car?.brand} • {booking.car?.year}
                   </div>
                 </div>
               </div>
@@ -225,10 +280,18 @@ const BookingHistoryTable: React.FC<BookingHistoryTableProps> = ({ bookings }) =
               </div>
             </div>
             
-            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600 flex gap-2">
               <button className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
                 View Details
               </button>
+              {canReview(booking) && (
+                <button
+                  onClick={() => handleWriteReview(booking)}
+                  className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 text-sm font-medium"
+                >
+                  Write Review
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -262,6 +325,31 @@ const BookingHistoryTable: React.FC<BookingHistoryTableProps> = ({ bookings }) =
             </div>
           </div>
         </div>
+      )}
+
+      {/* Review Form Modal */}
+      {showReviewForm && selectedBooking && (
+        <ReviewForm
+          isOpen={showReviewForm}
+          onClose={handleCloseReviewForm}
+          onSubmit={handleSubmitReview}
+          loading={createLoading}
+          review={null}
+          carInfo={{
+            id: selectedBooking.carId,
+            name: selectedBooking.car?.name || '',
+            model: selectedBooking.car?.model || '',
+            brand: selectedBooking.car?.brand || '',
+            year: selectedBooking.car?.year || new Date().getFullYear(),
+            imageUrl: selectedBooking.car?.images?.[0]?.imageUrl || selectedBooking.car?.imageUrl
+          }}
+          rentalInfo={{
+            id: selectedBooking.id,
+            startDate: selectedBooking.startDate,
+            endDate: selectedBooking.endDate
+          }}
+          mode="create"
+        />
       )}
     </div>
   );

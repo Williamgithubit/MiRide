@@ -119,7 +119,7 @@ const BookingModificationModal: React.FC<BookingModificationModalProps> = ({ boo
               {booking.car?.name} {booking.car?.model}
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {booking.car?.make} • {booking.car?.year} • ${(Number(booking.car?.rentalPricePerDay) || 0).toFixed(2)}/day
+              {booking.car?.brand} • {booking.car?.year} • ${(Number(booking.car?.rentalPricePerDay) || 0).toFixed(2)}/day
             </p>
           </div>
 

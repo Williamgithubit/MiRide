@@ -22,9 +22,15 @@ export interface Review {
     id: number;
     name: string;
     model: string;
-    make: string;
+    brand: string;
     year: number;
-    imageUrl: string;
+    imageUrl?: string;
+    images?: Array<{
+      id: number;
+      imageUrl: string;
+      isPrimary: boolean;
+      order: number;
+    }>;
   };
   rental?: {
     id: number;

@@ -50,10 +50,14 @@ export const useCustomerData = () => {
     });
   }
 
-  // Fetch real-time data from API
-  const { data: customerStats, isLoading: statsLoading, error: statsError } = useGetCustomerStatsQuery();
+  // Fetch real-time data from API with polling to keep data fresh
+  const { data: customerStats, isLoading: statsLoading, error: statsError } = useGetCustomerStatsQuery(undefined, {
+    pollingInterval: 30000, // Poll every 30 seconds
+  });
   const { data: carsDataRaw, isLoading: carsLoading } = useGetCarsQuery();
-  const { data: customerRentalsRaw, isLoading: rentalsLoading } = useGetCustomerRentalsQuery();
+  const { data: customerRentalsRaw, isLoading: rentalsLoading, refetch: refetchRentals } = useGetCustomerRentalsQuery(undefined, {
+    pollingInterval: 30000, // Poll every 30 seconds to catch status updates
+  });
   const { data: activeRentalsDataRaw, isLoading: activeRentalsLoading } = useGetActiveRentalsQuery();
   
   // Ensure all data is always an array (handle pagination response or single object)
@@ -116,6 +120,9 @@ export const useCustomerData = () => {
     rentalsLoading,
     activeRentalsLoading,
     customerLoading,
+    
+    // Refetch functions
+    refetchRentals,
     
     // Error states
     statsError,

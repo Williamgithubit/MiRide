@@ -1,11 +1,17 @@
 import React from 'react';
-import { Car, Calendar, CreditCard, Clock, CheckCircle, XCircle, AlertCircle, PlayCircle, StopCircle } from 'lucide-react';
+import { Car, Calendar, CreditCard, Clock, CheckCircle, XCircle, AlertCircle, PlayCircle, StopCircle, RefreshCw } from 'lucide-react';
 import DashboardCard from '../../shared/DashboardCard';
 import Table from '../../shared/Table';
 import { useCustomerData } from './useCustomerData';
 
 const CustomerBookings: React.FC = () => {
-  const { activeRentals, totalBookings, totalSpent, customerRentals } = useCustomerData();
+  const { activeRentals, totalBookings, totalSpent, customerRentals, refetchRentals, rentalsLoading } = useCustomerData();
+  
+  const handleRefresh = () => {
+    if (refetchRentals) {
+      refetchRentals();
+    }
+  };
 
   const rentalColumns = [
     {
@@ -63,8 +69,8 @@ const CustomerBookings: React.FC = () => {
     {
       key: 'status',
       label: 'Booking Status',
-      render: (rental: any) => {
-        const status = rental.status || 'pending_approval';
+      render: (status: string, rental: any) => {
+        const bookingStatus = status || rental?.status || 'pending_approval';
         
         const getStatusConfig = (status: string) => {
           switch (status) {
@@ -120,7 +126,7 @@ const CustomerBookings: React.FC = () => {
           }
         };
 
-        const config = getStatusConfig(status);
+        const config = getStatusConfig(bookingStatus);
         const Icon = config.icon;
         
         return (
@@ -130,12 +136,12 @@ const CustomerBookings: React.FC = () => {
               {config.label}
             </span>
             {/* Show additional info for pending/rejected status */}
-            {(status === 'pending_approval' || status === 'rejected') && (
+            {(bookingStatus === 'pending_approval' || bookingStatus === 'rejected') && (
               <div className="group relative">
                 <AlertCircle className="w-4 h-4 text-gray-400 cursor-help" />
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
                   {config.description}
-                  {status === 'rejected' && rental.rejectionReason && (
+                  {bookingStatus === 'rejected' && rental?.rejectionReason && (
                     <div className="mt-1 text-gray-300">
                       Reason: {rental.rejectionReason}
                     </div>
@@ -170,7 +176,18 @@ const CustomerBookings: React.FC = () => {
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">My Bookings</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">My Bookings</h3>
+          <button
+            onClick={handleRefresh}
+            disabled={rentalsLoading}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            title="Refresh bookings"
+          >
+            <RefreshCw className={`w-4 h-4 ${rentalsLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
         <Table columns={rentalColumns} data={customerRentals || []} searchable />
       </div>
     </div>
