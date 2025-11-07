@@ -31,27 +31,46 @@ export const BookingRequestsSection = () => {
   const [rejectBooking] = useRejectBookingMutation();
 
   // Transform Rental[] to BookingRequest[] with filtering
-  const allBookings: BookingRequest[] = rentals.map((rental: Rental) => ({
-    id: rental.id.toString(),
-    car: {
-      id: rental.car?.id?.toString() || rental.carId.toString(),
-      make: rental.car?.make || rental.car?.make || rental.car?.name?.split(" ")[0] || "Unknown",
-      model: rental.car?.model || rental.car?.name || "Unknown",
-      year: rental.car?.year || new Date().getFullYear(),
-      image: rental.car?.imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K',
-    },
-    customer: {
-      id: rental.customer?.id?.toString() || rental.customerId.toString(),
-      name: rental.customer?.name || "Unknown Customer",
-      email: rental.customer?.email || "unknown@email.com",
-    },
-    startDate: rental.startDate,
-    endDate: rental.endDate,
-    totalCost: Number(rental.totalAmount) || Number(rental.totalCost) || 0,
-    status: rental.status,
-    createdAt: rental.createdAt,
-    paymentStatus: rental.paymentStatus,
-  }));
+  const allBookings: BookingRequest[] = rentals.map((rental: Rental) => {
+    // Extract image URL from car.images array or use imageUrl directly
+    let carImageUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K';
+    
+    if (rental.car?.images && Array.isArray(rental.car.images) && rental.car.images.length > 0) {
+      // Find primary image or use first image
+      const primaryImage = rental.car.images.find((img: any) => img.isPrimary);
+      const rawImageUrl = primaryImage?.imageUrl || rental.car.images[0]?.imageUrl;
+      
+      // Convert relative URLs to absolute URLs
+      if (rawImageUrl) {
+        carImageUrl = rawImageUrl.startsWith('http') ? rawImageUrl : `http://localhost:4000${rawImageUrl}`;
+      }
+    } else if (rental.car?.imageUrl) {
+      // Convert relative URLs to absolute URLs
+      carImageUrl = rental.car.imageUrl.startsWith('http') ? rental.car.imageUrl : `http://localhost:4000${rental.car.imageUrl}`;
+    }
+
+    return {
+      id: rental.id.toString(),
+      car: {
+        id: rental.car?.id?.toString() || rental.carId.toString(),
+        make: rental.car?.brand || rental.car?.brand || rental.car?.name?.split(" ")[0] || "Unknown",
+        model: rental.car?.model || rental.car?.name || "Unknown",
+        year: rental.car?.year || new Date().getFullYear(),
+        image: carImageUrl,
+      },
+      customer: {
+        id: rental.customer?.id?.toString() || rental.customerId.toString(),
+        name: rental.customer?.name || "Unknown Customer",
+        email: rental.customer?.email || "unknown@email.com",
+      },
+      startDate: rental.startDate,
+      endDate: rental.endDate,
+      totalCost: Number(rental.totalAmount) || Number(rental.totalCost) || 0,
+      status: rental.status,
+      createdAt: rental.createdAt,
+      paymentStatus: rental.paymentStatus,
+    };
+  });
 
   // Filter bookings based on status
   const bookings = React.useMemo(() => {

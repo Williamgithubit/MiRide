@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme {
+  --color-mode: class;
+}
+
 /* Custom utilities */
 .line-clamp-2 {
   overflow: hidden;
