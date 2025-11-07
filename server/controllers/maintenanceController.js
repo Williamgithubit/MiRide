@@ -53,7 +53,23 @@ export const getMaintenanceByOwner = async (req, res) => {
     });
 
     console.log('Maintenance records found:', maintenanceRecords.length);
-    res.json(maintenanceRecords);
+    
+    // Transform the response to ensure imageUrl is properly included
+    const transformedRecords = maintenanceRecords.map(record => {
+      const recordData = record.toJSON();
+      
+      // Ensure car has imageUrl from images array
+      if (recordData.car && recordData.car.images && recordData.car.images.length > 0) {
+        const primaryImage = recordData.car.images.find(img => img.isPrimary);
+        recordData.car.imageUrl = primaryImage ? primaryImage.imageUrl : recordData.car.images[0].imageUrl;
+      } else {
+        recordData.car.imageUrl = null;
+      }
+      
+      return recordData;
+    });
+    
+    res.json(transformedRecords);
   } catch (error) {
     console.error('Error fetching maintenance records:', error);
     console.error('Error stack:', error.stack);
@@ -87,10 +103,29 @@ export const getMaintenanceByCar = async (req, res) => {
       order: [['createdAt', 'DESC']],
     });
 
-    res.json(maintenanceRecords);
+    // Transform the response to ensure imageUrl is properly included
+    const transformedRecords = maintenanceRecords.map(record => {
+      const recordData = record.toJSON();
+      
+      // Ensure car has imageUrl from images array
+      if (recordData.car && recordData.car.images && recordData.car.images.length > 0) {
+        const primaryImage = recordData.car.images.find(img => img.isPrimary);
+        recordData.car.imageUrl = primaryImage ? primaryImage.imageUrl : recordData.car.images[0].imageUrl;
+      } else {
+        recordData.car.imageUrl = null;
+      }
+      
+      return recordData;
+    });
+
+    res.json(transformedRecords);
   } catch (error) {
     console.error('Error fetching maintenance records:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      message: 'Failed to fetch maintenance records',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
@@ -157,10 +192,26 @@ export const createMaintenance = async (req, res) => {
       ],
     });
 
-    res.status(201).json(maintenanceWithCar);
+    // Transform the response to ensure imageUrl is properly included
+    const recordData = maintenanceWithCar.toJSON();
+    
+    // Ensure car has imageUrl from images array
+    if (recordData.car && recordData.car.images && recordData.car.images.length > 0) {
+      const primaryImage = recordData.car.images.find(img => img.isPrimary);
+      recordData.car.imageUrl = primaryImage ? primaryImage.imageUrl : recordData.car.images[0].imageUrl;
+    } else {
+      recordData.car.imageUrl = null;
+    }
+
+    console.log('Maintenance record created successfully:', recordData.id);
+    res.status(201).json(recordData);
   } catch (error) {
     console.error('Error creating maintenance record:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      message: 'Failed to create maintenance record',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
@@ -207,10 +258,25 @@ export const updateMaintenance = async (req, res) => {
       ],
     });
 
-    res.json(updatedMaintenance);
+    // Transform the response to ensure imageUrl is properly included
+    const recordData = updatedMaintenance.toJSON();
+    
+    // Ensure car has imageUrl from images array
+    if (recordData.car && recordData.car.images && recordData.car.images.length > 0) {
+      const primaryImage = recordData.car.images.find(img => img.isPrimary);
+      recordData.car.imageUrl = primaryImage ? primaryImage.imageUrl : recordData.car.images[0].imageUrl;
+    } else {
+      recordData.car.imageUrl = null;
+    }
+
+    res.json(recordData);
   } catch (error) {
     console.error('Error updating maintenance record:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      message: 'Failed to update maintenance record',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
@@ -237,7 +303,11 @@ export const deleteMaintenance = async (req, res) => {
     res.json({ message: 'Maintenance record deleted successfully' });
   } catch (error) {
     console.error('Error deleting maintenance record:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      message: 'Failed to delete maintenance record',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
