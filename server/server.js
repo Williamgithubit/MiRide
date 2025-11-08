@@ -30,7 +30,7 @@ const PORT = process.env.PORT || 3000; // Set default port to 3000 to match clie
 
 // Middleware ++
 app.use(cors({
-  origin: 'http://localhost:4000',
+  origin: process.env.CLIENT_URL,
   credentials: true
 }));
 app.use(express.json());
