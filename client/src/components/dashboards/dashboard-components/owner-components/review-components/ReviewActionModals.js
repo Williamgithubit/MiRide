@@ -1,0 +1,64 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useState } from 'react';
+import { FaTimes, FaCheck, FaEyeSlash, FaTrash, FaExclamationTriangle } from 'react-icons/fa';
+import StarRating from './StarRating';
+import ReviewStatusBadge from './ReviewStatusBadge';
+import { format } from 'date-fns';
+export const ReviewDetailsModal = ({ isOpen, onClose, review }) => {
+    if (!isOpen || !review)
+        return null;
+    return (_jsx("div", { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50", children: _jsxs("div", { className: "bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto", children: [_jsxs("div", { className: "flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700", children: [_jsx("h3", { className: "text-lg font-semibold text-gray-900 dark:text-white", children: "Review Details" }), _jsx("button", { onClick: onClose, className: "p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors", children: _jsx(FaTimes, { className: "w-5 h-5" }) })] }), _jsxs("div", { className: "p-6 space-y-6", children: [_jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [_jsxs("div", { className: "space-y-3", children: [_jsx("h4", { className: "text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: "Car Details" }), _jsxs("div", { className: "flex items-center space-x-3", children: [_jsx("img", { src: review.car.images?.[0]?.imageUrl || review.car.imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K', alt: `${review.car.brand || review.car.make} ${review.car.model}`, className: "w-16 h-16 rounded-lg object-cover", onError: (e) => {
+                                                        e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K';
+                                                    } }), _jsxs("div", { children: [_jsxs("div", { className: "text-sm font-medium text-gray-900 dark:text-white", children: [review.car.brand || review.car.make, " ", review.car.model] }), _jsx("div", { className: "text-sm text-gray-500 dark:text-gray-400", children: review.car.year })] })] })] }), _jsxs("div", { className: "space-y-3", children: [_jsx("h4", { className: "text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: "Customer Details" }), _jsxs("div", { className: "flex items-center space-x-3", children: [_jsx("div", { className: "w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center", children: review.customer.avatar ? (_jsx("img", { src: review.customer.avatar, alt: review.customer.name, className: "w-16 h-16 rounded-lg object-cover" })) : (_jsx("span", { className: "text-blue-600 dark:text-blue-400 text-lg font-semibold", children: review.customer.name.charAt(0).toUpperCase() })) }), _jsxs("div", { children: [_jsx("div", { className: "text-sm font-medium text-gray-900 dark:text-white", children: review.customer.name }), _jsx("div", { className: "text-sm text-gray-500 dark:text-gray-400", children: review.customer.email })] })] })] })] }), _jsxs("div", { className: "space-y-4", children: [_jsx("h4", { className: "text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider", children: "Review Information" }), _jsxs("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4", children: [_jsxs("div", { children: [_jsx("div", { className: "text-sm text-gray-500 dark:text-gray-400", children: "Rating" }), _jsx(StarRating, { rating: review.rating, size: "lg", showNumber: true })] }), _jsxs("div", { children: [_jsx("div", { className: "text-sm text-gray-500 dark:text-gray-400", children: "Status" }), _jsx(ReviewStatusBadge, { status: review.status, size: "md" })] }), _jsxs("div", { children: [_jsx("div", { className: "text-sm text-gray-500 dark:text-gray-400", children: "Date" }), _jsx("div", { className: "text-sm text-gray-900 dark:text-white", children: format(new Date(review.createdAt), 'MMM d, yyyy') })] })] }), _jsxs("div", { children: [_jsx("div", { className: "text-sm text-gray-500 dark:text-gray-400 mb-2", children: "Review Comment" }), _jsx("div", { className: "bg-gray-50 dark:bg-gray-700 rounded-lg p-4", children: _jsx("p", { className: "text-gray-900 dark:text-white leading-relaxed", children: review.comment || 'No comment provided.' }) })] })] })] }), _jsx("div", { className: "flex items-center justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700", children: _jsx("button", { onClick: onClose, className: "px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors", children: "Close" }) })] }) }));
+};
+export const ModerationModal = ({ isOpen, onClose, onConfirm, review, action, loading = false }) => {
+    const [reason, setReason] = useState('');
+    if (!isOpen || !review)
+        return null;
+    const getActionConfig = () => {
+        switch (action) {
+            case 'approve':
+                return {
+                    title: 'Approve Review',
+                    message: 'Are you sure you want to approve this review? It will be visible to all customers.',
+                    icon: FaCheck,
+                    iconColor: 'text-green-600',
+                    bgColor: 'bg-green-100',
+                    buttonColor: 'bg-green-600 hover:bg-green-700',
+                    requiresReason: false
+                };
+            case 'reject':
+                return {
+                    title: 'Reject Review',
+                    message: 'Are you sure you want to reject this review? Please provide a reason.',
+                    icon: FaTimes,
+                    iconColor: 'text-red-600',
+                    bgColor: 'bg-red-100',
+                    buttonColor: 'bg-red-600 hover:bg-red-700',
+                    requiresReason: true
+                };
+            case 'hide':
+                return {
+                    title: 'Hide Review',
+                    message: 'Are you sure you want to hide this review? It will not be visible to customers.',
+                    icon: FaEyeSlash,
+                    iconColor: 'text-gray-600',
+                    bgColor: 'bg-gray-100',
+                    buttonColor: 'bg-gray-600 hover:bg-gray-700',
+                    requiresReason: false
+                };
+        }
+    };
+    const config = getActionConfig();
+    const IconComponent = config.icon;
+    const handleConfirm = () => {
+        onConfirm(action, reason || undefined);
+        setReason('');
+    };
+    return (_jsx("div", { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50", children: _jsxs("div", { className: "bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full", children: [_jsxs("div", { className: "flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700", children: [_jsxs("div", { className: "flex items-center space-x-3", children: [_jsx("div", { className: `w-10 h-10 ${config.bgColor} rounded-lg flex items-center justify-center`, children: _jsx(IconComponent, { className: `w-5 h-5 ${config.iconColor}` }) }), _jsx("h3", { className: "text-lg font-semibold text-gray-900 dark:text-white", children: config.title })] }), _jsx("button", { onClick: onClose, className: "p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors", children: _jsx(FaTimes, { className: "w-5 h-5" }) })] }), _jsxs("div", { className: "p-6 space-y-4", children: [_jsx("p", { className: "text-gray-700 dark:text-gray-300", children: config.message }), _jsxs("div", { className: "bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-2", children: [_jsxs("div", { className: "flex items-center justify-between", children: [_jsx("div", { className: "text-sm font-medium text-gray-900 dark:text-white", children: review.customer.name }), _jsx(StarRating, { rating: review.rating, size: "sm" })] }), _jsx("p", { className: "text-sm text-gray-600 dark:text-gray-400 line-clamp-2", children: review.comment })] }), config.requiresReason && (_jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2", children: "Reason for rejection *" }), _jsx("textarea", { value: reason, onChange: (e) => setReason(e.target.value), placeholder: "Please provide a reason for rejecting this review...", className: "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none", rows: 3 })] }))] }), _jsxs("div", { className: "flex items-center justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700", children: [_jsx("button", { onClick: onClose, disabled: loading, className: "px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors disabled:opacity-50", children: "Cancel" }), _jsx("button", { onClick: handleConfirm, disabled: loading || (config.requiresReason && !reason.trim()), className: `px-4 py-2 text-sm text-white rounded-lg transition-colors disabled:opacity-50 ${config.buttonColor}`, children: loading ? 'Processing...' : config.title })] })] }) }));
+};
+export const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, review, loading = false }) => {
+    if (!isOpen || !review)
+        return null;
+    return (_jsx("div", { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50", children: _jsxs("div", { className: "bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full", children: [_jsxs("div", { className: "flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700", children: [_jsxs("div", { className: "flex items-center space-x-3", children: [_jsx("div", { className: "w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center", children: _jsx(FaTrash, { className: "w-5 h-5 text-red-600" }) }), _jsx("h3", { className: "text-lg font-semibold text-gray-900 dark:text-white", children: "Delete Review" })] }), _jsx("button", { onClick: onClose, className: "p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors", children: _jsx(FaTimes, { className: "w-5 h-5" }) })] }), _jsxs("div", { className: "p-6 space-y-4", children: [_jsxs("div", { className: "flex items-center space-x-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg", children: [_jsx(FaExclamationTriangle, { className: "w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" }), _jsx("p", { className: "text-sm text-red-800 dark:text-red-300", children: "This action cannot be undone. The review will be permanently deleted." })] }), _jsxs("p", { className: "text-gray-700 dark:text-gray-300", children: ["Are you sure you want to delete this review from ", _jsx("strong", { children: review.customer.name }), "?"] }), _jsxs("div", { className: "bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-2", children: [_jsxs("div", { className: "flex items-center justify-between", children: [_jsx("div", { className: "text-sm font-medium text-gray-900 dark:text-white", children: review.customer.name }), _jsx(StarRating, { rating: review.rating, size: "sm" })] }), _jsx("p", { className: "text-sm text-gray-600 dark:text-gray-400 line-clamp-2", children: review.comment })] })] }), _jsxs("div", { className: "flex items-center justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700", children: [_jsx("button", { onClick: onClose, disabled: loading, className: "px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors disabled:opacity-50", children: "Cancel" }), _jsx("button", { onClick: onConfirm, disabled: loading, className: "px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50", children: loading ? 'Deleting...' : 'Delete Review' })] })] }) }));
+};
