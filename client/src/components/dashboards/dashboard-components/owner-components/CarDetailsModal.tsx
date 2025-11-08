@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import Modal from '../../shared/Modal';
 import { Car, CarImage } from '../../../../store/Car/carApi';
+import { API_BASE_URL } from '../../../../config/api';
 
 interface CarDetailsModalProps {
   isOpen: boolean;
@@ -15,7 +16,7 @@ const CarDetailsModal: React.FC<CarDetailsModalProps> = ({ isOpen, onClose, sele
   const getImageUrl = (imageUrl: string | undefined): string => {
     if (!imageUrl) return '/placeholder-car.jpg';
     if (imageUrl.startsWith('http')) return imageUrl;
-    if (imageUrl.startsWith('/uploads')) return `http://localhost:3000${imageUrl}`;
+    if (imageUrl.startsWith('/uploads')) return `${API_BASE_URL}${imageUrl}`;
     return imageUrl;
   };
 

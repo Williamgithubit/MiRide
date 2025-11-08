@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { Skeleton } from "@mui/material";
 import useReduxAuth from "../store/hooks/useReduxAuth";
 import { useToggleLikeMutation } from "../store/Car/carApi";
+import { API_BASE_URL } from "../config/api";
 
 export interface CarCardProps {
   id: number;
@@ -163,7 +164,7 @@ const CarList: React.FC<CarListProps> = ({
       }
       // If it's a relative path starting with /uploads, prepend the API server URL
       if (car.imageUrl.startsWith('/uploads')) {
-        return `http://localhost:3000${car.imageUrl}`;
+        return `${API_BASE_URL}${car.imageUrl}`;
       }
       // Otherwise, return as is (might be a data URL or other format)
       return car.imageUrl;

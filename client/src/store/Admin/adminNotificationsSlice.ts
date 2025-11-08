@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from '../store';
 import tokenStorage from '../../utils/tokenStorage';
+import { API_BASE_URL } from '../../config/api';
 
 export interface AdminNotification {
   id: string;
@@ -66,7 +67,7 @@ export const fetchAdminNotifications = createAsyncThunk(
         return rejectWithValue('No authentication token found');
       }
 
-      const response = await fetch('/api/admin/notifications', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/notifications`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -104,7 +105,7 @@ export const sendNotification = createAsyncThunk(
         return rejectWithValue('No authentication token found');
       }
 
-      const response = await fetch('/api/admin/notifications/send', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/notifications/send`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -134,7 +135,7 @@ export const markNotificationAsRead = createAsyncThunk(
         return rejectWithValue('No authentication token found');
       }
 
-      const response = await fetch(`/api/admin/notifications/${notificationId}/read`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/notifications/${notificationId}/read`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -159,7 +160,7 @@ export const markNotificationAsUnread = createAsyncThunk(
         return rejectWithValue('No authentication token found');
       }
 
-      const response = await fetch(`/api/admin/notifications/${notificationId}/unread`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/notifications/${notificationId}/unread`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -184,7 +185,7 @@ export const deleteNotification = createAsyncThunk(
         return rejectWithValue('No authentication token found');
       }
 
-      const response = await fetch(`/api/admin/notifications/${notificationId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/notifications/${notificationId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -209,7 +210,7 @@ export const bulkDeleteNotifications = createAsyncThunk(
         return rejectWithValue('No authentication token found');
       }
 
-      const response = await fetch('/api/admin/notifications/bulk-delete', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/notifications/bulk-delete`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -235,7 +236,7 @@ export const clearAllNotifications = createAsyncThunk(
         return rejectWithValue('No authentication token found');
       }
 
-      const response = await fetch('/api/admin/notifications/clear-all', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/notifications/clear-all`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from '../store';
 import tokenStorage from '../../utils/tokenStorage';
+import { API_BASE_URL } from '../../config/api';
 
 export interface Booking {
   id: string;
@@ -75,7 +76,7 @@ export const fetchBookings = createAsyncThunk(
         return rejectWithValue('No authentication token found');
       }
 
-      const response = await fetch('/api/admin/bookings', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/bookings`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -103,7 +104,7 @@ export const updateBookingStatus = createAsyncThunk(
         return rejectWithValue('No authentication token found');
       }
 
-      const response = await fetch(`/api/admin/bookings/${bookingId}/status`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/bookings/${bookingId}/status`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -4,6 +4,11 @@ import Header from "./Header";
 import toast from "react-hot-toast";
 import useReduxAuth from "../store/hooks/useReduxAuth";
 import { useGetCarByIdQuery } from "../store/Car/carApi";
+import { useSelector } from 'react-redux';
+import { RootState } from '../store/store';
+import { useDispatch } from 'react-redux';
+import { carApi } from '../store/Car/carApi';
+import { API_BASE_URL } from '../config/api';
 import useRentals from "../store/hooks/useRentals";
 import { CarCardProps } from "./CarList";
 import { Car, CarImage } from "../types/index";
@@ -30,7 +35,7 @@ const CarDetails: React.FC = () => {
   const getImageUrl = (imageUrl: string | undefined): string => {
     if (!imageUrl) return "/car-placeholder.jpg";
     if (imageUrl.startsWith('http')) return imageUrl;
-    if (imageUrl.startsWith('/uploads')) return `http://localhost:3000${imageUrl}`;
+    if (imageUrl.startsWith('/uploads')) return `${API_BASE_URL}${imageUrl}`;
     return imageUrl;
   };
 

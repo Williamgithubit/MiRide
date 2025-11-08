@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import { useDispatch } from 'react-redux';
 import { carApi } from '../../store/Car/carApi';
+import { API_BASE_URL } from '../../config/api';
 
 interface BookingDetails {
   sessionId: string;
@@ -66,7 +67,10 @@ const BookingSuccess: React.FC = () => {
       
       // Call the fallback endpoint to create booking and get session details
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/payments/create-booking-fallback', {
+      const apiUrl = `${API_BASE_URL}/api/payments/create-booking-fallback`;
+      console.log('Fetching from URL:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

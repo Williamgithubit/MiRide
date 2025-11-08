@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from '../store';
 import tokenStorage from '../../utils/tokenStorage';
+import { API_BASE_URL } from '../../config/api';
 
 // Types
 export interface UserReportData {
@@ -112,7 +113,7 @@ export const fetchUserReport = createAsyncThunk(
       }
 
       const queryParams = new URLSearchParams(filters as any).toString();
-      const response = await fetch(`/api/admin/reports/users?${queryParams}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/reports/users?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -141,7 +142,7 @@ export const fetchCarReport = createAsyncThunk(
       }
 
       const queryParams = new URLSearchParams(filters as any).toString();
-      const response = await fetch(`/api/admin/reports/cars?${queryParams}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/reports/cars?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -170,7 +171,7 @@ export const fetchBookingReport = createAsyncThunk(
       }
 
       const queryParams = new URLSearchParams(filters as any).toString();
-      const response = await fetch(`/api/admin/reports/bookings?${queryParams}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/reports/bookings?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -199,7 +200,7 @@ export const fetchRevenueReport = createAsyncThunk(
       }
 
       const queryParams = new URLSearchParams(filters as any).toString();
-      const response = await fetch(`/api/admin/reports/revenue?${queryParams}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/reports/revenue?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -228,7 +229,7 @@ export const fetchActivityLogs = createAsyncThunk(
       }
 
       const queryParams = new URLSearchParams(filters as any).toString();
-      const response = await fetch(`/api/admin/reports/activity?${queryParams}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/reports/activity?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -256,7 +257,7 @@ export const fetchGeneratedReports = createAsyncThunk(
         return rejectWithValue('No authentication token found');
       }
 
-      const response = await fetch('/api/admin/reports/generated', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/reports/generated`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -287,7 +288,7 @@ export const exportReport = createAsyncThunk(
         return rejectWithValue('No authentication token found');
       }
 
-      const response = await fetch('/api/admin/reports/export', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/reports/export`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -10,6 +10,7 @@ import BookingRequestsTable, { BookingRequest } from './booking-requests/Booking
 import { ApprovalModal, RejectionModal } from './booking-requests/BookingActionModals';
 import BookingDetailsModal from './booking-requests/BookingDetailsModal';
 import { FaSync } from 'react-icons/fa';
+import { API_BASE_URL } from '../../../../config/api';
 
 export const BookingRequestsSection = () => {
   const [updating, setUpdating] = useState<Record<string, boolean>>({});
@@ -42,11 +43,11 @@ export const BookingRequestsSection = () => {
       
       // Convert relative URLs to absolute URLs
       if (rawImageUrl) {
-        carImageUrl = rawImageUrl.startsWith('http') ? rawImageUrl : `http://localhost:4000${rawImageUrl}`;
+        carImageUrl = rawImageUrl.startsWith('http') ? rawImageUrl : `${API_BASE_URL}${rawImageUrl}`;
       }
     } else if (rental.car?.imageUrl) {
       // Convert relative URLs to absolute URLs
-      carImageUrl = rental.car.imageUrl.startsWith('http') ? rental.car.imageUrl : `http://localhost:4000${rental.car.imageUrl}`;
+      carImageUrl = rental.car.imageUrl.startsWith('http') ? rental.car.imageUrl : `${API_BASE_URL}${rental.car.imageUrl}`;
     }
 
     return {
