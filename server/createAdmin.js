@@ -16,15 +16,22 @@ const createAdminUser = async () => {
     await db.sequelize.authenticate();
     console.log('✅ Database connection established successfully.');
 
-    // Admin credentials - CHANGE THESE VALUES
+    // Admin credentials from environment variables
     const adminData = {
-      name: 'Admin User',
-      email: 'admin@miride.com',
-      phone: '+231778711864',
-      password: 'Admin@123456', // Change this to a secure password
+      name: process.env.ADMIN_NAME || 'Admin User',
+      email: process.env.ADMIN_EMAIL || 'admin@miride.com',
+      phone: process.env.ADMIN_PHONE || '+231778711864',
+      password: process.env.ADMIN_PASSWORD || 'Admin@123456',
       role: 'admin',
       isActive: true
     };
+
+    // Validate required environment variables
+    if (!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD) {
+      console.error('\n❌ Error: Missing required environment variables!');
+      console.error('   Please set ADMIN_EMAIL and ADMIN_PASSWORD in your .env file');
+      process.exit(1);
+    }
 
     console.log('\n📝 Creating admin user with the following details:');
     console.log(`   Name: ${adminData.name}`);

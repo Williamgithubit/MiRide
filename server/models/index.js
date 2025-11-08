@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import process from 'process';
 import { Sequelize, DataTypes } from 'sequelize';
-import configFile from '../config/config.json' with { type: 'json' };
+import configFile from '../config/config.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,7 +23,9 @@ if (config.use_env_variable) {
     config.password,
     {
       host: config.host,
+      port: config.port,
       dialect: config.dialect,
+      dialectOptions: config.dialectOptions,
       logging: false, // optional: disables SQL query logging in console
     }
   );
