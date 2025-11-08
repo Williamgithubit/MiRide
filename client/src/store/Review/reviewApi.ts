@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { RootState } from '../store';
+import { API_BASE_URL } from '../../config/api';
 import { setAuthToken } from '../Auth/authUtils';
 
 // Review API types
@@ -72,7 +73,7 @@ export interface ReviewStats {
 
 // Create base query with auth
 const baseQuery = fetchBaseQuery({
-  baseUrl: '/api',
+  baseUrl: `${API_BASE_URL}/api`,
   prepareHeaders: (headers, { getState }) => {
     const token = (getState() as RootState).auth.token || localStorage.getItem('token');
     

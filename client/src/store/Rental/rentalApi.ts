@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { RootState } from '../store';
+import { API_BASE_URL } from '../../config/api';
 import { Car } from '../Car/carApi';
 import { Customer } from '../Customer/customerApi';
 
@@ -57,7 +58,7 @@ export interface CreateRentalRequest {
 export const rentalApi = createApi({
   reducerPath: 'rentalApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: '/api',
+    baseUrl: `${API_BASE_URL}/api`,
     prepareHeaders: (headers, { getState }) => {
       // Get the token from the state
       const token = (getState() as RootState).auth.token;

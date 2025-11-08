@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { RootState } from '../store';
+import { API_BASE_URL } from '../../config/api';
 import { BookingStatus } from './bookingSlice';
 
 export interface BookingModificationRequest {
@@ -32,7 +33,7 @@ export interface BookingStatsResponse {
 export const bookingApi = createApi({
   reducerPath: 'bookingApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: '/api',
+    baseUrl: `${API_BASE_URL}/api`,
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as RootState).auth.token;
       if (token) {

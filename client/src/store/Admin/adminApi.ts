@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { RootState } from '../store';
+import { API_BASE_URL } from '../../config/api';
 
 export interface Car {
   id: number;
@@ -25,7 +26,7 @@ interface User {
 
 // Create a base query with custom fetch logic
 const baseQuery = fetchBaseQuery({
-  baseUrl: `${import.meta.env.VITE_API_BASE_URL}/api/admin`,
+  baseUrl: `${API_BASE_URL}/api/admin`,
   credentials: 'include', // Important for cookies if using them
   prepareHeaders: (headers, { getState }) => {
     try {

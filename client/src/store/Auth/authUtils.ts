@@ -1,9 +1,10 @@
 // client/src/store/Auth/authUtils.ts
 import axios from 'axios';
+import { API_BASE_URL } from '../../config/api';
 
 // Create axios instance for token management
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },

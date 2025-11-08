@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { RootState } from '../store';
+import type { RootState } from '../store';
+import { API_BASE_URL } from '../../config/api';
 
 export interface CreateCheckoutSessionRequest {
   carId: number;
@@ -45,7 +46,7 @@ export interface CreatePaymentIntentResponse {
 export const paymentApi = createApi({
   reducerPath: 'paymentApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: '/api/payments',
+    baseUrl: `${API_BASE_URL}/api/payments`,
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as RootState).auth.token;
       if (token) {

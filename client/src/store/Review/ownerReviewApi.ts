@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { RootState } from '../store';
+import type { RootState } from '../store';
+import { API_BASE_URL } from '../../config/api';
 
 export interface OwnerReview {
   id: number;
@@ -58,7 +59,7 @@ export interface ReviewModerationRequest {
 export const ownerReviewApi = createApi({
   reducerPath: 'ownerReviewApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: '/api/reviews/owner',
+    baseUrl: `${API_BASE_URL}/api/reviews/owner`,
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as RootState).auth.token;
       if (token) {

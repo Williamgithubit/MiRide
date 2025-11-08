@@ -1,11 +1,12 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { API_BASE_URL } from '../../config/api';
 import { Booking } from './adminBookingsSlice';
 import tokenStorage from '../../utils/tokenStorage';
 
 export const adminBookingsApi = createApi({
   reducerPath: 'adminBookingsApi',
   baseQuery: fetchBaseQuery({ 
-    baseUrl: '/api/admin',
+    baseUrl: `${API_BASE_URL}/api/admin`,
     prepareHeaders: (headers) => {
       const token = tokenStorage.getToken();
       if (token) {

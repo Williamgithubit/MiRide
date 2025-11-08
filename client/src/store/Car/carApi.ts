@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { RootState } from "../store";
+import { API_BASE_URL } from "../../config/api";
 import type { 
   Car, 
   CarImage, 
@@ -30,7 +31,7 @@ const transformSingleCarResponse = (response: any): Car => {
 export const carApi = createApi({
   reducerPath: "carApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "/api",
+    baseUrl: `${API_BASE_URL}/api`,
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as RootState).auth.token;
       if (token) {

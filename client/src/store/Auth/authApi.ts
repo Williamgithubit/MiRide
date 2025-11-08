@@ -3,13 +3,14 @@ import { createApi, fetchBaseQuery, FetchBaseQueryError } from '@reduxjs/toolkit
 import type { RootState } from '../store';
 import { AuthResponse, LoginData, RegisterData, User, CustomerUser, OwnerUser } from '../User/userTypes';
 import { setAuthToken } from './authUtils';
+import { API_BASE_URL } from '../../config/api';
 
 // Re-export types for convenience
 export type { User, CustomerUser, OwnerUser, AuthResponse, LoginData, RegisterData };
 
 // Create a custom base query with token handling
 const baseQuery = fetchBaseQuery({
-  baseUrl: import.meta.env.VITE_API_BASE_URL,
+  baseUrl: `${API_BASE_URL}/api`,
   prepareHeaders: (headers, { getState }) => {
     // Get the token from the state or localStorage as fallback
     const token = (getState() as RootState).auth.token || localStorage.getItem('token');

@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { RootState } from '../store';
+import type { RootState } from '../store';
+import { API_BASE_URL } from '../../config/api';
 
 export interface OwnerNotification {
   id: number;
@@ -38,7 +39,7 @@ export interface NotificationFilters {
 export const ownerNotificationApi = createApi({
   reducerPath: 'ownerNotificationApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: '/api/notifications/owner',
+    baseUrl: `${API_BASE_URL}/api/notifications/owner`,
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as RootState).auth.token;
       if (token) {

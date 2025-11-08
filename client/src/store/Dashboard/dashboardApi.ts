@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { RootState } from '../store';
+import { API_BASE_URL } from '../../config/api';
 import { setAuthToken } from '../Auth/authUtils';
 
 // Dashboard API types
@@ -146,7 +147,7 @@ export interface CustomerStats {
 
 // Create base query with auth
 const baseQuery = fetchBaseQuery({
-  baseUrl: import.meta.env.VITE_API_BASE_URL,
+  baseUrl: `${API_BASE_URL}/api`,
   prepareHeaders: (headers, { getState }) => {
     const token = (getState() as RootState).auth.token || localStorage.getItem('token');
     
