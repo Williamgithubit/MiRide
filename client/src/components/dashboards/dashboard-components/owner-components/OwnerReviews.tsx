@@ -125,14 +125,14 @@ export const OwnerReviews = () => {
   }, [reviewsError]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
             Customer Reviews
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
             Manage and moderate customer reviews for your vehicles
           </p>
         </div>
@@ -143,101 +143,100 @@ export const OwnerReviews = () => {
               refetchStats();
             }}
             disabled={reviewsLoading}
-            className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center space-x-2"
+            className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center gap-2"
           >
-            <FaSync className={`w-4 h-4 ${reviewsLoading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{reviewsLoading ? "Refreshing..." : "Refresh"}</span>
-            <span className="sm:hidden">↻</span>
+            <FaSync className={`w-3 h-3 sm:w-4 sm:h-4 ${reviewsLoading ? 'animate-spin' : ''}`} />
+            <span>{reviewsLoading ? "Refreshing..." : "Refresh"}</span>
           </button>
         </div>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 lg:gap-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 lg:p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <FaEye className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                <FaEye className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
-            <div className="ml-4">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            <div className="ml-2 sm:ml-4">
+              <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                 Total Reviews
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
                 {statsLoading ? '...' : stats?.totalReviews || 0}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 lg:p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
-                <FaStar className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
+                <FaStar className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-600 dark:text-yellow-400" />
               </div>
             </div>
-            <div className="ml-4">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            <div className="ml-2 sm:ml-4">
+              <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                 Average Rating
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
                 {statsLoading ? '...' : (stats?.averageRating || 0).toFixed(1)}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 lg:p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                <FaCheck className="w-4 h-4 text-green-600 dark:text-green-400" />
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                <FaCheck className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 dark:text-green-400" />
               </div>
             </div>
-            <div className="ml-4">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            <div className="ml-2 sm:ml-4">
+              <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                 Published
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
                 {statsLoading ? '...' : stats?.publishedReviews || 0}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 lg:p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
-                <FaClock className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
+                <FaClock className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-600 dark:text-yellow-400" />
               </div>
             </div>
-            <div className="ml-4">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            <div className="ml-2 sm:ml-4">
+              <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                 Pending
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
                 {statsLoading ? '...' : stats?.pendingReviews || 0}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 lg:p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                <FaEyeSlash className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                <FaEyeSlash className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-400" />
               </div>
             </div>
-            <div className="ml-4">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            <div className="ml-2 sm:ml-4">
+              <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                 Hidden
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
                 {statsLoading ? '...' : stats?.hiddenReviews || 0}
               </div>
             </div>

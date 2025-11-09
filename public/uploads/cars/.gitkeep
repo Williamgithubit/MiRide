@@ -1,0 +1,2 @@
+# This file ensures the uploads/cars directory is tracked by git
+# Even when it's empty, the directory structure will be preserved

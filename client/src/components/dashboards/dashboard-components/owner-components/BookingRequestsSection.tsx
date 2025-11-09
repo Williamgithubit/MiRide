@@ -149,21 +149,21 @@ export const BookingRequestsSection = () => {
   }, [rentalsError]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
             Booking Requests
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
             Manage and review customer booking requests ({bookings.length} {statusFilter === 'all' ? 'total' : statusFilter.replace('_', ' ')} bookings)
           </p>
         </div>
-        <div className="flex items-center justify-end gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
           {/* Status Filter */}
           <div className="flex items-center gap-2">
-            <label htmlFor="status-filter" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="status-filter" className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
               Status:
             </label>
             <select
@@ -185,11 +185,10 @@ export const BookingRequestsSection = () => {
           <button
             onClick={() => refetch()}
             disabled={loading}
-            className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center space-x-2"
+            className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center gap-2"
           >
-            <FaSync className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{loading ? "Refreshing..." : "Refresh"}</span>
-            <span className="sm:hidden">↻</span>
+            <FaSync className={`w-3 h-3 sm:w-4 sm:h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span>{loading ? "Refreshing..." : "Refresh"}</span>
           </button>
         </div>
       </div>

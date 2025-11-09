@@ -21,3 +21,7 @@ export const getApiBaseUrl = (): string => {
 };
 
 export const API_BASE_URL = getApiBaseUrl();
+
+// Debug: Log the API base URL (will be visible in production console)
+console.log('🔧 API_BASE_URL configured as:', API_BASE_URL);
+console.log('🔧 VITE_API_URL from env:', import.meta.env.VITE_API_URL);

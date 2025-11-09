@@ -173,23 +173,23 @@ export const OwnerNotifications = () => {
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
             Notifications
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
             Manage your notifications and stay updated on important events
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {/* Unread Count Badge */}
           {unreadCount > 0 && (
-            <div className="flex items-center space-x-2 px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-lg">
-              <FaBell className="w-4 h-4" />
-              <span className="text-sm font-medium">
+            <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-lg">
+              <FaBell className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="text-xs sm:text-sm font-medium">
                 {unreadCount} unread
               </span>
             </div>
@@ -198,37 +198,34 @@ export const OwnerNotifications = () => {
           {/* Auto-refresh Toggle */}
           <button
             onClick={() => setAutoRefresh(!autoRefresh)}
-            className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+            className={`px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg transition-colors ${
               autoRefresh 
                 ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
                 : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
             }`}
             title={autoRefresh ? "Auto-refresh enabled" : "Auto-refresh disabled"}
           >
-            <span className="hidden sm:inline">Auto-refresh</span>
-            <span className="sm:hidden">Auto</span>
-            <span className="ml-1">{autoRefresh ? 'ON' : 'OFF'}</span>
+            <span>Auto-refresh {autoRefresh ? 'ON' : 'OFF'}</span>
           </button>
 
           {/* Action Buttons */}
           <button
             onClick={handleMarkAllAsRead}
             disabled={unreadCount === 0}
-            className="px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center space-x-2"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center gap-1.5 sm:gap-2"
           >
-            <FaCheckDouble className="w-4 h-4" />
+            <FaCheckDouble className="w-3 h-3 sm:w-4 sm:h-4" />
             <span className="hidden sm:inline">Mark All Read</span>
-            <span className="sm:hidden">Read All</span>
+            <span className="sm:hidden">Read</span>
           </button>
 
           <button
             onClick={handleClearAll}
             disabled={totalNotifications === 0}
-            className="px-3 py-2 text-sm bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg transition-colors focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 flex items-center space-x-2"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg transition-colors focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 flex items-center gap-1.5 sm:gap-2"
           >
-            <FaTrash className="w-4 h-4" />
-            <span className="hidden sm:inline">Clear All</span>
-            <span className="sm:hidden">Clear</span>
+            <FaTrash className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span>Clear All</span>
           </button>
 
           <button
@@ -237,83 +234,82 @@ export const OwnerNotifications = () => {
               refetchUnreadCount();
             }}
             disabled={loading}
-            className="px-3 py-2 text-sm bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white rounded-lg transition-colors focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 flex items-center space-x-2"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white rounded-lg transition-colors focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 flex items-center gap-1.5 sm:gap-2"
           >
-            <FaSync className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{loading ? "Refreshing..." : "Refresh"}</span>
-            <span className="sm:hidden">↻</span>
+            <FaSync className={`w-3 h-3 sm:w-4 sm:h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span>{loading ? "Refreshing..." : "Refresh"}</span>
           </button>
         </div>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 lg:p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <FaBell className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                <FaBell className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
-            <div className="ml-4">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            <div className="ml-2 sm:ml-4">
+              <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                 Total Notifications
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
                 {totalNotifications}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 lg:p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-                <FaBell className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+                <FaBell className="w-3 h-3 sm:w-4 sm:h-4 text-orange-600 dark:text-orange-400" />
               </div>
             </div>
-            <div className="ml-4">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            <div className="ml-2 sm:ml-4">
+              <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                 Unread
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
                 {unreadCount}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 lg:p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                <FaCheckDouble className="w-4 h-4 text-green-600 dark:text-green-400" />
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                <FaCheckDouble className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 dark:text-green-400" />
               </div>
             </div>
-            <div className="ml-4">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            <div className="ml-2 sm:ml-4">
+              <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                 Read
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
                 {totalNotifications - unreadCount}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 lg:p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
-                <FaBell className="w-4 h-4 text-red-600 dark:text-red-400" />
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+                <FaBell className="w-3 h-3 sm:w-4 sm:h-4 text-red-600 dark:text-red-400" />
               </div>
             </div>
-            <div className="ml-4">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            <div className="ml-2 sm:ml-4">
+              <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                 High Priority
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
                 {notifications.filter(n => n.priority === 'high' || n.priority === 'urgent').length}
               </div>
             </div>

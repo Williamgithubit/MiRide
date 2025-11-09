@@ -26,9 +26,9 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
   ownerRentals,
 }) => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <DashboardCard
           title="Total Earnings"
           value={`$${totalEarnings.toLocaleString()}`}
@@ -55,7 +55,7 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <Chart
           type="line"
           data={revenueChartData}
@@ -76,7 +76,7 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({
 
       {/* Recent Rentals */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
           Recent Rentals
         </h3>
         <Table
