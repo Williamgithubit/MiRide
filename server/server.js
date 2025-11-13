@@ -56,7 +56,18 @@ for (const testPath of uploadPaths) {
   }
 }
 
-app.use('/uploads', express.static(uploadsPath));
+// Serve static files with cache control headers
+app.use('/uploads', express.static(uploadsPath, {
+  maxAge: 0, // No caching in development/production
+  etag: true, // Enable ETag for cache validation
+  lastModified: true, // Enable Last-Modified header
+  setHeaders: (res, path) => {
+    // Disable caching for images to ensure fresh content after updates
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+}));
 
 // Log all requests
 app.use((req, res, next) => {
