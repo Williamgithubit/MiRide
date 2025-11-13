@@ -25,14 +25,6 @@ import userManagementRoutes from './routes/userManagementRoutes.js';
 
 // Load environment variables
 dotenv.config();
-
-// Validate critical environment variables
-console.log('🔧 Environment Configuration:');
-console.log(`   NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
-console.log(`   PORT: ${process.env.PORT || 3000}`);
-console.log(`   CLIENT_URL: ${process.env.CLIENT_URL || 'NOT SET'}`);
-console.log(`   DATABASE_URL: ${process.env.DATABASE_URL ? 'SET' : 'NOT SET'}`);
-
 if (!process.env.CLIENT_URL) {
   console.warn('⚠️  WARNING: CLIENT_URL is not set. CORS may not work correctly in production.');
 }
@@ -60,13 +52,11 @@ let uploadsPath = uploadPaths[0];
 for (const testPath of uploadPaths) {
   if (fs.existsSync(testPath)) {
     uploadsPath = testPath;
-    console.log(`✅ Using uploads path: ${uploadsPath}`);
     break;
   }
 }
 
 app.use('/uploads', express.static(uploadsPath));
-console.log(`📁 Static files served from: ${uploadsPath}`);
 
 // Log all requests
 app.use((req, res, next) => {
