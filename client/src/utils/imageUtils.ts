@@ -22,7 +22,7 @@ export const getImageUrl = (
   // Return fallback if no URL provided
   if (!imageUrl) return fallback;
 
-  // If already a full URL (http/https), return as-is
+  // If already a full URL (http/https), return as-is (Cloudinary URLs)
   if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
     return imageUrl;
   }
@@ -46,8 +46,8 @@ export const getImageUrl = (
       // ignore
     }
 
-    // Add cache-busting parameter to force fresh image loads after updates
-    // Use a version parameter that changes when images are updated
+    // Note: No cache-busting needed for Cloudinary URLs
+    // For local storage, add cache-busting parameter
     const cacheBuster = `?v=${new Date().toISOString().split('T')[0]}`;
     return `${API_BASE_URL}${imageUrl}${cacheBuster}`;
   }

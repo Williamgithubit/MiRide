@@ -2,6 +2,7 @@ import React from 'react';
 import { format } from 'date-fns';
 import { Car as CarIcon } from 'lucide-react';
 import { Booking } from '../../../../store/Admin/adminBookingsSlice';
+import BookingExpirationProgressBar from '../customer-components/booking-components/BookingExpirationProgressBar';
 
 interface BookingTableProps {
   bookings: Booking[];
@@ -105,6 +106,16 @@ export const BookingTable: React.FC<BookingTableProps> = ({
                     <span className={`inline-flex px-2 text-xs font-semibold rounded-full ${getPaymentStatusColor(booking.paymentStatus)}`}>
                       {booking.paymentStatus}
                     </span>
+                    {/* Progress Bar for Active/Approved Bookings */}
+                    {(booking.bookingStatus === 'Confirmed' || booking.bookingStatus === 'Pending') && (
+                      <div className="mt-2">
+                        <BookingExpirationProgressBar
+                          startDate={booking.startDate}
+                          endDate={booking.endDate}
+                          status={booking.bookingStatus === 'Confirmed' ? 'active' : 'pending_approval'}
+                        />
+                      </div>
+                    )}
                   </div>
                 </td>
                 <td className="px-6 py-4">
@@ -228,6 +239,17 @@ export const BookingTable: React.FC<BookingTableProps> = ({
                 <p className="text-sm font-medium text-gray-900 dark:text-white">Owner: {booking.owner.name}</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">{booking.owner.email}</p>
               </div>
+
+              {/* Progress Bar for Active/Approved Bookings */}
+              {(booking.bookingStatus === 'Confirmed' || booking.bookingStatus === 'Pending') && (
+                <div className="mb-3">
+                  <BookingExpirationProgressBar
+                    startDate={booking.startDate}
+                    endDate={booking.endDate}
+                    status={booking.bookingStatus === 'Confirmed' ? 'active' : 'pending_approval'}
+                  />
+                </div>
+              )}
 
               <div className="flex justify-between items-center mt-3">
                 <div>

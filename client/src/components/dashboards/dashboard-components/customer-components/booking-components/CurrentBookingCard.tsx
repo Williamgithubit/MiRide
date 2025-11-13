@@ -9,6 +9,7 @@ import {
 import BookingStatusBadge from '../../../../../components/dashboards/dashboard-components/customer-components/booking-components/BookingStatusBadge';
 import PaymentStatusBadge from '../../../../../components/dashboards/dashboard-components/customer-components/booking-components/PaymentStatusBadge';
 import BookingModificationModal from '../../../../../components/dashboards/dashboard-components/customer-components/booking-components/BookingModificationModal';
+import BookingExpirationProgressBar from '../../../../../components/dashboards/dashboard-components/customer-components/booking-components/BookingExpirationProgressBar';
 
 interface CurrentBookingCardProps {
   booking: BookingStatus;
@@ -194,6 +195,13 @@ const CurrentBookingCard: React.FC<CurrentBookingCardProps> = ({ booking }) => {
               </span>
             </div>
           </div>
+
+          {/* Expiration Progress Bar */}
+          <BookingExpirationProgressBar
+            startDate={booking.startDate}
+            endDate={booking.endDate}
+            status={booking.status}
+          />
 
           {/* Action Buttons */}
           <div className="flex gap-2">

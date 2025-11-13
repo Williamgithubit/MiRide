@@ -22,21 +22,52 @@ import {
   useMarkAllAsReadMutation,
   Notification 
 } from '../../store/Notification/notificationApi';
+import {
+  useGetOwnerNotificationsQuery,
+  useGetOwnerUnreadCountQuery,
+  useMarkOwnerNotificationAsReadMutation,
+  useMarkAllOwnerNotificationsAsReadMutation,
+} from '../../store/Notification/ownerNotificationApi';
+import { useAppSelector } from '../../store/hooks';
 
 const NotificationDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { data: unreadData } = useGetUnreadCountQuery();
-  const { data: notificationsData, refetch } = useGetNotificationsQuery({ limit: 10 });
-  const [markAsRead] = useMarkAsReadMutation();
-  const [markAllAsRead] = useMarkAllAsReadMutation();
+  const userRole = useAppSelector((state) => state.auth.user?.role);
+  
+  // Use owner or customer API based on role
+  const isOwner = userRole === 'owner';
+  
+  // Customer queries
+  const { data: customerUnreadData, refetch: refetchCustomerUnread } = useGetUnreadCountQuery(undefined, { skip: isOwner });
+  const { data: customerNotificationsData, refetch: refetchCustomerNotifications } = useGetNotificationsQuery({ limit: 10 }, { skip: isOwner });
+  const [markAsReadCustomer] = useMarkAsReadMutation();
+  const [markAllAsReadCustomer] = useMarkAllAsReadMutation();
+  
+  // Owner queries
+  const { data: ownerUnreadData, refetch: refetchOwnerUnread } = useGetOwnerUnreadCountQuery(undefined, { skip: !isOwner });
+  const { data: ownerNotificationsData, refetch: refetchOwnerNotifications } = useGetOwnerNotificationsQuery({ limit: 10 }, { skip: !isOwner });
+  const [markAsReadOwner] = useMarkOwnerNotificationAsReadMutation();
+  const [markAllAsReadOwner] = useMarkAllOwnerNotificationsAsReadMutation();
 
-  const unreadCount = unreadData?.unreadCount || 0;
-  const notifications = notificationsData?.notifications || [];
+  const unreadCount = isOwner 
+    ? (ownerUnreadData?.unreadCount || 0)
+    : (customerUnreadData?.unreadCount || 0);
+    
+  const notifications = isOwner
+    ? (ownerNotificationsData?.notifications || [])
+    : (customerNotificationsData?.notifications || []);
 
   const handleMarkAsRead = async (notificationId: number) => {
     try {
-      await markAsRead(notificationId).unwrap();
-      refetch();
+      if (isOwner) {
+        await markAsReadOwner(notificationId).unwrap();
+        refetchOwnerNotifications();
+        refetchOwnerUnread();
+      } else {
+        await markAsReadCustomer(notificationId).unwrap();
+        refetchCustomerNotifications();
+        refetchCustomerUnread();
+      }
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
@@ -44,8 +75,15 @@ const NotificationDropdown: React.FC = () => {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await markAllAsRead().unwrap();
-      refetch();
+      if (isOwner) {
+        await markAllAsReadOwner().unwrap();
+        refetchOwnerNotifications();
+        refetchOwnerUnread();
+      } else {
+        await markAllAsReadCustomer().unwrap();
+        refetchCustomerNotifications();
+        refetchCustomerUnread();
+      }
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
     }

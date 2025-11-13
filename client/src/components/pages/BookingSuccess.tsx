@@ -138,7 +138,7 @@ const BookingSuccess: React.FC = () => {
     } catch (error) {
       console.error('Error fetching session details:', error);
       setIsLoading(false);
-      toast.error('Error loading booking details. Please contact support.');
+      // toast.error('Error loading booking details. Please contact support.');
     }
   };
 

@@ -226,6 +226,20 @@ export const rentalApi = createApi({
         { type: 'Rental', id: 'CAR' },
       ],
     }),
+    getOwnerActiveRentals: builder.query<Rental[], void>({
+      query: () => '/rentals/owner/active',
+      transformResponse: (response: any) => {
+        if (!response) return [];
+        return Array.isArray(response) ? response : [response];
+      },
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: 'Rental' as const, id })),
+              { type: 'Rental', id: 'OWNER_ACTIVE' },
+            ]
+          : [{ type: 'Rental', id: 'OWNER_ACTIVE' }],
+    }),
   }),
 });
 
@@ -242,6 +256,7 @@ export const {
   // Owner-specific hooks
   useGetPendingBookingsQuery,
   useGetOwnerBookingsQuery,
+  useGetOwnerActiveRentalsQuery,
   useApproveBookingMutation,
   useRejectBookingMutation,
 } = rentalApi;

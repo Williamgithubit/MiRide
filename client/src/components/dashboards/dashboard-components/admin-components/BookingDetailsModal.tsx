@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 import { format } from "date-fns";
 import { Car as CarIcon } from 'lucide-react';
 import { useGetBookingByIdQuery } from "../../../../store/Admin/bookingsService";
+import BookingExpirationProgressBar from '../customer-components/booking-components/BookingExpirationProgressBar';
 
 interface BookingDetailsModalProps {
   isOpen: boolean;
@@ -133,6 +134,17 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
                           <p className="font-medium text-gray-900 dark:text-white">{booking.paymentStatus}</p>
                         </div>
                       </div>
+                      
+                      {/* Progress Bar for Active/Approved Bookings */}
+                      {(booking.bookingStatus === 'Confirmed' || booking.bookingStatus === 'Pending') && (
+                        <div className="mt-4">
+                          <BookingExpirationProgressBar
+                            startDate={booking.startDate}
+                            endDate={booking.endDate}
+                            status={booking.bookingStatus === 'Confirmed' ? 'active' : 'pending_approval'}
+                          />
+                        </div>
+                      )}
                     </div>
 
                     {/* Car Details */}

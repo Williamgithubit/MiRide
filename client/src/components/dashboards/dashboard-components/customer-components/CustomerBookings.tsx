@@ -20,9 +20,9 @@ const CustomerBookings: React.FC = () => {
       render: (value: number) => `#${value.toString().padStart(4, '0')}`
     },
     {
-      key: 'Car',
+      key: 'car',
       label: 'Car',
-      render: (car: any) => car ? `${car.year} ${car.brand} ${car.model}` : 'N/A'
+      render: (car: any) => car ? `${car.year || ''} ${car.brand || ''} ${car.model || ''}`.trim() || 'N/A' : 'N/A'
     },
     {
       key: 'startDate',
