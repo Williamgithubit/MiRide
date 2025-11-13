@@ -7,10 +7,28 @@ import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Ensure upload directory exists
-const uploadDir = path.join(__dirname, '../../public/uploads/cars');
+// Ensure upload directory exists - try multiple paths for different deployment structures
+const possiblePaths = [
+  path.join(__dirname, '../../public/uploads/cars'),  // Development: utils/../../public/uploads/cars
+  path.join(__dirname, '../public/uploads/cars'),     // Render: utils/../public/uploads/cars
+  path.join(process.cwd(), 'public/uploads/cars')     // Current working directory
+];
+
+let uploadDir = possiblePaths[0];
+for (const testPath of possiblePaths) {
+  const parentDir = path.dirname(testPath);
+  if (fs.existsSync(parentDir)) {
+    uploadDir = testPath;
+    break;
+  }
+}
+
+// Create directory if it doesn't exist
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
+  console.log(`📁 Created upload directory: ${uploadDir}`);
+} else {
+  console.log(`📁 Using existing upload directory: ${uploadDir}`);
 }
 
 // Configure multer storage

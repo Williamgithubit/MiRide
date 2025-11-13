@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import db from './models/index.js';
 // import { createApiUser, generateAccessToken, generateApiKey } from './utils/momo.js';
@@ -25,6 +26,17 @@ import userManagementRoutes from './routes/userManagementRoutes.js';
 // Load environment variables
 dotenv.config();
 
+// Validate critical environment variables
+console.log('🔧 Environment Configuration:');
+console.log(`   NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
+console.log(`   PORT: ${process.env.PORT || 3000}`);
+console.log(`   CLIENT_URL: ${process.env.CLIENT_URL || 'NOT SET'}`);
+console.log(`   DATABASE_URL: ${process.env.DATABASE_URL ? 'SET' : 'NOT SET'}`);
+
+if (!process.env.CLIENT_URL) {
+  console.warn('⚠️  WARNING: CLIENT_URL is not set. CORS may not work correctly in production.');
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000; // Set default port to 3000 to match client requests
 
@@ -36,8 +48,25 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from public directory (at root level, not in server folder)
-app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+// Serve static files from public directory
+// Try multiple paths to handle different deployment structures
+const uploadPaths = [
+  path.join(__dirname, '../public/uploads'),  // Development: server/../public/uploads
+  path.join(__dirname, 'public/uploads'),      // Render: server/public/uploads
+  path.join(process.cwd(), 'public/uploads')   // Current working directory
+];
+
+let uploadsPath = uploadPaths[0];
+for (const testPath of uploadPaths) {
+  if (fs.existsSync(testPath)) {
+    uploadsPath = testPath;
+    console.log(`✅ Using uploads path: ${uploadsPath}`);
+    break;
+  }
+}
+
+app.use('/uploads', express.static(uploadsPath));
+console.log(`📁 Static files served from: ${uploadsPath}`);
 
 // Log all requests
 app.use((req, res, next) => {
