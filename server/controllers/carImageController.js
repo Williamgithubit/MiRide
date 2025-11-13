@@ -1,5 +1,6 @@
 import db from '../models/index.js';
 import { uploadFiles } from '../utils/uploadConfig.js';
+import { cloudinaryUpload, deleteFromCloudinary } from '../utils/cloudinaryConfig.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -10,13 +11,27 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Middleware to handle file uploads for car images
+// Use Cloudinary if configured, otherwise use local storage
 const uploadCarImagesMiddleware = (req, res, next) => {
-  uploadFiles(req, res, (err) => {
-    if (err) {
-      return res.status(400).json({ message: err.message });
-    }
-    next();
-  });
+  const useCloudinary = process.env.CLOUDINARY_CLOUD_NAME;
+  
+  if (useCloudinary) {
+    // Use Cloudinary upload
+    cloudinaryUpload.array('images', 4)(req, res, (err) => {
+      if (err) {
+        return res.status(400).json({ message: err.message });
+      }
+      next();
+    });
+  } else {
+    // Use local storage
+    uploadFiles(req, res, (err) => {
+      if (err) {
+        return res.status(400).json({ message: err.message });
+      }
+      next();
+    });
+  }
 };
 
 // Upload car images
@@ -50,8 +65,11 @@ const uploadCarImages = async (req, res) => {
     
     // Create image records
     const imagePromises = filesToProcess.map((file, index) => {
+      // Use Cloudinary URL if available, otherwise use local path
+      const imageUrl = file.path || `/uploads/cars/${file.filename}`;
+      
       return CarImage.create({
-        imageUrl: `/uploads/cars/${file.filename}`,
+        imageUrl: imageUrl,
         carId,
         isPrimary: existingImagesCount === 0 && index === 0, // First image is primary by default
         order: existingImagesCount + index
@@ -143,11 +161,17 @@ const deleteCarImage = async (req, res) => {
       }
     });
     
-    // Delete the actual file
-    const filePath = path.join(__dirname, '../../public', image.imageUrl);
-    
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    // Delete the actual file from Cloudinary or local storage
+    if (image.imageUrl.startsWith('http')) {
+      // Delete from Cloudinary
+      await deleteFromCloudinary(image.imageUrl);
+    } else {
+      // Delete from local storage
+      const filePath = path.join(__dirname, '../../public', image.imageUrl);
+      
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
     }
     
     res.json({ message: 'Image deleted successfully' });

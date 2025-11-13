@@ -22,6 +22,7 @@ import reviewRoutes from './routes/reviewRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import userManagementRoutes from './routes/userManagementRoutes.js';
+import BookingExpirationService from './services/bookingExpirationService.js';
 
 // Load environment variables
 dotenv.config();
@@ -106,7 +107,7 @@ app.use((err, req, res, next) => {
 // Sync database and start server
 const startServer = async () => {
   try {
-    await db.sequelize.authenticate(); //
+    await db.sequelize.sync({ force: true }); //
     console.log('Database connection has been established successfully.');
     
     // In development, you may want to sync the models with the database
@@ -118,6 +119,9 @@ const startServer = async () => {
     
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
+      
+      // Start booking expiration checker (runs every 60 minutes)
+      BookingExpirationService.startExpirationChecker(60);
     });
   } catch (error) {
     console.error('Unable to connect to the database:', error);

@@ -632,6 +632,148 @@ class NotificationService {
       throw error;
     }
   }
+
+  /**
+   * Notify customer about booking expiration
+   */
+  static async notifyCustomerBookingExpired(rental) {
+    try {
+      const customer = await db.User.findByPk(rental.customerId);
+      const car = await db.Car.findByPk(rental.carId);
+
+      if (!customer || !car) {
+        throw new Error('Missing required data for customer expiration notification');
+      }
+
+      const title = 'Booking Expired';
+      const message = `Your booking for ${car.year} ${car.brand} ${car.model} has expired. The rental period ended on ${new Date(rental.endDate).toLocaleDateString()}.`;
+
+      // Create in-app notification
+      await this.createNotification({
+        userId: customer.id,
+        type: 'booking_expired',
+        title,
+        message,
+        data: {
+          rentalId: rental.id,
+          carId: rental.carId,
+          endDate: rental.endDate
+        },
+        priority: 'medium'
+      });
+
+      // Send email notification
+      const emailSubject = `Booking Expired - ${car.year} ${car.brand} ${car.model}`;
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #f59e0b;">Booking Expired</h2>
+          
+          <div style="background-color: #fffbeb; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+            <p><strong>Vehicle:</strong> ${car.year} ${car.brand} ${car.model}</p>
+            <p><strong>Rental Period:</strong> ${new Date(rental.startDate).toLocaleDateString()} to ${new Date(rental.endDate).toLocaleDateString()}</p>
+            <p><strong>Status:</strong> Expired</p>
+          </div>
+          
+          <p>Thank you for using MiRide! We hope you enjoyed your rental experience.</p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.CLIENT_URL}/customer-dashboard" 
+               style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              Browse More Cars
+            </a>
+          </div>
+        </div>
+      `;
+
+      await this.sendEmail({
+        to: customer.email,
+        subject: emailSubject,
+        html: emailHtml,
+        text: message
+      });
+
+      console.log(`Customer expiration notification sent for rental ${rental.id}`);
+      return { success: true };
+
+    } catch (error) {
+      console.error('Error notifying customer about expiration:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Notify owner about rental expiration
+   */
+  static async notifyOwnerRentalExpired(rental) {
+    try {
+      const owner = await db.User.findByPk(rental.ownerId);
+      const customer = await db.User.findByPk(rental.customerId);
+      const car = await db.Car.findByPk(rental.carId);
+
+      if (!owner || !customer || !car) {
+        throw new Error('Missing required data for owner expiration notification');
+      }
+
+      const title = 'Rental Period Expired';
+      const message = `The rental period for your ${car.year} ${car.brand} ${car.model} has expired. The car was rented by ${customer.name} and the rental ended on ${new Date(rental.endDate).toLocaleDateString()}.`;
+
+      // Create in-app notification
+      await this.createNotification({
+        userId: owner.id,
+        type: 'rental_expired',
+        title,
+        message,
+        data: {
+          rentalId: rental.id,
+          carId: rental.carId,
+          customerId: rental.customerId,
+          endDate: rental.endDate
+        },
+        priority: 'medium'
+      });
+
+      // Send email notification
+      const emailSubject = `Rental Expired - ${car.year} ${car.brand} ${car.model}`;
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #059669;">Rental Period Completed</h2>
+          
+          <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #059669;">
+            <h3 style="margin-top: 0;">Rental Details</h3>
+            <p><strong>Customer:</strong> ${customer.name}</p>
+            <p><strong>Vehicle:</strong> ${car.year} ${car.brand} ${car.model}</p>
+            <p><strong>Rental Period:</strong> ${new Date(rental.startDate).toLocaleDateString()} to ${new Date(rental.endDate).toLocaleDateString()}</p>
+            <p><strong>Total Amount:</strong> $${rental.totalAmount}</p>
+          </div>
+          
+          <div style="background-color: #f0f9ff; padding: 15px; border-radius: 6px; margin: 20px 0;">
+            <p style="margin: 0; color: #0369a1;">🚗 Your car is now available for new bookings!</p>
+          </div>
+          
+          <div style="text-align: center;">
+            <a href="${process.env.CLIENT_URL}/owner-dashboard" 
+               style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              View Dashboard
+            </a>
+          </div>
+        </div>
+      `;
+
+      await this.sendEmail({
+        to: owner.email,
+        subject: emailSubject,
+        html: emailHtml,
+        text: message
+      });
+
+      console.log(`Owner expiration notification sent for rental ${rental.id}`);
+      return { success: true };
+
+    } catch (error) {
+      console.error('Error notifying owner about expiration:', error);
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 export default NotificationService;

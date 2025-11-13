@@ -1,5 +1,5 @@
 import express from 'express';
-import { createRental, getRental, getStats, getActive, getCustomerRentals, deleteRental, getRentals, getOwnerRentals, updateRentalStatus, getRevenue, getPendingBookings, approveBooking, rejectBooking, getCurrentBookings, getBookingHistory, getCustomerBookingStats, createTestBooking, cancelBooking } from '../controllers/rentalController.js';
+import { createRental, getRental, getStats, getActive, getCustomerRentals, deleteRental, getRentals, getOwnerRentals, updateRentalStatus, getRevenue, getPendingBookings, approveBooking, rejectBooking, getCurrentBookings, getBookingHistory, getCustomerBookingStats, createTestBooking, cancelBooking, getOwnerActiveRentals } from '../controllers/rentalController.js';
 import auth from '../middleware/auth.js';
 import db from '../models/index.js';
 
@@ -37,6 +37,7 @@ rentalRouter.get('/stats', auth(['admin']), getStats); // Admin only for stats
 
 // Owner routes (must come before /:id routes to avoid conflicts)
 rentalRouter.get('/pending', auth(['owner', 'admin']), getPendingBookings);
+rentalRouter.get('/owner/active', auth(['owner', 'admin']), getOwnerActiveRentals);
 rentalRouter.get('/owner', auth(['owner', 'admin']), getOwnerRentals);
 rentalRouter.get('/revenue', auth(['owner', 'admin']), getRevenue);
 rentalRouter.get('/owner/:ownerId', auth(['owner', 'admin']), getOwnerRentals);

@@ -1,3 +1,5 @@
 node_modules/
 scripts/
 .env*
+createAdminProduction.js
+quickAdminSetup.js

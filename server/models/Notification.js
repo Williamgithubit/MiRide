@@ -21,6 +21,8 @@ const NotificationModel = (sequelize, DataTypes) => {
         'booking_approved', 
         'booking_rejected', 
         'booking_cancelled',
+        'booking_expired',
+        'rental_expired',
         'payment_received', 
         'payment_successful',
         'payment_failed',

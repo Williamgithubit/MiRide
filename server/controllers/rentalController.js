@@ -908,6 +908,56 @@ export const createTestBooking = async (req, res) => {
   }
 };
 
+// Get active rentals for owner's cars
+export const getOwnerActiveRentals = async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const ownerId = req.user.id;
+    console.log('getOwnerActiveRentals - Fetching active rentals for owner:', ownerId);
+
+    const activeRentals = await db.Rental.findAll({
+      where: {
+        ownerId: ownerId,
+        status: {
+          [Op.in]: ['active', 'approved']
+        },
+        endDate: {
+          [Op.gte]: new Date()
+        }
+      },
+      include: [
+        {
+          model: db.Car,
+          as: 'car',
+          attributes: ['id', 'name', 'model', 'brand', 'year', 'rentalPricePerDay'],
+          include: [{
+            model: db.CarImage,
+            as: 'images',
+            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
+            limit: 1,
+            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
+          }]
+        },
+        {
+          model: db.User,
+          as: 'customer',
+          attributes: ['id', 'name', 'email']
+        }
+      ],
+      order: [['endDate', 'ASC']]
+    });
+
+    console.log(`getOwnerActiveRentals - Found ${activeRentals.length} active rentals`);
+    res.json(activeRentals);
+  } catch (error) {
+    console.error('getOwnerActiveRentals - Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const deleteRental = async (req, res) => {
     const { id } = req.params;
 
