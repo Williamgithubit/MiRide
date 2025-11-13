@@ -1,0 +1,24 @@
+# Root .gitignore for MiRide project
+
+# Keep uploaded images but ignore large files
+public/uploads/**/*
+!public/uploads/**/.gitkeep
+!public/uploads/cars/*.jpg
+!public/uploads/cars/*.jpeg
+!public/uploads/cars/*.png
+!public/uploads/cars/*.webp
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
