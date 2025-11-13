@@ -17,6 +17,7 @@ import {
   useUpdateReviewResponseMutation,
   useDeleteReviewMutation,
 } from "../../../../store/Review/reviewApi";
+import { getImageUrl } from "../../../../utils/imageUtils";
 
 interface Review {
   id: number;
@@ -159,7 +160,7 @@ export const ReviewsSection = () => {
       render: (value: unknown, row: Review) => (
         <div className="flex items-center gap-3">
           <img
-            src={row.car.imageUrl || "/placeholder-car.jpg"}
+            src={getImageUrl(row.car.imageUrl)}
             alt={`${row.car.make} ${row.car.model}`}
             className="w-12 h-12 rounded-md object-cover"
           />

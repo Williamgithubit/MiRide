@@ -5,6 +5,7 @@ import BookingModal from './BookingModal';
 import { useCustomerData } from './useCustomerData';
 import { useDispatch } from 'react-redux';
 import { carApi } from '../../../../store/Car/carApi';
+import { getPrimaryImageUrl } from '../../../../utils/imageUtils';
 
 interface BrowseCarsProps {
   selectedCar: any;
@@ -109,11 +110,12 @@ const BrowseCars: React.FC<BrowseCarsProps> = ({
 
   const renderCarCard = (car: any) => {
     const isAvailable = car.isAvailable;
+    const carImageUrl = getPrimaryImageUrl(car.images, car.imageUrl);
     
     return (
       <div key={car.id} className={`bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow ${!isAvailable ? 'opacity-75' : ''}`}>
         <div className="relative">
-          <img src={car.imageUrl} alt={car.model} className={`w-full h-48 object-cover ${!isAvailable ? 'brightness-50' : ''}`} />
+          <img src={carImageUrl} alt={car.model} className={`w-full h-48 object-cover ${!isAvailable ? 'brightness-50' : ''}`} />
           {!isAvailable && (
             <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
               <span className="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-medium shadow-lg">
@@ -300,7 +302,7 @@ const BrowseCars: React.FC<BrowseCarsProps> = ({
       <Modal isOpen={!!selectedCar && !showBookingModal} onClose={() => setSelectedCar(null)} title="Car Details" size="lg">
         {selectedCar && (
           <div className="space-y-4">
-            <img src={selectedCar.imageUrl} alt={selectedCar.model} className="w-full h-64 object-cover rounded-lg" />
+            <img src={getPrimaryImageUrl(selectedCar.images, selectedCar.imageUrl)} alt={selectedCar.model} className="w-full h-64 object-cover rounded-lg" />
             <div className="grid grid-cols-2 gap-4">
               <div><p className="text-sm text-gray-500">Make & Model</p><p className="font-medium">{selectedCar.year} {selectedCar.brand} {selectedCar.model}</p></div>
               <div><p className="text-sm text-gray-500">Daily Rate</p><p className="font-medium">${selectedCar.rentalPricePerDay}</p></div>

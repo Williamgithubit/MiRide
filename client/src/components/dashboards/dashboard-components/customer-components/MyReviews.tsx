@@ -26,6 +26,7 @@ import { useGetCustomerRentalsQuery, Rental } from '@/store/Rental/rentalApi';
 import ReviewCard from './review-components/ReviewCard';
 import ReviewForm from './review-components/ReviewForm';
 import StarRating from './review-components/StarRating';
+import { getPrimaryImageUrl } from '@/utils/imageUtils';
 
 const MyReviews: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -296,7 +297,7 @@ const MyReviews: React.FC = () => {
               >
                 <div className="flex items-center space-x-3 mb-3">
                   <img
-                    src={rental.car?.images?.[0]?.imageUrl || rental.car?.imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xMiAxOEgzNkwzNCAyN0gzMFYyNEgyN1YyN0gyMlYyNEgxOVYyN0gxNVYyNEgxM1YyN0gxMkwxOCAxOFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K'}
+                    src={getPrimaryImageUrl(rental.car?.images, rental.car?.imageUrl)}
                     alt={`${rental.car?.brand} ${rental.car?.model}`}
                     className="w-12 h-12 rounded-lg object-cover"
                     onError={(e) => {

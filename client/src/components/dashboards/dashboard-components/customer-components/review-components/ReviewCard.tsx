@@ -3,6 +3,7 @@ import { FaEdit, FaTrash, FaCalendar, FaCar, FaEllipsisV, FaCheckCircle, FaClock
 import { format } from 'date-fns';
 import StarRating from './StarRating';
 import { Review } from '@/store/Review/reviewApi';
+import { getPrimaryImageUrl } from '@/utils/imageUtils';
 
 interface ReviewCardProps {
   review: Review;
@@ -56,7 +57,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3 flex-1">
           <img
-            src={review.car.images?.[0]?.imageUrl || review.car.imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K'}
+            src={getPrimaryImageUrl(review.car.images, review.car.imageUrl)}
             alt={`${review.car.brand} ${review.car.model}`}
             className="w-16 h-16 rounded-lg object-cover"
             onError={(e) => {

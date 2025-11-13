@@ -8,6 +8,7 @@ import { toast } from "react-hot-toast";
 import DashboardCard from "../../../dashboards/shared/DashboardCard";
 import Chart from "../../../dashboards/shared/Chart";
 import { useStore } from "react-redux";
+import { getPrimaryImageUrl } from "../../../../utils/imageUtils";
 
 interface OwnerCar {
   id?: string | number;
@@ -166,7 +167,7 @@ const EarningsSectionCore: React.FC<EarningsSectionProps> = React.memo(
                 >
                   <div className="flex items-center gap-2 sm:gap-3">
                     <img
-                      src={car.imageUrl || "/placeholder-car.jpg"}
+                      src={getPrimaryImageUrl((car as any).images, car.imageUrl)}
                       alt={car.model}
                       className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover flex-shrink-0"
                       onError={(e) => {
