@@ -6,6 +6,7 @@ import useReduxAuth from '../../../../store/hooks/useReduxAuth';
 import useRentals from '../../../../store/hooks/useRentals';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { useCreateCheckoutSessionMutation } from '../../../../store/Payment/paymentApi';
+import { getPrimaryImageUrl } from '../../../../utils/imageUtils';
 
 // Initialize Stripe with fallback
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51234567890abcdef');
@@ -756,7 +757,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedCa
               <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Your Selection</h4>
               <div className="space-y-4">
                 <img
-                  src={selectedCar.imageUrl}
+                  src={getPrimaryImageUrl(selectedCar.images, selectedCar.imageUrl)}
                   alt={selectedCar.model}
                   className="w-full h-32 object-cover rounded-lg"
                 />

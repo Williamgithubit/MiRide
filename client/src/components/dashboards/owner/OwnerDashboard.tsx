@@ -7,6 +7,7 @@ import {
   useDeleteCarMutation,
   Car,
 } from "../../../store/Car/carApi";
+import { getPrimaryImageUrl } from "../../../utils/imageUtils";
 import {
   useGetOwnerBookingsQuery,
   Rental,
@@ -218,7 +219,7 @@ const OwnerDashboard: React.FC = () => {
         return (
           <div className="flex items-center space-x-3">
             <img
-              src={value || "/placeholder-car.jpg"}
+              src={getPrimaryImageUrl((row as any).images, value)}
               alt={row.model || "Car"}
               className="w-12 h-12 rounded-lg object-cover"
               onError={(e) => {

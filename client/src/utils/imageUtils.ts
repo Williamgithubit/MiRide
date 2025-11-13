@@ -46,7 +46,10 @@ export const getImageUrl = (
       // ignore
     }
 
-    return `${API_BASE_URL}${imageUrl}`;
+    // Add cache-busting parameter to force fresh image loads after updates
+    // Use a version parameter that changes when images are updated
+    const cacheBuster = `?v=${new Date().toISOString().split('T')[0]}`;
+    return `${API_BASE_URL}${imageUrl}${cacheBuster}`;
   }
 
   // For other cases (data URLs, relative paths, etc.), return as-is
