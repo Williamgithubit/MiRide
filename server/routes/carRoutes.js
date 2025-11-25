@@ -1,7 +1,8 @@
 import express from 'express';
 import { 
   getCars, 
-  getCar, 
+  getCar,
+  getAvailableCars,
   getCarsByOwner, 
   toggleLike, 
   addReview, 
@@ -25,11 +26,14 @@ const carRouter = express.Router();
 // Public routes - anyone can view cars
 carRouter.get('/', getCars);
 
+// Available cars route - check availability based on dates (MUST come before /:id)
+carRouter.get('/available', getAvailableCars);
+
 // Owner routes - only car owners can create and manage their cars (MUST come before /:id)
 carRouter.get('/owner/:ownerId', auth(['owner']), getCarsByOwner);
 carRouter.get('/owner', auth(['owner']), getCarsByOwner);
 
-// Public route for single car (MUST come after /owner routes)
+// Public route for single car (MUST come after /owner and /available routes)
 carRouter.get('/:id', getCar);
 
 // Customer routes - only authenticated customers can like and review

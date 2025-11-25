@@ -255,6 +255,124 @@ const getCar = async (req, res) => {
   }
 };
 
+// Get available cars based on date range
+const getAvailableCars = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const { Op } = db.Sequelize;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ 
+        message: "Start date and end date are required" 
+      });
+    }
+
+    // Parse dates
+    const requestedStart = new Date(startDate);
+    const requestedEnd = new Date(endDate);
+
+    if (isNaN(requestedStart.getTime()) || isNaN(requestedEnd.getTime())) {
+      return res.status(400).json({ 
+        message: "Invalid date format" 
+      });
+    }
+
+    if (requestedStart >= requestedEnd) {
+      return res.status(400).json({ 
+        message: "End date must be after start date" 
+      });
+    }
+
+    // Get all cars that are marked as available
+    const allCars = await db.Car.findAll({
+      where: { isAvailable: true },
+      include: [
+        {
+          model: db.CarImage,
+          as: 'images',
+          attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
+          order: [['isPrimary', 'DESC'], ['order', 'ASC']]
+        }
+      ],
+      attributes: [
+        "id",
+        "name",
+        "brand",
+        "model",
+        "year",
+        "rentalPricePerDay",
+        "seats",
+        "fuelType",
+        "location",
+        "features",
+        "rating",
+        "reviews",
+        "isLiked",
+        "isAvailable",
+        "createdAt",
+        "updatedAt"
+      ]
+    });
+
+    // Check each car for conflicting rentals
+    const availableCars = [];
+    
+    for (const car of allCars) {
+      // Find any rentals that overlap with the requested dates
+      const conflictingRentals = await db.Rental.findAll({
+        where: {
+          carId: car.id,
+          status: {
+            [Op.in]: ['pending', 'active', 'confirmed']
+          },
+          [Op.or]: [
+            {
+              // Rental starts during requested period
+              startDate: {
+                [Op.between]: [requestedStart, requestedEnd]
+              }
+            },
+            {
+              // Rental ends during requested period
+              endDate: {
+                [Op.between]: [requestedStart, requestedEnd]
+              }
+            },
+            {
+              // Rental completely encompasses requested period
+              [Op.and]: [
+                { startDate: { [Op.lte]: requestedStart } },
+                { endDate: { [Op.gte]: requestedEnd } }
+              ]
+            }
+          ]
+        }
+      });
+
+      // If no conflicting rentals, car is available
+      if (conflictingRentals.length === 0) {
+        availableCars.push(car);
+      }
+    }
+
+    // Format the response
+    const formattedCars = availableCars.map(car => {
+      const carData = car.get({ plain: true });
+      return carData;
+    });
+
+    console.log(`getAvailableCars - Found ${formattedCars.length} available cars for ${startDate} to ${endDate}`);
+    
+    return res.status(200).json(formattedCars);
+  } catch (error) {
+    console.error("Error fetching available cars:", error);
+    return res.status(500).json({ 
+      message: "Internal server error",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 // Get cars by owner
 const getCarsByOwner = async (req, res) => {
   try {
@@ -588,6 +706,7 @@ export {
   createCar,
   getCars,
   getCar,
+  getAvailableCars,
   getCarsByOwner,
   updateCar,
   toggleLike,
@@ -602,6 +721,7 @@ export default {
   createCar,
   getCars,
   getCar,
+  getAvailableCars,
   getCarsByOwner,
   updateCar,
   toggleLike,

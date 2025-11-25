@@ -271,12 +271,12 @@ export const getCustomerRentals = async (req, res) => {
         { 
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'rentalPricePerDay', 'brand', 'year'],
+          attributes: ['id', 'name', 'model', 'rentalPricePerDay', 'brand', 'year', 'imageUrl'],
           include: [{
             model: db.CarImage,
             as: 'images',
             attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
-            limit: 1,
+            separate: true, // Use separate query to get all images
             order: [['isPrimary', 'DESC'], ['order', 'ASC']]
           }]
         },
@@ -290,6 +290,7 @@ export const getCustomerRentals = async (req, res) => {
     });
 
     console.log(`getCustomerRentals - Found ${rentals.length} rentals`);
+    console.log('getCustomerRentals - Sample rental:', rentals.length > 0 ? JSON.stringify(rentals[0], null, 2) : 'No rentals');
     res.json(rentals);
   } catch (error) {
     console.error('getCustomerRentals - Error:', error);
