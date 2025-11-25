@@ -130,7 +130,10 @@ const VehicleFleet: React.FC = () => {
                     </span>
                     <span className="text-gray-600 text-sm">/day</span>
                   </div>
-                  <button className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200 font-semibold">
+                  <button 
+                    onClick={() => window.location.href = '/cars'}
+                    className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200 font-semibold"
+                  >
                     Rent Now
                   </button>
                 </div>
@@ -141,7 +144,10 @@ const VehicleFleet: React.FC = () => {
 
         {/* View All Button */}
         <div className="text-center mt-12">
-          <button className="bg-green-600 text-white px-8 py-3 rounded-xl hover:bg-green-700 transition-all duration-200 transform hover:scale-105 shadow-lg font-semibold">
+          <button 
+            onClick={() => window.location.href = '/cars'}
+            className="bg-green-600 text-white px-8 py-3 rounded-xl hover:bg-green-700 transition-all duration-200 transform hover:scale-105 shadow-lg font-semibold"
+          >
             View All Vehicles
           </button>
         </div>

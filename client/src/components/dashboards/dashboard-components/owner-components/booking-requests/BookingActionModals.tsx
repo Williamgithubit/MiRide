@@ -70,7 +70,7 @@ export const ApprovalModal: React.FC<ApprovalModalProps> = ({
           </div>
 
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-            <p className="text-sm text-blue-800 dark:text-blue-200">
+            <p className="text-sm text-gray-700 dark:text-white">
               <strong>Note:</strong> Approving this booking will make the car unavailable for the selected dates 
               and notify the customer that their booking has been confirmed.
             </p>

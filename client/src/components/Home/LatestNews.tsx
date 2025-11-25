@@ -114,7 +114,10 @@ const LatestNews: React.FC = () => {
 
         {/* View All Button */}
         <div className="text-center mt-12">
-          <button className="bg-green-600 text-white px-8 py-3 rounded-xl hover:bg-green-700 transition-all duration-200 transform hover:scale-105 shadow-lg font-semibold">
+          <button 
+            onClick={() => window.location.href = '#'}
+            className="bg-green-600 text-white px-8 py-3 rounded-xl hover:bg-green-700 transition-all duration-200 transform hover:scale-105 shadow-lg font-semibold"
+          >
             View All Articles
           </button>
         </div>

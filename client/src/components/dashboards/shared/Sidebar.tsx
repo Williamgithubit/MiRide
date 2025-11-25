@@ -15,9 +15,11 @@ import {
   FaSignOutAlt,
   FaUserCircle,
 } from "react-icons/fa";
+import { Link } from "react-router-dom";
 import useReduxAuth from "../../../store/hooks/useReduxAuth";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../store/store";
+import MiRideLogo from "../../../assets/MiRide Logo.png";
 
 interface SidebarProps {
   role: "customer" | "owner" | "admin";
@@ -247,10 +249,10 @@ const Sidebar: React.FC<SidebarProps> = ({
       >
         {/* Header with close button on mobile */}
         <div className="p-4 sm:p-5 border-b border-gray-700 dark:border-gray-800">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg sm:text-xl font-bold">
-              {role.charAt(0).toUpperCase() + role.slice(1)} Dashboard
-            </h2>
+          <div className="flex items-center justify-between mb-3">
+            <Link to="/" className="hover:opacity-80 transition-opacity">
+              <img src={MiRideLogo} alt="MiRide" className="h-8 w-auto cursor-pointer" />
+            </Link>
             {/* Close button for mobile */}
             <button
               onClick={() => {
@@ -263,7 +265,12 @@ const Sidebar: React.FC<SidebarProps> = ({
               <FaTimes size={18} />
             </button>
           </div>
-          <p className="text-xs sm:text-sm text-gray-400 truncate">Welcome, {user?.name}</p>
+          <div className="mb-2">
+            <h2 className="text-lg sm:text-xl font-bold">
+              {role.charAt(0).toUpperCase() + role.slice(1)} Dashboard
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-400 truncate">Welcome, {user?.name}</p>
+          </div>
         </div>
 
         <nav className="mt-3 sm:mt-5 pb-4">

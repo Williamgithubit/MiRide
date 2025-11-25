@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { FaEye, FaEyeSlash, FaSpinner } from "react-icons/fa";
 import { toast } from "react-toastify";
 import useReduxAuth from "../store/hooks/useReduxAuth";
+import MiRideLogo from "../assets/MiRide Logo.png";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -99,6 +100,9 @@ const Login: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-lg">
+        <div className="flex justify-center mb-6">
+          <img src={MiRideLogo} alt="MiRide" className="h-16 w-auto" />
+        </div>
         <h2 className="text-3xl font-bold text-center text-primary-500 mb-6">
           Sign In to Your Account
         </h2>

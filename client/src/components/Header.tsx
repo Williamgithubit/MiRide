@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAppSelector } from "../store/hooks";
 import useReduxAuth from "../store/hooks/useReduxAuth";
 import { toast } from "react-hot-toast";
+import MiRideLogo from "../assets/MiRide Logo.png";
 
 const Header: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -80,10 +81,9 @@ const Header: React.FC = () => {
         <Link
           to="/"
           onClick={closeMenu}
-          className="flex items-center text-blue-600 text-2xl font-bold"
+          className="flex items-center"
         >
-          <FaCarSide className="mr-2" />
-          MiRide
+          <img src={MiRideLogo} alt="MiRide" className="h-10 w-auto" />
         </Link>
 
         {/* Hamburger (mobile) */}

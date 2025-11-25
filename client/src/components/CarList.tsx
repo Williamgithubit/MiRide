@@ -15,7 +15,7 @@ export interface CarCardProps {
   model: string;
   year: number;
   seats: number;
-  fuelType: "Petrol" | "Electric" | "Hybrid";
+  fuelType: "Petrol" | "Diesel" | "Electric" | "Hybrid";
   location: string;
   features: string[];
   rating: number;

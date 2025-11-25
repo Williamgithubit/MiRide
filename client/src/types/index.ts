@@ -47,6 +47,7 @@ export interface Car {
   dailyRate?: number; // Alias for rentalPricePerDay
   color?: string;
   licensePlate?: string;
+  transmission?: string; // Transmission type (e.g., Automatic, Manual)
 }
 
 export interface ImageUploadResponse {

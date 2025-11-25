@@ -1,0 +1,10 @@
+export { default as Hero } from './Hero';
+export { default as SearchWidget } from './SearchWidget';
+export { default as SpecialOffers } from './SpecialOffers';
+export { default as PaymentMethods } from './PaymentMethods';
+export { default as VehicleFleet } from './VehicleFleet';
+export { default as Testimonials } from './Testimonials';
+export { default as Statistics } from './Statistics';
+export { default as FAQ } from './FAQ';
+export { default as LatestNews } from './LatestNews';
+export { default as HowItWorks } from './HowItWorks';

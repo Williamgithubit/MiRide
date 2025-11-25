@@ -2,7 +2,7 @@ import React from "react";
 import { ArrowRight, Shield, Clock, Award } from "lucide-react";
 import SearchWidget from "./SearchWidget";
 
-const Hero: React.FC = () => {
+const HeroEnhanced: React.FC = () => {
   return (
     <section className="relative pt-20 pb-32 lg:pt-24 lg:pb-40 bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 w-full mt-14 overflow-hidden">
       {/* Background Pattern */}
@@ -27,14 +27,14 @@ const Hero: React.FC = () => {
             {/* Main Heading */}
             <div className="space-y-4">
               <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight">
-                Your Journey Across Liberia Starts Here
+                Your Journey Starts Here
                 <span className="block text-green-600 mt-2">
                   Premium Cars, Unbeatable Prices
                 </span>
               </h1>
               <p className="text-xl text-gray-600 leading-relaxed max-w-xl">
-                Experience the freedom of exploring Liberia with our premium fleet. 
-                From Monrovia to Buchanan, find the perfect vehicle for your journey across Liberia.
+                Experience the freedom of the open road with our premium fleet. 
+                From luxury sedans to rugged SUVs, find the perfect vehicle for your adventure.
               </p>
             </div>
 
@@ -84,17 +84,17 @@ const Hero: React.FC = () => {
           {/* Hero Image */}
           <div className="relative hidden lg:block">
             <div className="relative w-full h-96">
-              {/* Car Image */}
+              {/* Floating Car Image */}
               <div className="relative z-10 flex items-center justify-center h-full">
                 <img 
                   src="https://www.madebydesignesia.com/themes/rentaly/images/misc/car-2.png" 
                   alt="Luxury Car" 
-                  className="w-full max-w-lg h-auto object-contain"
+                  className="w-full max-w-lg h-auto object-contain animate-float"
                 />
               </div>
               
-              {/* Floating Stats */}
-              <div className="absolute top-8 right-8 bg-white p-6 rounded-2xl shadow-xl z-20">
+              {/* Decorative Elements */}
+              <div className="absolute top-8 right-8 bg-white p-6 rounded-2xl shadow-xl z-20 animate-bounce-slow">
                 <div className="text-center">
                   <div className="text-3xl font-bold text-green-600">4.9★</div>
                   <div className="text-sm text-gray-600 mt-1">Customer Rating</div>
@@ -109,6 +109,10 @@ const Hero: React.FC = () => {
                   <div className="text-xs text-gray-500 mt-1">Available now</div>
                 </div>
               </div>
+
+              {/* Gradient Orbs */}
+              <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-green-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+              <div className="absolute top-1/3 right-1/4 w-64 h-64 bg-emerald-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
             </div>
           </div>
         </div>
@@ -118,8 +122,43 @@ const Hero: React.FC = () => {
           <SearchWidget />
         </div>
       </div>
+
+      {/* Custom Animations */}
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+        }
+        
+        @keyframes blob {
+          0%, 100% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        
+        @keyframes bounce-slow {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
+        }
+        
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        
+        .animate-bounce-slow {
+          animation: bounce-slow 3s ease-in-out infinite;
+        }
+      `}</style>
     </section>
   );
 };
 
-export default Hero;
+export default HeroEnhanced;

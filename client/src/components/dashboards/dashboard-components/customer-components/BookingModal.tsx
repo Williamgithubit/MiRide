@@ -7,6 +7,7 @@ import useRentals from '../../../../store/hooks/useRentals';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { useCreateCheckoutSessionMutation } from '../../../../store/Payment/paymentApi';
 import { getPrimaryImageUrl } from '../../../../utils/imageUtils';
+import { LIBERIA_LOCATIONS } from '../../../../constants/locations';
 
 // Initialize Stripe with fallback
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51234567890abcdef');
@@ -159,6 +160,11 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedCa
   const validateStep1 = () => {
     if (!bookingData.startDate || !bookingData.endDate) {
       toast.error('Please select both start and end dates');
+      return false;
+    }
+
+    if (!bookingData.pickupLocation || bookingData.pickupLocation === 'default') {
+      toast.error('Please select a pickup location');
       return false;
     }
 
@@ -505,35 +511,53 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedCa
                 {/* Pickup and Dropoff Locations */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2 flex items-center">
-                      <MapPin className="w-4 h-4 mr-2" />
+                    <label className="block text-sm font-medium mb-2 flex items-center text-gray-700 dark:text-gray-300">
+                      <MapPin className="w-4 h-4 mr-2 text-blue-600" />
                       Pickup Location
                     </label>
                     <select 
                       value={bookingData.pickupLocation}
                       onChange={(e) => handleInputChange('pickupLocation', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     >
-                      <option value="default">Car Location ({selectedCar.location})</option>
-                      <option value="airport">Airport Terminal</option>
-                      <option value="downtown">Downtown Office</option>
-                      <option value="hotel">Hotel Delivery (+$25)</option>
+                      <option value="default">Select location</option>
+                      {LIBERIA_LOCATIONS.map((location) => (
+                        <option key={location} value={location}>
+                          {location}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2 flex items-center">
-                      <MapPin className="w-4 h-4 mr-2" />
-                      Dropoff Location
+                    <label className="block text-sm font-medium mb-2 flex items-center justify-between text-gray-700 dark:text-gray-300">
+                      <span className="flex items-center">
+                        <MapPin className="w-4 h-4 mr-2 text-blue-600" />
+                        Drop-off Location
+                      </span>
+                      <label className="flex items-center text-xs font-normal cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={bookingData.dropoffLocation === 'default'}
+                          onChange={(e) => handleInputChange('dropoffLocation', e.target.checked ? 'default' : bookingData.pickupLocation)}
+                          className="mr-2 rounded text-blue-600 focus:ring-blue-500"
+                        />
+                        Same as pickup
+                      </label>
                     </label>
                     <select 
                       value={bookingData.dropoffLocation}
                       onChange={(e) => handleInputChange('dropoffLocation', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700"
+                      disabled={bookingData.dropoffLocation === 'default'}
+                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                        bookingData.dropoffLocation === 'default' ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
                     >
                       <option value="default">Same as Pickup</option>
-                      <option value="airport">Airport Terminal</option>
-                      <option value="downtown">Downtown Office</option>
-                      <option value="hotel">Hotel Pickup (+$25)</option>
+                      {LIBERIA_LOCATIONS.map((location) => (
+                        <option key={location} value={location}>
+                          {location}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -648,8 +672,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedCa
                       <p>Start Date: {new Date(bookingData.startDate).toLocaleDateString()}</p>
                       <p>End Date: {new Date(bookingData.endDate).toLocaleDateString()}</p>
                       <p>Duration: {bookingData.totalDays} days</p>
-                      <p>Pickup: {bookingData.pickupLocation === 'default' ? selectedCar.location : bookingData.pickupLocation}</p>
-                      <p>Dropoff: {bookingData.dropoffLocation === 'default' ? 'Same as pickup' : bookingData.dropoffLocation}</p>
+                      <p>Pickup: {bookingData.pickupLocation === 'default' ? 'Please select a location' : bookingData.pickupLocation}</p>
+                      <p>Dropoff: {bookingData.dropoffLocation === 'default' ? (bookingData.pickupLocation === 'default' ? 'Please select a location' : bookingData.pickupLocation) : bookingData.dropoffLocation}</p>
                     </div>
                   </div>
                   

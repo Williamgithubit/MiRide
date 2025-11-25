@@ -9,8 +9,8 @@ const Testimonials: React.FC = () => {
       role: 'Business Executive',
       image: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
       rating: 5,
-      text: 'MiRide has completely transformed my travel experience. The cars are always clean, well-maintained, and the booking process is incredibly smooth. I\'ve been using their service for over a year now.',
-      location: 'New York, NY'
+      text: 'MiRide has completely transformed my travel experience in Liberia. The cars are always clean, well-maintained, and the booking process is incredibly smooth. Paying with Orange Money is so convenient!',
+      location: 'Monrovia, Liberia'
     },
     {
       id: 2,
@@ -18,8 +18,8 @@ const Testimonials: React.FC = () => {
       role: 'Travel Blogger',
       image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
       rating: 5,
-      text: 'As someone who travels frequently, I need reliable transportation. MiRide delivers every time with their premium fleet and exceptional customer service. Highly recommended!',
-      location: 'Los Angeles, CA'
+      text: 'As someone who travels frequently across Liberia, I need reliable transportation. MiRide delivers every time with their premium fleet and exceptional customer service. Highly recommended!',
+      location: 'Paynesville, Liberia'
     },
     {
       id: 3,
@@ -27,8 +27,8 @@ const Testimonials: React.FC = () => {
       role: 'Marketing Director',
       image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
       rating: 5,
-      text: 'The luxury vehicles and professional service make every trip special. Whether it\'s for business meetings or weekend getaways, MiRide never disappoints. Five stars!',
-      location: 'Miami, FL'
+      text: 'The luxury vehicles and professional service make every trip special. Whether it\'s for business meetings in Monrovia or trips to Buchanan, MiRide never disappoints. Five stars!',
+      location: 'Sinkor, Liberia'
     }
   ];
 

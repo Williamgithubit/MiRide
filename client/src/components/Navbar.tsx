@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import useReduxAuth from "../store/hooks/useReduxAuth";
 import { toast } from "react-hot-toast";
+import MiRideLogo from "../assets/MiRide Logo.png";
 
 interface NavbarProps {
   activeTab: "cars" | "rentals";
@@ -67,9 +68,9 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
             {/* Logo */}
             <Link
               to="/"
-              className="text-xl font-bold flex items-center space-x-2 cursor-pointer"
+              className="flex items-center cursor-pointer"
             >
-              <span>MiRide</span>
+              <img src={MiRideLogo} alt="MiRide" className="h-10 w-auto" />
             </Link>
 
             {/* Desktop Menu */}

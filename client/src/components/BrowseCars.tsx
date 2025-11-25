@@ -58,7 +58,6 @@ const BrowseCars: React.FC = () => {
     cars: carData,
     pagination,
     isLoading: isLoadingCars,
-    error: carsError,
   } = useCars({
     page: currentPage,
     limit: pageSize,
@@ -67,7 +66,6 @@ const BrowseCars: React.FC = () => {
   const {
     rentals: rentalData,
     isLoading: isLoadingRentals,
-    error: rentalsError,
   } = useRentals();
 
   // Handle page change
@@ -131,18 +129,8 @@ const BrowseCars: React.FC = () => {
     }
   }, [rentalData, isAuthenticated]);
 
-  // Handle errors
-  useEffect(() => {
-    if (carsError) {
-      toast.error("Failed to fetch car data");
-      console.error(carsError);
-    }
-
-    if (rentalsError) {
-      toast.error("Failed to fetch rental data");
-      console.error(rentalsError);
-    }
-  }, [carsError, rentalsError]);
+  // Error handling is now done by RTK Query automatically
+  // Removed manual error toasts to prevent false error messages
 
   // Handle loading state
   const isLoading = isLoadingCars || isLoadingRentals;

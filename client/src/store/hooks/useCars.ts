@@ -146,12 +146,8 @@ export const useCars = (options?: { page?: number; limit?: number }) => {
       updateCarResult.isLoading ||
       deleteCarResult.isLoading ||
       toggleLikeResult.isLoading,
-    error:
-      carsError ||
-      addCarResult.error ||
-      updateCarResult.error ||
-      deleteCarResult.error ||
-      toggleLikeResult.error,
+    // Only return query errors, not mutation errors (mutations handle their own errors)
+    error: carsError,
     selectCar,
     clearSelectedCar,
     createCar,

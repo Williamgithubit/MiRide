@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash, FaUser, FaCar, FaEnvelope, FaLock, FaSpinner } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import useReduxAuth from '../store/hooks/useReduxAuth';
+import MiRideLogo from '../assets/MiRide Logo.png';
 
 const Signup: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -120,9 +121,9 @@ const Signup: React.FC = () => {
     <div className="min-h-screen bg-gray-50 mt-8 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          {/* User icon */}
-          <div className="mx-auto h-12 w-12 bg-green-900 rounded-full flex items-center justify-center mb-4">
-            <FaUser className="h-6 w-6 text-white" />
+          {/* MiRide Logo */}
+          <div className="flex justify-center mb-4">
+            <img src={MiRideLogo} alt="MiRide" className="h-16 w-auto" />
           </div>
           
           <h2 className="text-2xl font-bold text-gray-900 mb-2">

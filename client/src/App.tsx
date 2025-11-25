@@ -23,6 +23,7 @@ const BookingFlow = lazy(() => import('./components/BookingFlow'));
 const RoleTest = lazy(() => import('./components/RoleTest'));
 const BookingSuccess = lazy(() => import('./components/pages/BookingSuccess'));
 const BookingCancelled = lazy(() => import('./components/pages/BookingCancelled'));
+const SearchResults = lazy(() => import('./pages/SearchResults'));
 
 // Lazy load dashboard components
 const NewDashboardRouter = lazy(() => import('./components/dashboards/DashboardRouter'));
@@ -67,6 +68,7 @@ const AppContent: React.FC = () => {
         <Route path="/" element={<Home />} />
         <Route path="/browse-cars" element={<BrowseCars />} />
         <Route path="/cars" element={<BrowseCars />} />
+        <Route path="/search-results" element={<SearchResults />} />
         <Route path="/car-details/:carId" element={<CarDetails />} />
         <Route path="/booking/:carId" element={<BookingFlow />} />
         <Route path="/booking-success" element={<BookingSuccess />} />

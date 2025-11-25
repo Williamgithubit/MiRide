@@ -122,8 +122,8 @@ export const useRentals = () => {
     isLoading: isLoadingRentals || isLoadingSelectedRental || 
                createRentalResult.isLoading || updateRentalResult.isLoading || 
                cancelRentalResult.isLoading || completeRentalResult.isLoading,
-    error: rentalsError || createRentalResult.error || updateRentalResult.error || 
-           cancelRentalResult.error || completeRentalResult.error,
+    // Only return query errors, not mutation errors (mutations handle their own errors)
+    error: rentalsError,
     selectRental,
     clearSelectedRental,
     addRental,

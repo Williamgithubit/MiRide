@@ -71,11 +71,12 @@ const MyReviews: React.FC = () => {
     
     const reviewedRentalIds = new Set(reviews.map(review => review.rentalId));
     const now = new Date();
-    // Set to start of today for proper date comparison
-    now.setHours(0, 0, 0, 0);
     
     const reviewableRentals = rentals.filter(rental => {
-      if (!rental || !rental.id) return false;
+      if (!rental || !rental.id) {
+        console.log('MyReviews - Invalid rental (no id):', rental);
+        return false;
+      }
       
       // Check if rental has already been reviewed
       if (reviewedRentalIds.has(rental.id)) {
@@ -89,28 +90,35 @@ const MyReviews: React.FC = () => {
         return false;
       }
       
+      // Don't allow reviews for pending approval
+      if (rental.status === 'pending_approval') {
+        console.log(`MyReviews - Rental ${rental.id} is pending approval, not reviewable yet`);
+        return false;
+      }
+      
       // A rental is reviewable if:
       // 1. It has status 'completed', OR
-      // 2. Its endDate has passed (regardless of status being 'active' or 'approved')
+      // 2. Its endDate has passed (for active or approved rentals)
       const endDate = new Date(rental.endDate);
-      endDate.setHours(23, 59, 59, 999); // Set to end of the day
       const isCompleted = rental.status === 'completed';
       const hasEnded = endDate < now;
       
       console.log(`MyReviews - Rental ${rental.id}:`, {
         status: rental.status,
         endDate: rental.endDate,
-        endDateObj: endDate,
-        nowObj: now,
+        endDateObj: endDate.toISOString(),
+        nowObj: now.toISOString(),
         isCompleted,
         hasEnded,
-        isReviewable: isCompleted || hasEnded
+        isReviewable: isCompleted || hasEnded,
+        carInfo: rental.car ? `${rental.car.brand} ${rental.car.model}` : 'No car info'
       });
       
       return isCompleted || hasEnded;
     });
     
     console.log('MyReviews - Reviewable rentals:', reviewableRentals.length);
+    console.log('MyReviews - Reviewable rentals details:', reviewableRentals);
     return reviewableRentals;
   }, [rentals, reviews]);
 
