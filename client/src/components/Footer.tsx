@@ -1,5 +1,6 @@
 import React from 'react';
-import { Car, Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin } from 'lucide-react';
+import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin } from 'lucide-react';
+import MiRideLogo from '../assets/MiRide Logo.png';
 
 const Footer: React.FC = () => {
   const companyLinks = [
@@ -37,10 +38,8 @@ const Footer: React.FC = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-8">
             {/* Brand */}
             <div className="lg:col-span-2 space-y-6">
-              <div className="flex items-center space-x-2">
-                <div className="bg-blue-600 p-2 rounded-lg">
-                  <Car className="h-6 w-6 text-white" />
-                </div>
+              <div className="flex items-center space-x-3">
+                <img src={MiRideLogo} alt="MiRide" className="h-12 w-auto" />
                 <span className="text-xl font-bold">MiRide</span>
               </div>
               <p className="text-gray-400 leading-relaxed max-w-md">
