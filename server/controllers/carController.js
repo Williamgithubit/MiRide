@@ -323,7 +323,7 @@ const getAvailableCars = async (req, res) => {
         where: {
           carId: car.id,
           status: {
-            [Op.in]: ['pending', 'active', 'confirmed']
+            [Op.in]: ['pending_approval', 'approved', 'active']
           },
           [Op.or]: [
             {
