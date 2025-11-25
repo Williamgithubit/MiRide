@@ -20,9 +20,14 @@ const SearchResults: React.FC = () => {
   const returnDate = searchParams.get('returnDate') || '';
   const returnTime = searchParams.get('returnTime') || '';
 
-  // Combine date and time for API call
-  const startDate = pickupDate ? `${pickupDate}T${pickupTime}:00` : '';
-  const endDate = returnDate ? `${returnDate}T${returnTime}:00` : '';
+  // Combine date and time for API call - ensure proper ISO format
+  const startDate = pickupDate && pickupTime ? `${pickupDate}T${pickupTime}:00` : '';
+  const endDate = returnDate && returnTime ? `${returnDate}T${returnTime}:00` : '';
+
+  // Debug logging
+  console.log('Search params:', { pickupDate, pickupTime, returnDate, returnTime });
+  console.log('API params:', { startDate, endDate });
+  console.log('API URL will be:', `/api/cars/available?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`);
 
   // Fetch available cars from backend
   const {
@@ -33,6 +38,25 @@ const SearchResults: React.FC = () => {
     { startDate, endDate },
     { skip: !startDate || !endDate }
   );
+
+  // Debug error
+  console.log('Available cars query:', { availableCars, isLoading, error });
+  
+  // Show error toast if there's an error
+  useEffect(() => {
+    if (error) {
+      const errorMessage = 'data' in error && error.data 
+        ? (typeof error.data === 'object' && 'message' in error.data 
+          ? String(error.data.message) 
+          : JSON.stringify(error.data))
+        : 'status' in error 
+        ? `Error ${error.status}: Failed to fetch available vehicles`
+        : 'Failed to fetch available vehicles';
+      
+      console.error('API Error:', errorMessage);
+      toast.error(errorMessage);
+    }
+  }, [error]);
 
   // Format date for display
   const formatDate = (dateStr: string, timeStr: string) => {
@@ -159,9 +183,23 @@ const SearchResults: React.FC = () => {
               <h3 className="text-xl font-semibold text-red-900 mb-2">
                 Error Loading Vehicles
               </h3>
-              <p className="text-red-700">
+              <p className="text-red-700 mb-4">
                 Unable to fetch available vehicles. Please try again.
               </p>
+              {process.env.NODE_ENV === 'development' && (
+                <details className="text-left text-sm text-red-600 bg-red-100 p-4 rounded">
+                  <summary className="cursor-pointer font-semibold">Error Details</summary>
+                  <pre className="mt-2 overflow-auto">
+                    {JSON.stringify(error, null, 2)}
+                  </pre>
+                </details>
+              )}
+              <button
+                onClick={handleBackToSearch}
+                className="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Modify Search
+              </button>
             </div>
           )}
 

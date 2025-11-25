@@ -3,6 +3,8 @@ import Modal from "../../shared/Modal";
 import { useAddCarMutation, useUploadCarImagesMutation } from "../../../../store/Car/carApi";
 import toast from "react-hot-toast";
 import { ImageUpload } from "../../../common/ImageUpload";
+import { LIBERIA_LOCATIONS } from "../../../../constants/locations";
+import { CAR_FEATURES } from "../../../../constants/features";
 
 interface CreateCarData {
   name: string;
@@ -68,6 +70,15 @@ const AddCarModal: React.FC<AddCarModalProps> = ({
 
   const handleImageUpload = async (files: File[]): Promise<void> => {
     setSelectedImages(files);
+  };
+
+  const handleFeatureToggle = (feature: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      features: prev.features.includes(feature)
+        ? prev.features.filter((f) => f !== feature)
+        : [...prev.features, feature],
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -215,15 +226,20 @@ const AddCarModal: React.FC<AddCarModalProps> = ({
           </div>
           <div>
             <label className="block text-sm font-medium mb-2">Location</label>
-            <input
-              type="text"
+            <select
               name="location"
               value={formData.location}
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700"
-              placeholder="Downtown"
               required
-            />
+            >
+              <option value="">Select location</option>
+              {LIBERIA_LOCATIONS.map((location) => (
+                <option key={location} value={location}>
+                  {location}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -255,6 +271,31 @@ const AddCarModal: React.FC<AddCarModalProps> = ({
             />
           </div>
         </div>
+
+        {/* Features & Amenities Section */}
+        <div>
+          <label className="block text-sm font-medium mb-3">Features & Amenities</label>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-60 overflow-y-auto p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800">
+            {CAR_FEATURES.map((feature) => (
+              <label
+                key={feature}
+                className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  checked={formData.features.includes(feature)}
+                  onChange={() => handleFeatureToggle(feature)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300">{feature}</span>
+              </label>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            {formData.features.length} feature(s) selected
+          </p>
+        </div>
+
         <div>
           <label className="block text-sm font-medium mb-2">
             Car Images (Optional - Up to 4 images)

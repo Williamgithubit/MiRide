@@ -2,7 +2,6 @@ import React, { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 // Use the custom auth hook instead of direct Redux access
 import useReduxAuth from './store/hooks/useReduxAuth';
-import { Toaster } from 'react-hot-toast';
 import Header from './components/Header';
 import { DarkModeProvider } from './contexts/DarkModeContext';
 import ScrollToTop from './components/common/ScrollToTop';
@@ -135,7 +134,6 @@ const App: React.FC = () => {
       <div className="app-container" style={{ padding: '0', width: '100%' }}>
         {!isAuthPage && !isDashboardPage && <Header />}
         <AppContent />
-        <Toaster position="top-center" />
         <ScrollToTop />
       </div>
     </DarkModeProvider>

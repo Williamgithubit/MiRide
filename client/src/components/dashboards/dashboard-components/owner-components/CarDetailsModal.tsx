@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import Modal from '../../shared/Modal';
 import { Car, CarImage } from '../../../../store/Car/carApi';
 import { API_BASE_URL } from '../../../../config/api';
+import { CAR_FEATURES } from '../../../../constants/features';
 
 interface CarDetailsModalProps {
   isOpen: boolean;
@@ -153,6 +154,33 @@ const CarDetailsModal: React.FC<CarDetailsModalProps> = ({ isOpen, onClose, sele
             <div>
               <p className="text-sm text-gray-500">Reviews</p>
               <p className="font-medium">{selectedCar.reviews || 0}</p>
+            </div>
+          </div>
+
+          {/* Features & Amenities Section */}
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Features & Amenities</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {CAR_FEATURES.map((feature, index) => {
+                const carFeatures = selectedCar.features && Array.isArray(selectedCar.features) ? selectedCar.features : [];
+                const isAvailable = carFeatures.includes(feature);
+                return (
+                  <div key={index} className={`flex items-center ${!isAvailable ? 'opacity-40' : ''}`}>
+                    {isAvailable ? (
+                      <svg className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4 text-gray-300 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                    <span className={`text-sm ${isAvailable ? 'text-gray-700 dark:text-gray-300 font-medium' : 'text-gray-400 dark:text-gray-500'}`}>
+                      {feature}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

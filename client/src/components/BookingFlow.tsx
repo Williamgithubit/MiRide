@@ -3,9 +3,16 @@ import { useNavigate, useParams } from "react-router-dom";
 import Header from "./Header";
 import toast from "react-hot-toast";
 import useReduxAuth from "../store/hooks/useReduxAuth";
-import useCars from "../store/hooks/useCars";
+import { useGetCarByIdQuery } from "../store/Car/carApi";
 import useRentals from "../store/hooks/useRentals";
 import { Car } from "../types";
+import { LIBERIA_LOCATIONS } from "../constants/locations";
+import { MapPin, Car as CarIcon } from "lucide-react";
+import { loadStripe } from "@stripe/stripe-js";
+import { useCreateCheckoutSessionMutation } from "../store/Payment/paymentApi";
+
+// Initialize Stripe
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51234567890abcdef');
 
 interface BookingData {
   carId: number;
@@ -18,6 +25,13 @@ interface BookingData {
   expiryDate: string;
   cvv: string;
   cardholderName: string;
+  insurance: boolean;
+  gps: boolean;
+  childSeat: boolean;
+  additionalDriver: boolean;
+  pickupLocation: string;
+  dropoffLocation: string;
+  specialRequests: string;
 }
 
 const BookingFlow: React.FC = () => {
@@ -26,9 +40,20 @@ const BookingFlow: React.FC = () => {
   const { user, isAuthenticated } = useReduxAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRedirectingToStripe, setIsRedirectingToStripe] = useState(false);
+  const hasShownOwnerError = React.useRef(false);
 
-  const { cars, isLoading: isLoadingCars } = useCars({});
   const { addRental } = useRentals();
+  const [createCheckoutSession] = useCreateCheckoutSessionMutation();
+  
+  // Fetch car by ID
+  const {
+    data: car,
+    isLoading: isLoadingCar,
+    error: carError,
+  } = useGetCarByIdQuery(parseInt(carId || "0"), {
+    skip: !carId,
+  });
 
   const [bookingData, setBookingData] = useState<BookingData>({
     carId: parseInt(carId || "0"),
@@ -41,10 +66,16 @@ const BookingFlow: React.FC = () => {
     expiryDate: "",
     cvv: "",
     cardholderName: "",
+    insurance: false,
+    gps: false,
+    childSeat: false,
+    additionalDriver: false,
+    pickupLocation: "default",
+    dropoffLocation: "default",
+    specialRequests: "",
   });
 
-  const car = cars?.find((c: Car) => c.id === parseInt(carId || "0"));
-
+  // Check authentication and user role on mount
   useEffect(() => {
     if (!isAuthenticated) {
       toast.error("Please log in to book a car");
@@ -52,12 +83,53 @@ const BookingFlow: React.FC = () => {
       return;
     }
 
-    if (!carId || !car) {
-      toast.error("Car not found");
+    // Prevent owners from booking cars (only show toast once)
+    if (user?.role === 'owner' && !hasShownOwnerError.current) {
+      hasShownOwnerError.current = true;
+      toast.error("Car owners cannot book cars. Only customers can make bookings.");
       navigate("/browse-cars");
       return;
     }
-  }, [isAuthenticated, carId, car, navigate]);
+  }, [isAuthenticated, user?.role, navigate]);
+
+  // Handle car loading errors
+  useEffect(() => {
+    if (carError) {
+      console.error("Error loading car:", carError);
+      toast.error("Car not found");
+      navigate("/browse-cars");
+    }
+  }, [carError, navigate]);
+
+  // Show loading state
+  if (isLoadingCar) {
+    return (
+      <>
+        <Header />
+        <div className="flex justify-center items-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </>
+    );
+  }
+
+  // Show error if car not found
+  if (!car) {
+    return (
+      <>
+        <Header />
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Car not found</h2>
+          <button
+            onClick={() => navigate("/browse-cars")}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Back to Browse Cars
+          </button>
+        </div>
+      </>
+    );
+  }
 
   useEffect(() => {
     if (bookingData.startDate && bookingData.endDate && car) {
@@ -69,15 +141,23 @@ const BookingFlow: React.FC = () => {
       // Get the daily rate from multiple possible properties
       const dailyRate = (car as any).rentalPricePerDay || car.dailyRate || (car as any).dailyRate || 0;
       
+      let totalPrice = diffDays * dailyRate;
+      
+      // Add extras
+      if (bookingData.insurance) totalPrice += diffDays * 15;
+      if (bookingData.gps) totalPrice += diffDays * 5;
+      if (bookingData.childSeat) totalPrice += diffDays * 8;
+      if (bookingData.additionalDriver) totalPrice += 25;
+      
       setBookingData(prev => ({
         ...prev,
         totalDays: diffDays,
-        totalPrice: diffDays * dailyRate,
+        totalPrice: Math.max(totalPrice, 0),
       }));
     }
-  }, [bookingData.startDate, bookingData.endDate, car]);
+  }, [bookingData.startDate, bookingData.endDate, bookingData.insurance, bookingData.gps, bookingData.childSeat, bookingData.additionalDriver, car]);
 
-  const handleInputChange = (field: keyof BookingData, value: string | number) => {
+  const handleInputChange = (field: keyof BookingData, value: string | number | boolean) => {
     setBookingData(prev => ({
       ...prev,
       [field]: value,
@@ -87,6 +167,11 @@ const BookingFlow: React.FC = () => {
   const validateStep1 = () => {
     if (!bookingData.startDate || !bookingData.endDate) {
       toast.error("Please select both start and end dates");
+      return false;
+    }
+
+    if (!bookingData.pickupLocation || bookingData.pickupLocation === "default") {
+      toast.error("Please select a pickup location");
       return false;
     }
 
@@ -113,20 +198,105 @@ const BookingFlow: React.FC = () => {
     return true;
   };
 
+  const handleStripeCheckout = async () => {
+    if (!isAuthenticated) {
+      toast.error('Please log in to proceed with payment');
+      return;
+    }
+
+    // Prevent owners from booking cars (silent check - toast already shown in useEffect)
+    if (user?.role === 'owner') {
+      navigate('/browse-cars');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setIsRedirectingToStripe(false);
+    
+    try {
+      const stripe = await stripePromise;
+      if (!stripe) {
+        throw new Error('Stripe failed to load. Please check your internet connection and try again.');
+      }
+
+      const loadingToast = toast.loading('Creating secure checkout session...');
+
+      try {
+        const result = await createCheckoutSession({
+          carId: bookingData.carId,
+          startDate: bookingData.startDate,
+          endDate: bookingData.endDate,
+          totalDays: bookingData.totalDays,
+          totalPrice: bookingData.totalPrice,
+          insurance: bookingData.insurance,
+          gps: bookingData.gps,
+          childSeat: bookingData.childSeat,
+          additionalDriver: bookingData.additionalDriver,
+          pickupLocation: bookingData.pickupLocation,
+          dropoffLocation: bookingData.dropoffLocation,
+          specialRequests: bookingData.specialRequests,
+          selectedCar: {
+            id: car!.id,
+            year: car!.year,
+            brand: (car as any).brand || (car as any).make,
+            model: car!.model,
+            rentalPricePerDay: (car as any).rentalPricePerDay || (car as any).dailyRate || 0,
+            imageUrl: car!.imageUrl
+          }
+        }).unwrap();
+
+        const { sessionId, url } = result;
+        
+        toast.dismiss(loadingToast);
+        setIsRedirectingToStripe(true);
+        toast.success('Redirecting to secure payment...', { duration: 2000 });
+        
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        if (url) {
+          window.location.href = url;
+          return;
+        } else if (sessionId) {
+          const checkoutResult = await stripe.redirectToCheckout({ sessionId });
+          
+          if (checkoutResult.error) {
+            setIsRedirectingToStripe(false);
+            throw new Error(checkoutResult.error.message);
+          }
+        } else {
+          throw new Error('No checkout session URL or ID received');
+        }
+      } catch (sessionError) {
+        toast.dismiss(loadingToast);
+        throw sessionError;
+      }
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      setIsRedirectingToStripe(false);
+      
+      if (error instanceof Error) {
+        if (error.message.includes('network') || error.message.includes('fetch')) {
+          toast.error('Network error. Please check your connection and try again.');
+        } else if (error.message.includes('session')) {
+          toast.error('Failed to create payment session. Please try again.');
+        } else {
+          toast.error(error.message || 'Failed to initialize payment. Please try again.');
+        }
+      } else {
+        toast.error('Failed to initialize payment. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleNext = () => {
     if (currentStep === 1 && !validateStep1()) return;
-    if (currentStep === 2 && !validateStep2()) return;
     
-    // Log booking data when moving from step 2 to step 3
+    // Handle Step 2 -> Redirect to Stripe Checkout
     if (currentStep === 2) {
-      console.log('Booking Data to be sent to server:', {
-        carId: bookingData.carId,
-        startDate: bookingData.startDate,
-        endDate: bookingData.endDate,
-        totalDays: bookingData.totalDays,
-        totalPrice: bookingData.totalPrice,
-        selectedCar: car
-      });
+      handleStripeCheckout();
+      return;
     }
     
     setCurrentStep(prev => prev + 1);
@@ -141,9 +311,18 @@ const BookingFlow: React.FC = () => {
     try {
       await addRental({
         carId: bookingData.carId,
-        customerId: parseInt(user?.id || "0"),
         startDate: bookingData.startDate,
         endDate: bookingData.endDate,
+        totalDays: bookingData.totalDays,
+        totalPrice: bookingData.totalPrice,
+        insurance: bookingData.insurance,
+        gps: bookingData.gps,
+        childSeat: bookingData.childSeat,
+        additionalDriver: bookingData.additionalDriver,
+        pickupLocation: bookingData.pickupLocation,
+        dropoffLocation: bookingData.dropoffLocation,
+        specialRequests: bookingData.specialRequests,
+        selectedCar: car,
       });
 
       toast.success("Booking confirmed successfully!");
@@ -173,17 +352,6 @@ const BookingFlow: React.FC = () => {
     }
   };
 
-  if (isLoadingCars) {
-    return (
-      <>
-        <Header />
-        <div className="flex justify-center items-center min-h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
-        </div>
-      </>
-    );
-  }
-
   if (!car) {
     return (
       <>
@@ -212,10 +380,10 @@ const BookingFlow: React.FC = () => {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-3xl font-bold text-gray-800">Book Your Ride</h1>
-              <span className="text-sm text-gray-500">Step {currentStep} of 3</span>
+              <span className="text-sm text-gray-500">Step {currentStep} of 2</span>
             </div>
             <div className="flex items-center">
-              {[1, 2, 3].map((step) => (
+              {[1, 2].map((step) => (
                 <React.Fragment key={step}>
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -226,7 +394,7 @@ const BookingFlow: React.FC = () => {
                   >
                     {step}
                   </div>
-                  {step < 3 && (
+                  {step < 2 && (
                     <div
                       className={`flex-1 h-1 mx-4 ${
                         step < currentStep ? "bg-green-600" : "bg-gray-200"
@@ -237,9 +405,8 @@ const BookingFlow: React.FC = () => {
               ))}
             </div>
             <div className="flex justify-between mt-2 text-sm text-gray-600">
-              <span>Select Dates</span>
+              <span>Dates & Extras</span>
               <span>Payment</span>
-              <span>Confirmation</span>
             </div>
           </div>
 
@@ -247,10 +414,12 @@ const BookingFlow: React.FC = () => {
             {/* Main Content */}
             <div className="lg:col-span-2">
               <div className="bg-white rounded-xl shadow-lg p-6">
-                {/* Step 1: Date Selection */}
+                {/* Step 1: Date Selection & Extras */}
                 {currentStep === 1 && (
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-6">Select Your Dates</h2>
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-6">Select Dates & Options</h2>
+                    
+                    {/* Date Selection */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -277,14 +446,168 @@ const BookingFlow: React.FC = () => {
                         />
                       </div>
                     </div>
+
+                    {/* Pickup and Dropoff Locations */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium mb-2 flex items-center text-gray-700">
+                          <MapPin className="w-4 h-4 mr-2 text-green-600" />
+                          Pickup Location
+                        </label>
+                        <select 
+                          value={bookingData.pickupLocation}
+                          onChange={(e) => handleInputChange("pickupLocation", e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900"
+                        >
+                          <option value="default">Select location</option>
+                          {LIBERIA_LOCATIONS.map((location) => (
+                            <option key={location} value={location}>
+                              {location}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2 flex items-center justify-between text-gray-700">
+                          <span className="flex items-center">
+                            <MapPin className="w-4 h-4 mr-2 text-green-600" />
+                            Drop-off Location
+                          </span>
+                          <label className="flex items-center text-xs font-normal cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={bookingData.dropoffLocation === "default"}
+                              onChange={(e) => handleInputChange("dropoffLocation", e.target.checked ? "default" : bookingData.pickupLocation)}
+                              className="mr-2 rounded text-green-600 focus:ring-green-500"
+                            />
+                            Same as pickup
+                          </label>
+                        </label>
+                        <select 
+                          value={bookingData.dropoffLocation}
+                          onChange={(e) => handleInputChange("dropoffLocation", e.target.value)}
+                          disabled={bookingData.dropoffLocation === "default"}
+                          className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 ${
+                            bookingData.dropoffLocation === "default" ? "opacity-50 cursor-not-allowed" : ""
+                          }`}
+                        >
+                          <option value="default">Same as Pickup</option>
+                          {LIBERIA_LOCATIONS.map((location) => (
+                            <option key={location} value={location}>
+                              {location}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Add-ons and Extras */}
+                    <div>
+                      <h4 className="text-lg font-semibold mb-3 flex items-center">
+                        <CarIcon className="w-5 h-5 mr-2" />
+                        Add-ons & Extras
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label className="flex items-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={bookingData.insurance}
+                            onChange={(e) => handleInputChange("insurance", e.target.checked)}
+                            className="mr-3" 
+                          />
+                          <div>
+                            <p className="font-medium">Full Insurance</p>
+                            <p className="text-sm text-gray-500">+$15/day</p>
+                          </div>
+                        </label>
+                        <label className="flex items-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={bookingData.gps}
+                            onChange={(e) => handleInputChange("gps", e.target.checked)}
+                            className="mr-3" 
+                          />
+                          <div>
+                            <p className="font-medium">GPS Navigation</p>
+                            <p className="text-sm text-gray-500">+$5/day</p>
+                          </div>
+                        </label>
+                        <label className="flex items-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={bookingData.childSeat}
+                            onChange={(e) => handleInputChange("childSeat", e.target.checked)}
+                            className="mr-3" 
+                          />
+                          <div>
+                            <p className="font-medium">Child Safety Seat</p>
+                            <p className="text-sm text-gray-500">+$8/day</p>
+                          </div>
+                        </label>
+                        <label className="flex items-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={bookingData.additionalDriver}
+                            onChange={(e) => handleInputChange("additionalDriver", e.target.checked)}
+                            className="mr-3" 
+                          />
+                          <div>
+                            <p className="font-medium">Additional Driver</p>
+                            <p className="text-sm text-gray-500">+$25 one-time</p>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Special Requests */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Special Requests</label>
+                      <textarea 
+                        rows={3} 
+                        value={bookingData.specialRequests}
+                        onChange={(e) => handleInputChange("specialRequests", e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" 
+                        placeholder="Any special requests or notes..." 
+                      />
+                    </div>
                     
                     {bookingData.startDate && bookingData.endDate && (
                       <div className="mt-6 p-4 bg-green-50 rounded-lg">
                         <h3 className="font-medium text-green-800 mb-2">Rental Summary</h3>
-                        <div className="text-sm text-green-700">
-                          <p>Duration: {bookingData.totalDays} days</p>
-                          <p>Daily Rate: ${(car as any).rentalPricePerDay || car.dailyRate || (car as any).dailyRate || 0}/day</p>
-                          <p className="font-bold">Total: ${bookingData.totalPrice}</p>
+                        <div className="text-sm text-green-700 space-y-1">
+                          <div className="flex justify-between">
+                            <span>Car rental ({bookingData.totalDays} days)</span>
+                            <span>${(bookingData.totalDays * ((car as any).rentalPricePerDay || car.dailyRate || 0)).toFixed(2)}</span>
+                          </div>
+                          {bookingData.insurance && (
+                            <div className="flex justify-between">
+                              <span>Insurance ({bookingData.totalDays} days)</span>
+                              <span>${(bookingData.totalDays * 15).toFixed(2)}</span>
+                            </div>
+                          )}
+                          {bookingData.gps && (
+                            <div className="flex justify-between">
+                              <span>GPS ({bookingData.totalDays} days)</span>
+                              <span>${(bookingData.totalDays * 5).toFixed(2)}</span>
+                            </div>
+                          )}
+                          {bookingData.childSeat && (
+                            <div className="flex justify-between">
+                              <span>Child seat ({bookingData.totalDays} days)</span>
+                              <span>${(bookingData.totalDays * 8).toFixed(2)}</span>
+                            </div>
+                          )}
+                          {bookingData.additionalDriver && (
+                            <div className="flex justify-between">
+                              <span>Additional driver</span>
+                              <span>$25.00</span>
+                            </div>
+                          )}
+                          <hr className="my-2 border-green-300" />
+                          <div className="flex justify-between font-bold text-lg">
+                            <span>Total</span>
+                            <span>${bookingData.totalPrice.toFixed(2)}</span>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -313,36 +636,6 @@ const BookingFlow: React.FC = () => {
                   </div>
                 )}
 
-                {/* Step 3: Confirmation */}
-                {currentStep === 3 && (
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-6">Confirm Your Booking</h2>
-                    <div className="space-y-6">
-                      <div className="border-b pb-4">
-                        <h3 className="font-medium text-gray-800 mb-2">Rental Details</h3>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <p>Start Date: {new Date(bookingData.startDate).toLocaleDateString()}</p>
-                          <p>End Date: {new Date(bookingData.endDate).toLocaleDateString()}</p>
-                          <p>Duration: {bookingData.totalDays} days</p>
-                        </div>
-                      </div>
-                      
-                      <div className="border-b pb-4">
-                        <h3 className="font-medium text-gray-800 mb-2">Payment Method</h3>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <p>Payment will be processed securely through Stripe</p>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-green-50 p-4 rounded-lg">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium text-green-800">Total Amount</span>
-                          <span className="text-2xl font-bold text-green-800">${bookingData.totalPrice}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 {/* Navigation Buttons */}
                 <div className="flex justify-between mt-8">
@@ -353,22 +646,25 @@ const BookingFlow: React.FC = () => {
                     {currentStep === 1 ? "Cancel" : "Back"}
                   </button>
                   
-                  {currentStep < 3 ? (
-                    <button
-                      onClick={handleNext}
-                      className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                      Next
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleSubmit}
-                      disabled={isSubmitting}
-                      className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isSubmitting ? "Processing..." : "Confirm Booking"}
-                    </button>
-                  )}
+                  <button
+                    onClick={handleNext}
+                    disabled={isSubmitting || isRedirectingToStripe}
+                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isRedirectingToStripe ? (
+                      <>
+                        <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Redirecting to Stripe...
+                      </>
+                    ) : isSubmitting ? (
+                      <>
+                        <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Creating Session...
+                      </>
+                    ) : (
+                      currentStep === 2 ? 'Continue to Payment' : 'Next'
+                    )}
+                  </button>
                 </div>
               </div>
             </div>

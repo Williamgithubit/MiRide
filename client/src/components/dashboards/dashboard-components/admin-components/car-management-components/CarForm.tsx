@@ -12,6 +12,7 @@ import { Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { ImageUpload } from '@/components/common/ImageUpload';
 import { useUploadCarImagesMutation, useDeleteCarImageMutation, useSetPrimaryImageMutation } from '../../../../../store/Car/carApi';
+import { CAR_FEATURES } from '@/constants/features';
 
 const carFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name is too long'),
@@ -22,7 +23,7 @@ const carFormSchema = z.object({
   seats: z.number().min(1, 'At least 1 seat').max(10, 'Maximum 10 seats'),
   fuelType: z.enum(['Petrol', 'Diesel', 'Electric', 'Hybrid']),
   location: z.string().min(2, 'Location is required'),
-  features: z.string().optional(),
+  features: z.array(z.string()).optional(),
   isAvailable: z.boolean(),
   description: z.string().optional(),
 });
@@ -99,10 +100,10 @@ export const CarForm: React.FC<CarFormProps> = ({
       fuelType: initialData?.fuelType || 'Petrol',
       location: initialData?.location || '',
       features: Array.isArray(initialData?.features) 
-        ? initialData.features.join(', ') 
+        ? initialData.features 
         : typeof initialData?.features === 'string' 
-          ? initialData.features 
-          : '',
+          ? initialData.features.split(',').map(f => f.trim()).filter(Boolean)
+          : [],
       isAvailable: initialData?.isAvailable ?? true,
       description: initialData?.description || '',
     },
@@ -122,8 +123,10 @@ export const CarForm: React.FC<CarFormProps> = ({
         fuelType: initialData.fuelType || 'Petrol',
         location: initialData.location || '',
         features: Array.isArray(initialData.features)
-          ? initialData.features.join(', ')
-          : initialData.features || '',
+          ? initialData.features
+          : typeof initialData.features === 'string'
+            ? initialData.features.split(',').map(f => f.trim()).filter(Boolean)
+            : [],
         isAvailable: initialData.isAvailable ?? true,
         description: initialData.description || '',
       });
@@ -206,19 +209,9 @@ export const CarForm: React.FC<CarFormProps> = ({
 
   const handleFormSubmit = async (formData: CarFormData) => {
     try {
-      // Process features string into an array
-      const featuresArray = typeof formData.features === 'string' 
-        ? formData.features
-            .split(',')
-            .map(f => f.trim())
-            .filter(Boolean)
-        : [];
-
-      const { features: _, ...restFormData } = formData;
-      
       const processedData: CarFormValues & { id?: string | number } = {
-        ...restFormData,
-        features: featuresArray,
+        ...formData,
+        features: formData.features || [],
         id: initialData?.id,
       };
 
@@ -405,14 +398,42 @@ export const CarForm: React.FC<CarFormProps> = ({
         </div>
       </div>
 
+      {/* Features & Amenities Section */}
       <div className="space-y-2">
-        <Label htmlFor="features">Features (comma-separated)</Label>
-        <Input
-          id="features"
-          placeholder="e.g., GPS, Bluetooth, Sunroof"
-          {...carForm.register('features')}
-          disabled={isSubmitting}
+        <Label>Features & Amenities</Label>
+        <Controller
+          name="features"
+          control={carForm.control}
+          render={({ field }) => (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-60 overflow-y-auto p-4 border rounded-lg bg-muted/50">
+              {CAR_FEATURES.map((feature) => (
+                <label
+                  key={feature}
+                  className="flex items-center space-x-2 cursor-pointer hover:bg-accent p-2 rounded transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={field.value?.includes(feature) || false}
+                    onChange={(e) => {
+                      const currentFeatures = field.value || [];
+                      if (e.target.checked) {
+                        field.onChange([...currentFeatures, feature]);
+                      } else {
+                        field.onChange(currentFeatures.filter((f) => f !== feature));
+                      }
+                    }}
+                    disabled={isSubmitting}
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  <span className="text-sm">{feature}</span>
+                </label>
+              ))}
+            </div>
+          )}
         />
+        <p className="text-xs text-muted-foreground">
+          {carForm.watch('features')?.length || 0} feature(s) selected
+        </p>
       </div>
 
       <div className="space-y-2">

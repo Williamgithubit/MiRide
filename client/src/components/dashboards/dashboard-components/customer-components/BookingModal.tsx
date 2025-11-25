@@ -197,6 +197,13 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedCa
       return;
     }
 
+    // Prevent owners from booking cars
+    if (user?.role === 'owner') {
+      toast.error('Car owners cannot book cars. Only customers can make bookings.');
+      onClose();
+      return;
+    }
+
     if (!stripeLoaded) {
       toast.error('Payment system is not ready. Please wait a moment and try again.');
       return;
