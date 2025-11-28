@@ -60,6 +60,8 @@ import { paymentApi } from "./Payment/paymentApi";
 import { userManagementApi } from "./User/userManagementApi";
 // Import the car management API
 import { carManagementApi } from "./Car/carManagementApi";
+// Import the message API
+import { messageApi } from "./Message/messageApi";
 // Import admin bookings slice and API
 import adminBookingsReducer from "./Admin/adminBookingsSlice";
 import { adminBookingsApi } from "./Admin/bookingsService";
@@ -98,6 +100,7 @@ const persistConfig = {
     paymentApi.reducerPath,
     userManagementApi.reducerPath,
     carManagementApi.reducerPath,
+    messageApi.reducerPath,
   ],
 };
 
@@ -126,6 +129,7 @@ const appReducer = {
   [userManagementApi.reducerPath]: userManagementApi.reducer,
   [carManagementApi.reducerPath]: carManagementApi.reducer,
   [adminBookingsApi.reducerPath]: adminBookingsApi.reducer,
+  [messageApi.reducerPath]: messageApi.reducer,
 };
 // Create the root reducer
 const rootReducer = combineReducers(appReducer);
@@ -159,6 +163,7 @@ export const store = configureStore({
       .concat(userManagementApi.middleware)
       .concat(carManagementApi.middleware)
       .concat(adminBookingsApi.middleware)
+      .concat(messageApi.middleware)
       .concat(authMiddleware),
   devTools: process.env.NODE_ENV !== "production",
 });

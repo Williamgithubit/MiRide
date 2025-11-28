@@ -13,7 +13,9 @@ export type CarStatus = 'available' | 'rented' | 'maintenance' | 'pending_approv
 
 export interface User {
   id: string;
-  name: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   // Add other user properties as needed
 }

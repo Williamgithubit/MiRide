@@ -22,6 +22,7 @@ import Maintenance from "../dashboard-components/owner-components/maintenance-co
 import { ReviewsSection } from "../dashboard-components/owner-components/ReviewsSection";
 import { OwnerReviews } from "../dashboard-components/owner-components/OwnerReviews";
 import { OwnerNotifications } from "../dashboard-components/owner-components/OwnerNotifications";
+import OwnerMessages from "../dashboard-components/owner-components/OwnerMessages";
 import CarDetailsModal from "../dashboard-components/owner-components/CarDetailsModal";
 import EditCarModal from "../dashboard-components/owner-components/EditCarModal";
 import DeleteConfirmationModal from "../dashboard-components/owner-components/DeleteConfirmationModal";
@@ -449,6 +450,9 @@ const OwnerDashboard: React.FC = () => {
 
       case "owner-reviews":
         return <OwnerReviews />;
+
+      case "messages":
+        return <OwnerMessages />;
 
       case "notifications":
         return <OwnerNotifications />;

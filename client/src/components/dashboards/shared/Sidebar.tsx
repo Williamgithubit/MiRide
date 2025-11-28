@@ -14,12 +14,14 @@ import {
   FaTimes,
   FaSignOutAlt,
   FaUserCircle,
+  FaCommentDots,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import useReduxAuth from "../../../store/hooks/useReduxAuth";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../store/store";
 import MiRideLogo from "../../../assets/MiRide Logo.png";
+import { useGetUnreadCountQuery } from "../../../store/Message/messageApi";
 
 interface SidebarProps {
   role: "customer" | "owner" | "admin";
@@ -51,6 +53,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   const adminUnreadCount = useSelector((state: RootState) => 
     role === 'admin' ? state.adminNotifications?.unreadCount || 0 : 0
   );
+  
+  // Get message unread count for owners
+  const { data: messageUnreadData } = useGetUnreadCountQuery(undefined, {
+    skip: role !== 'owner',
+  });
+  const ownerMessageUnreadCount = messageUnreadData?.unreadCount || 0;
 
   useEffect(() => {
     setIsMobileMenuOpen(isOpen);
@@ -149,6 +157,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       id: "owner-reviews",
       label: "Reviews",
       icon: <FaStar />,
+      roles: ["owner"],
+    },
+    {
+      id: "messages",
+      label: "Messages",
+      icon: <FaCommentDots />,
       roles: ["owner"],
     },
     {
@@ -298,6 +312,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                   {item.id === "notifications" && role === "admin" && adminUnreadCount > 0 && (
                     <span className="bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center animate-pulse">
                       {adminUnreadCount > 99 ? '99+' : adminUnreadCount}
+                    </span>
+                  )}
+                  {item.id === "messages" && role === "owner" && ownerMessageUnreadCount > 0 && (
+                    <span className="bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center animate-pulse">
+                      {ownerMessageUnreadCount > 99 ? '99+' : ownerMessageUnreadCount}
                     </span>
                   )}
                 </button>
