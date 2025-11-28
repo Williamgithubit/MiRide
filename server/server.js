@@ -22,6 +22,7 @@ import reviewRoutes from './routes/reviewRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import userManagementRoutes from './routes/userManagementRoutes.js';
+import messageRoutes from './routes/messageRoutes.js';
 import BookingExpirationService from './services/bookingExpirationService.js';
 
 // Load environment variables
@@ -88,6 +89,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin/users', userManagementRoutes);
+app.use('/api/messages', messageRoutes);
 
 // Default route
 app.get('/', (req, res) => {

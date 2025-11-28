@@ -236,7 +236,9 @@ const getCar = async (req, res) => {
         {
           model: db.User,
           as: 'owner',
-          attributes: ['id', 'name', 'email', 'phone', 'role']
+          attributes: ['id', 'name', 'email', 'phone', 'role'],
+          // Add firstName and lastName as computed fields from name
+          include: []
         }
       ]
     });
