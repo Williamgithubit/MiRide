@@ -29,134 +29,122 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5, ease: 'easeInOut' }}
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-gradient-to-br from-green-600 via-emerald-600 to-teal-700"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-900 dark:to-gray-800"
         >
-          {/* Animated background elements */}
-          <div className="absolute inset-0 overflow-hidden">
-            <motion.div
-              animate={{
-                scale: [1, 1.2, 1],
-                rotate: [0, 180, 360],
-              }}
-              transition={{
-                duration: 20,
-                repeat: Infinity,
-                ease: 'linear',
-              }}
-              className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-green-400/20 to-transparent rounded-full blur-3xl"
-            />
-            <motion.div
-              animate={{
-                scale: [1.2, 1, 1.2],
-                rotate: [360, 180, 0],
-              }}
-              transition={{
-                duration: 15,
-                repeat: Infinity,
-                ease: 'linear',
-              }}
-              className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-emerald-400/20 to-transparent rounded-full blur-3xl"
-            />
-          </div>
+          <div className="flex flex-col items-center space-y-6">
+            {/* Animated logo container */}
+            <div className="relative">
+              {/* Outer rotating ring */}
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: 'linear',
+                }}
+                className="absolute inset-0 w-32 h-32 rounded-full border-4 border-transparent border-t-green-500 border-r-emerald-500"
+              />
+              
+              {/* Inner rotating ring (opposite direction) */}
+              <motion.div
+                animate={{ rotate: -360 }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: 'linear',
+                }}
+                className="absolute inset-2 w-28 h-28 rounded-full border-4 border-transparent border-b-green-400 border-l-emerald-400"
+              />
 
-          {/* Logo and content container */}
-          <div className="relative z-10 flex flex-col items-center justify-center space-y-8 px-4">
-            {/* Logo with fade-in and scale animation */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ 
-                duration: 0.8, 
-                ease: 'easeOut',
-                delay: 0.2 
-              }}
-              className="relative"
-            >
-              {/* Glow effect behind logo */}
+              {/* Pulsing glow effect */}
               <motion.div
                 animate={{
-                  scale: [1, 1.1, 1],
-                  opacity: [0.5, 0.8, 0.5],
+                  scale: [1, 1.2, 1],
+                  opacity: [0.3, 0.6, 0.3],
                 }}
                 transition={{
                   duration: 2,
                   repeat: Infinity,
                   ease: 'easeInOut',
                 }}
-                className="absolute inset-0 bg-white/30 rounded-full blur-3xl"
+                className="absolute inset-0 w-32 h-32 rounded-full bg-green-400/20 blur-xl"
               />
-              
-              {/* MiRide Logo */}
-              <motion.div 
-                className="relative bg-white rounded-3xl p-8 shadow-2xl"
-                initial={{ rotate: 0 }}
-                animate={{ rotate: [0, 5, -5, 0] }}
+
+              {/* Logo in center */}
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
                 transition={{
-                  duration: 3,
+                  type: 'spring',
+                  stiffness: 260,
+                  damping: 20,
+                }}
+                className="relative w-32 h-32 flex items-center justify-center"
+              >
+                <div className="w-20 h-20 bg-white rounded-2xl shadow-lg flex items-center justify-center p-3">
+                  <img
+                    src={logo}
+                    alt="MiRide"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Loading text with dots animation */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="text-center"
+            >
+              <div className="flex items-center space-x-2">
+                <span className="text-lg font-semibold text-gray-700 dark:text-gray-200">
+                  Loading...
+                </span>
+                <div className="flex space-x-1">
+                  {[0, 1, 2].map((index) => (
+                    <motion.div
+                      key={index}
+                      animate={{
+                        scale: [1, 1.5, 1],
+                        opacity: [0.3, 1, 0.3],
+                      }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        delay: index * 0.2,
+                      }}
+                      className="w-2 h-2 bg-green-600 rounded-full"
+                    />
+                  ))}
+                </div>
+              </div>
+              
+              {/* Progress bar */}
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: '100%' }}
+                transition={{
+                  duration: 2,
                   repeat: Infinity,
                   ease: 'easeInOut',
                 }}
-              >
-                <img
-                  src={logo}
-                  alt="MiRide Logo"
-                  className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 object-contain"
-                />
-              </motion.div>
+                className="mt-4 h-1 bg-gradient-to-r from-green-500 via-emerald-500 to-green-500 rounded-full"
+                style={{ width: '200px' }}
+              />
             </motion.div>
 
-            {/* Brand name */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ 
-                duration: 0.6, 
-                ease: 'easeOut',
-                delay: 0.5 
-              }}
-              className="text-center"
-            >
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-2 tracking-tight drop-shadow-lg">
-                MiRide
-              </h1>
-              <p className="text-lg sm:text-xl text-green-50 font-medium">
-                Rental Service
-              </p>
-            </motion.div>
-
-            {/* Loading spinner */}
-            <motion.div
+            {/* Optional: Loading tips or messages */}
+            <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
-              className="flex items-center space-x-3"
+              transition={{ delay: 0.6 }}
+              className="text-sm text-gray-500 dark:text-gray-400 max-w-xs text-center"
             >
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ 
-                  duration: 1, 
-                  repeat: Infinity, 
-                  ease: 'linear' 
-                }}
-                className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full"
-              />
-              <span className="text-white text-sm font-medium">
-                Loading...
-              </span>
-            </motion.div>
+              Preparing your experience...
+            </motion.p>
           </div>
-
-          {/* Bottom decorative elements */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1 }}
-            className="absolute bottom-8 left-0 right-0 text-center"
-          >
-            <p className="text-green-50/70 text-sm font-medium">
-              Your journey begins here
-            </p>
-          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
