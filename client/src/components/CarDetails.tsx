@@ -3,14 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import Header from "./Header";
 import toast from "react-hot-toast";
 import useReduxAuth from "../store/hooks/useReduxAuth";
-import { useGetCarByIdQuery } from "../store/Car/carApi";
-import { useSelector } from 'react-redux';
-import { RootState } from '../store/store';
-import { useDispatch } from 'react-redux';
-import { carApi } from '../store/Car/carApi';
+import { useGetCarByIdQuery, useGetCarsByOwnerQuery } from '../store/Car/carApi';
 import { API_BASE_URL } from '../config/api';
 import useRentals from "../store/hooks/useRentals";
-import { CarCardProps } from "./CarList";
 import { Car, CarImage } from "../types/index";
 import { CAR_FEATURES } from "../constants/features";
 import { 
@@ -28,7 +23,12 @@ import {
   FaShieldAlt
 } from 'react-icons/fa';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
+import { MapPin } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { Icon } from 'leaflet';
 import MessageModal from './MessageModal';
+import { generateNearbyCoords, LIBERIA_CENTER } from '../utils/mapUtils';
+import 'leaflet/dist/leaflet.css';
 
 const CarDetails: React.FC = () => {
   const { carId } = useParams<{ carId: string }>();
@@ -37,6 +37,8 @@ const CarDetails: React.FC = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isRenting, setIsRenting] = useState(false);
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+  const [showLocationMap, setShowLocationMap] = useState(false);
+  const [ownerStats, setOwnerStats] = useState<{ totalCars: number; totalBookings: number } | null>(null);
 
   // Fetch car by ID directly from API
   const {
@@ -47,7 +49,86 @@ const CarDetails: React.FC = () => {
     skip: !carId,
   });
 
+  // Fetch owner's cars to get the count
+  const {
+    data: ownerCars,
+    isLoading: isLoadingOwnerCars,
+  } = useGetCarsByOwnerQuery(carData?.ownerId ? parseInt(carData.ownerId.toString()) : 0, {
+    skip: !carData?.ownerId,
+  });
+
+  // Generate approximate car location (in production, this would come from backend)
+  const carLocation = React.useMemo(() => {
+    return generateNearbyCoords(LIBERIA_CENTER, 10);
+  }, [carData]);
+
+  // Custom marker icon
+  const carMarkerIcon = new Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
   const { addRental } = useRentals();
+
+  // Fetch owner stats when owner ID is available
+  useEffect(() => {
+    const fetchOwnerStats = async () => {
+      if (!carData?.ownerId) {
+        console.log('❌ No ownerId available');
+        return;
+      }
+      
+      console.log('🔍 Fetching stats for ownerId:', carData.ownerId);
+      console.log('📊 ownerCars data:', ownerCars);
+      
+      // First, set the car count from ownerCars if available
+      if (ownerCars && ownerCars.length > 0) {
+        console.log('✅ Setting stats from ownerCars:', ownerCars.length);
+        setOwnerStats(prev => ({
+          totalCars: ownerCars.length,
+          totalBookings: prev?.totalBookings || 0,
+        }));
+      } else {
+        console.log('⚠️ ownerCars is empty or undefined');
+      }
+      
+      // Then try to fetch complete stats from API (public endpoint, no auth needed)
+      try {
+        const apiUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/api/dashboard/public-owner-stats/${carData.ownerId}`;
+        console.log('🌐 Fetching from:', apiUrl);
+        
+        const response = await fetch(apiUrl, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        console.log('📡 Response status:', response.status);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ Stats received:', data);
+          setOwnerStats({
+            totalCars: data.totalCars || ownerCars?.length || 0,
+            totalBookings: data.totalBookings || 0,
+          });
+        } else {
+          const errorText = await response.text();
+          console.log('❌ Stats API failed:', response.status, errorText);
+          console.log('Using ownerCars count as fallback');
+        }
+      } catch (error) {
+        console.error('❌ Error fetching owner stats:', error);
+        // Keep the ownerCars count we already set
+      }
+    };
+
+    fetchOwnerStats();
+  }, [carData?.ownerId, ownerCars]);
 
   // Helper function to get image URL
   const getImageUrl = (imageUrl: string | undefined): string => {
@@ -326,6 +407,46 @@ const CarDetails: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Car Location */}
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900">Car Location</h3>
+                    <button
+                      onClick={() => setShowLocationMap(!showLocationMap)}
+                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      {showLocationMap ? 'Hide Map' : 'Show Map'}
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3 flex items-center">
+                    <MapPin className="w-4 h-4 mr-1 text-green-600" />
+                    Approximate location in Monrovia area
+                  </p>
+                  {showLocationMap && (
+                    <div className="rounded-lg overflow-hidden border-2 border-gray-300 shadow-lg">
+                      <MapContainer
+                        center={[carLocation.lat, carLocation.lng]}
+                        zoom={13}
+                        style={{ height: '300px', width: '100%' }}
+                        scrollWheelZoom={false}
+                      >
+                        <TileLayer
+                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                        <Marker position={[carLocation.lat, carLocation.lng]} icon={carMarkerIcon}>
+                          <Popup>
+                            <div className="text-center">
+                              <p className="font-semibold text-gray-900">{car.brand} {car.model}</p>
+                              <p className="text-sm text-gray-600">Approximate Location</p>
+                            </div>
+                          </Popup>
+                        </Marker>
+                      </MapContainer>
+                    </div>
+                  )}
+                </div>
+
                 {/* Recent Reviews */}
                 <div>
                   <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Recent Reviews</h3>
@@ -417,11 +538,15 @@ const CarDetails: React.FC = () => {
                   
                   <div className="grid grid-cols-2 gap-3 sm:gap-4 text-center">
                     <div>
-                      <div className="text-xl sm:text-2xl font-bold text-gray-900">3</div>
+                      <div className="text-xl sm:text-2xl font-bold text-gray-900">
+                        {ownerStats?.totalCars ?? (ownerCars?.length || 0)}
+                      </div>
                       <div className="text-xs sm:text-sm text-gray-500">Cars Listed</div>
                     </div>
                     <div>
-                      <div className="text-xl sm:text-2xl font-bold text-gray-900">156</div>
+                      <div className="text-xl sm:text-2xl font-bold text-gray-900">
+                        {ownerStats?.totalBookings ?? 0}
+                      </div>
                       <div className="text-xs sm:text-sm text-gray-500">Trips Completed</div>
                     </div>
                   </div>

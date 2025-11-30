@@ -46,7 +46,7 @@ const MaintenanceTable: React.FC<MaintenanceTableProps> = ({
       const matchesSearch = 
         record.car.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         record.car.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        record.car.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        record.car.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
         record.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
         record.description.toLowerCase().includes(searchTerm.toLowerCase());
       
@@ -234,7 +234,7 @@ const MaintenanceTable: React.FC<MaintenanceTableProps> = ({
                           <div className="flex items-center space-x-3">
                             <img
                               src={record.car.imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K'}
-                              alt={`${record.car.make} ${record.car.model}`}
+                              alt={`${record.car.brand} ${record.car.model}`}
                               className="w-12 h-12 rounded-lg object-cover"
                               onError={(e) => {
                                 e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K';
@@ -245,7 +245,7 @@ const MaintenanceTable: React.FC<MaintenanceTableProps> = ({
                                 {record.car.name}
                               </div>
                               <div className="text-sm text-gray-500 dark:text-gray-400">
-                                {record.car.make} {record.car.model} ({record.car.year})
+                                {record.car.brand} {record.car.model} ({record.car.year})
                               </div>
                             </div>
                           </div>
@@ -343,7 +343,7 @@ const MaintenanceTable: React.FC<MaintenanceTableProps> = ({
                       <div className="flex items-start space-x-3 flex-1">
                         <img
                           src={record.car.imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K'}
-                          alt={`${record.car.make} ${record.car.model}`}
+                          alt={`${record.car.brand} ${record.car.model}`}
                           className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
                           onError={(e) => {
                             e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K';
@@ -354,7 +354,7 @@ const MaintenanceTable: React.FC<MaintenanceTableProps> = ({
                             {record.car.name}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {record.car.make} {record.car.model} ({record.car.year})
+                            {record.car.brand} {record.car.model} ({record.car.year})
                           </div>
                           <div className="flex items-center space-x-2 mt-1">
                             <TypeIcon className="w-4 h-4 text-gray-400" />

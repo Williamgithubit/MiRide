@@ -71,6 +71,8 @@ import adminNotificationsReducer from "./Admin/adminNotificationsSlice";
 import adminReportsReducer from "./Admin/adminReportsSlice";
 // Import admin settings slice
 import adminSettingsReducer from "./Admin/adminSettingsSlice";
+// Import owner profile slice
+import ownerProfileReducer from "./Owner/ownerProfileSlice";
 
 // Define the root state type
 // Note: _persist property removed since we're temporarily bypassing persistence
@@ -112,6 +114,7 @@ const appReducer = {
   adminNotifications: adminNotificationsReducer,
   adminReports: adminReportsReducer,
   adminSettings: adminSettingsReducer,
+  ownerProfile: ownerProfileReducer,
   [authApi.reducerPath]: authApi.reducer,
   [carApi.reducerPath]: carApi.reducer,
   [rentalApi.reducerPath]: rentalApi.reducer,

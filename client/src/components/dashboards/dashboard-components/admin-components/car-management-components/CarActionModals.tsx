@@ -208,7 +208,7 @@ const CarActionModals: React.FC<CarActionModalsProps> = ({
     <>
       {/* Car Details Modal */}
       {showDetailsModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 backdrop-blur-sm bg-gray-900/30 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Car Details</h3>
@@ -326,7 +326,7 @@ const CarActionModals: React.FC<CarActionModalsProps> = ({
 
       {/* Edit Car Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 backdrop-blur-sm bg-gray-900/30 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
@@ -409,7 +409,7 @@ const CarActionModals: React.FC<CarActionModalsProps> = ({
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 backdrop-blur-sm bg-gray-900/30 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full">
             <div className="p-6">
               <div className="flex items-center mb-4">
@@ -455,7 +455,7 @@ const CarActionModals: React.FC<CarActionModalsProps> = ({
 
       {/* Status Update Modal */}
       {showStatusModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 backdrop-blur-sm bg-gray-900/30 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full">
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Update Car Status</h3>
@@ -533,7 +533,7 @@ const CarActionModals: React.FC<CarActionModalsProps> = ({
 
       {/* Bulk Actions Modal */}
       {showBulkModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 backdrop-blur-sm bg-gray-900/30 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full">
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Bulk Actions</h3>

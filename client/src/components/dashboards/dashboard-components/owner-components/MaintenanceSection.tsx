@@ -160,12 +160,12 @@ export const MaintenanceSection = () => {
         <div className="flex items-center gap-3">
           <img
             src={getImageUrl(row.car.imageUrl)}
-            alt={`${row.car.make} ${row.car.model}`}
+            alt={`${row.car.brand} ${row.car.model}`}
             className="w-12 h-12 rounded-md object-cover"
           />
           <div>
             <div className="font-medium text-white">
-              {row.car.make} {row.car.model}
+              {row.car.brand} {row.car.model}
             </div>
             <div className="text-sm text-gray-400">{row.car.year}</div>
           </div>

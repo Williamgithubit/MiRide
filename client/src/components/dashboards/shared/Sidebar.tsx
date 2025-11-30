@@ -177,6 +177,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: <FaChartLine />,
       roles: ["owner"],
     },
+    {
+      id: "profile",
+      label: "My Profile",
+      icon: <FaUserCircle />,
+      roles: ["owner"],
+    },
 
     // Admin Items
     {

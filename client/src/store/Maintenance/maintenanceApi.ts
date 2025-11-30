@@ -24,7 +24,7 @@ export interface CarMaintenanceRecord {
     id: number;
     name: string;
     model: string;
-    make: string;
+    brand: string;
     year: number;
     imageUrl: string;
   };
@@ -49,9 +49,10 @@ export interface UpdateMaintenanceRecord extends Partial<CreateMaintenanceRecord
   nextServiceDue?: string;
 }
 
-// Create base query with auth
+// Create base query with auth and timeout
 const baseQuery = fetchBaseQuery({
   baseUrl: `${API_BASE_URL}/api`,
+  timeout: 15000, // 15 second timeout
   prepareHeaders: (headers, { getState }) => {
     const token = (getState() as RootState).auth.token || localStorage.getItem('token');
     
@@ -105,6 +106,7 @@ export const maintenanceApi = createApi({
         method: 'GET',
       }),
       providesTags: ['Maintenance'],
+      keepUnusedDataFor: 0,
     }),
 
     // Create maintenance record

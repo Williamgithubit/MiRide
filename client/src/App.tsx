@@ -1,10 +1,12 @@
-import React, { lazy, Suspense, useEffect } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 // Use the custom auth hook instead of direct Redux access
 import useReduxAuth from './store/hooks/useReduxAuth';
 import Header from './components/Header';
 import { DarkModeProvider } from './contexts/DarkModeContext';
 import ScrollToTop from './components/common/ScrollToTop';
+import SplashScreen from './components/SplashScreen';
+import ModernLoader from './components/common/ModernLoader';
 
 // Import Home directly (not lazy) to test
 import Home from './pages/Home';
@@ -27,15 +29,10 @@ const SearchResults = lazy(() => import('./pages/SearchResults'));
 // Lazy load dashboard components
 const NewDashboardRouter = lazy(() => import('./components/dashboards/DashboardRouter'));
 
-// Loading component
+// Modern Loading component
 const LoadingFallback = () => {
   console.log('LoadingFallback component rendering - Suspense is active');
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      <p className="ml-4 text-gray-600">Loading component...</p>
-    </div>
-  );
+  return <ModernLoader message="Loading component" />;
 };
 
 const AppContent: React.FC = () => {
@@ -83,6 +80,7 @@ const App: React.FC = () => {
   const location = useLocation();
   const { user, isAuthenticated, isLoading } = useReduxAuth();
   const [isInitialized, setIsInitialized] = React.useState(false);
+  const [showSplash, setShowSplash] = useState(true);
   
   // Initialize app
   useEffect(() => {
@@ -101,18 +99,18 @@ const App: React.FC = () => {
     }
   }, [isAuthenticated, user, isLoading, location.pathname]);
   
+  // Handle splash screen completion
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+  };
+  
   // Show loading state only for protected routes or initial auth check
   const currentPath = location.pathname;
   const isProtectedRoute = currentPath.startsWith('/dashboard');
   
   // Only show loading for protected routes or during initial auth check with token
   if (isLoading && isProtectedRoute) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-        <p className="text-gray-600">Loading application...</p>
-      </div>
-    );
+    return <ModernLoader message="Loading application" />;
   }
   
   const currentLocation = useLocation();
@@ -131,6 +129,15 @@ const App: React.FC = () => {
   
   return (
     <DarkModeProvider>
+      {/* Splash Screen */}
+      {showSplash && (
+        <SplashScreen 
+          onLoadingComplete={handleSplashComplete}
+          minDisplayTime={2500}
+        />
+      )}
+      
+      {/* Main App Content */}
       <div className="app-container" style={{ padding: '0', width: '100%' }}>
         {!isAuthPage && !isDashboardPage && <Header />}
         <AppContent />

@@ -21,7 +21,7 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
   if (!isOpen || !record) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 backdrop-blur-sm bg-gray-900/30 flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
@@ -52,7 +52,7 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
             <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <img
                 src={record.car.imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K'}
-                alt={`${record.car.make} ${record.car.model}`}
+                alt={`${record.car.brand} ${record.car.model}`}
                 className="w-12 h-12 rounded-lg object-cover"
               />
               <div className="flex-1">
@@ -132,7 +132,7 @@ export const MaintenanceDetailsModal: React.FC<MaintenanceDetailsModalProps> = (
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 backdrop-blur-sm bg-gray-900/30 flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
@@ -168,7 +168,7 @@ export const MaintenanceDetailsModal: React.FC<MaintenanceDetailsModalProps> = (
             <div className="flex items-center space-x-4">
               <img
                 src={record.car.imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K'}
-                alt={`${record.car.make} ${record.car.model}`}
+                alt={`${record.car.brand} ${record.car.model}`}
                 className="w-16 h-16 rounded-lg object-cover"
               />
               <div>
@@ -176,7 +176,7 @@ export const MaintenanceDetailsModal: React.FC<MaintenanceDetailsModalProps> = (
                   {record.car.name}
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">
-                  {record.car.make} {record.car.model} ({record.car.year})
+                  {record.car.brand} {record.car.model} ({record.car.year})
                 </div>
               </div>
             </div>
@@ -342,7 +342,7 @@ export const CompleteMaintenanceModal: React.FC<CompleteMaintenanceModalProps> =
   if (!isOpen || !record) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 backdrop-blur-sm bg-gray-900/30 flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
@@ -373,7 +373,7 @@ export const CompleteMaintenanceModal: React.FC<CompleteMaintenanceModalProps> =
             <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <img
                 src={record.car.imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K'}
-                alt={`${record.car.make} ${record.car.model}`}
+                alt={`${record.car.brand} ${record.car.model}`}
                 className="w-12 h-12 rounded-lg object-cover"
               />
               <div className="flex-1">
@@ -389,7 +389,7 @@ export const CompleteMaintenanceModal: React.FC<CompleteMaintenanceModalProps> =
 
           <div className="flex items-start space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
             <FaCheck className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-green-800 dark:text-green-300">
+            <div className="text-sm text-green-800 dark:text-white">
               <p className="font-medium">Mark this maintenance as completed?</p>
               <p className="mt-1">This will update the status and set the completion date to today.</p>
             </div>

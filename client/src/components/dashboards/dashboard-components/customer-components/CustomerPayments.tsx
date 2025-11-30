@@ -6,9 +6,18 @@ import { useCustomerData } from './useCustomerData';
 const CustomerPayments: React.FC = () => {
   const { totalSpent, totalBookings, customerRentals } = useCustomerData();
 
-  // Filter rentals with payment information and sort by date
+  // Debug logging
+  React.useEffect(() => {
+    console.log('CustomerPayments - Debug Info:', {
+      totalRentals: customerRentals?.length || 0,
+      customerRentals: customerRentals,
+      rentalsWithPaymentStatus: customerRentals?.filter(r => r.paymentStatus).length || 0,
+      sampleRental: customerRentals?.[0]
+    });
+  }, [customerRentals]);
+
+  // Show all rentals, sorted by date (payment status defaults to 'pending' in the database)
   const paymentsData = (customerRentals || [])
-    .filter(rental => rental.paymentStatus) // Only show rentals with payment status
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const getPaymentStatusConfig = (status: string) => {

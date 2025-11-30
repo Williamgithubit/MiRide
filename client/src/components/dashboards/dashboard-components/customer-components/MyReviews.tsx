@@ -238,49 +238,51 @@ const MyReviews: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">My Reviews</h2>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">My Reviews</h2>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
             Manage your car rental reviews and feedback
           </p>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <FaStar className="w-8 h-8 text-yellow-400" />
+              <FaStar className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-400" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Reviews</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{reviews.length}</p>
+            <div className="ml-3 sm:ml-4">
+              <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Total Reviews</p>
+              <p className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">{reviews.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <StarRating rating={averageRating} size="md" />
+              <div className="text-yellow-400">
+                <StarRating rating={averageRating} size="sm" />
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Average Rating</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+            <div className="ml-3 sm:ml-4">
+              <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Average Rating</p>
+              <p className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
                 {(Number(averageRating) || 0).toFixed(1)}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 sm:col-span-2 lg:col-span-1">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <FaPlus className="w-8 h-8 text-green-500" />
+              <FaPlus className="w-6 h-6 sm:w-8 sm:h-8 text-green-500" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Can Review</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{completedRentals.length}</p>
+            <div className="ml-3 sm:ml-4">
+              <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Can Review</p>
+              <p className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">{completedRentals.length}</p>
             </div>
           </div>
         </div>
@@ -288,51 +290,51 @@ const MyReviews: React.FC = () => {
 
       {/* Pending Reviews Section */}
       {completedRentals.length > 0 && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+            <h3 className="text-base sm:text-lg font-semibold text-blue-900 dark:text-blue-100">
               Completed Rentals - Write Reviews
             </h3>
-            <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 text-xs font-medium px-2.5 py-0.5 rounded-full">
+            <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 text-xs font-medium px-2.5 py-0.5 rounded-full w-fit">
               {completedRentals.length} pending
             </span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {completedRentals.slice(0, 6).map((rental) => (
               <div
                 key={rental.id}
-                className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700"
+                className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-700"
               >
-                <div className="flex items-center space-x-3 mb-3">
+                <div className="flex items-center space-x-2 sm:space-x-3 mb-3">
                   <img
                     src={getPrimaryImageUrl(rental.car?.images, rental.car?.imageUrl)}
                     alt={`${rental.car?.brand} ${rental.car?.model}`}
-                    className="w-12 h-12 rounded-lg object-cover"
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover flex-shrink-0"
                     onError={(e) => {
                       e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xMiAxOEgzNkwzNCAyN0gzMFYyNEgyN1YyN0gyMlYyNEgxOVYyN0gxNVYyNEgxM1YyN0gxMkwxOCAxOFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K';
                     }}
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate">
                       {rental.car?.brand} {rental.car?.model}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                       {formatDate(rental.startDate)} - {formatDate(rental.endDate)}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => handleCreateReview(rental)}
-                  className="w-full px-3 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors flex items-center justify-center space-x-2"
+                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors flex items-center justify-center space-x-1 sm:space-x-2"
                 >
-                  <FaPlus className="w-3 h-3" />
+                  <FaPlus className="w-3 h-3 flex-shrink-0" />
                   <span>Write Review</span>
                 </button>
               </div>
             ))}
           </div>
           {completedRentals.length > 6 && (
-            <p className="text-sm text-blue-700 dark:text-blue-300 mt-4">
+            <p className="text-xs sm:text-sm text-blue-700 dark:text-blue-300 mt-3 sm:mt-4">
               And {completedRentals.length - 6} more completed rentals...
             </p>
           )}
@@ -340,7 +342,7 @@ const MyReviews: React.FC = () => {
       )}
 
       {/* Search and Filter */}
-      <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
         <div className="relative flex-1">
           <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
@@ -348,15 +350,15 @@ const MyReviews: React.FC = () => {
             placeholder="Search reviews by car or comment..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
-        <div className="flex items-center space-x-2">
-          <FaFilter className="text-gray-400 w-4 h-4" />
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <FaFilter className="text-gray-400 w-4 h-4 flex-shrink-0" />
           <select
             value={ratingFilter || ''}
             onChange={(e) => setRatingFilter(e.target.value ? parseInt(e.target.value) : null)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 sm:flex-none px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="">All Ratings</option>
             <option value="5">5 Stars</option>
@@ -370,12 +372,12 @@ const MyReviews: React.FC = () => {
 
       {/* Reviews Grid */}
       {filteredReviews.length === 0 ? (
-        <div className="text-center py-12">
-          <FaCar className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+        <div className="text-center py-8 sm:py-12">
+          <FaCar className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 dark:text-gray-600 mx-auto mb-3 sm:mb-4" />
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white mb-2">
             {reviews.length === 0 ? 'No reviews yet' : 'No reviews found'}
           </h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-6">
+          <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-4 sm:mb-6 px-4">
             {reviews.length === 0 
               ? 'Complete a rental to write your first review'
               : 'Try adjusting your search or filter criteria'
@@ -384,7 +386,7 @@ const MyReviews: React.FC = () => {
           {completedRentals.length > 0 && (
             <button
               onClick={() => handleCreateReview(completedRentals[0])}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors space-x-2"
+              className="inline-flex items-center px-3 sm:px-4 py-2 bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors space-x-2"
             >
               <FaPlus className="w-4 h-4" />
               <span>Write Your First Review</span>
@@ -393,7 +395,7 @@ const MyReviews: React.FC = () => {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {paginatedReviews.map((review) => (
               <ReviewCard
                 key={review.id}
@@ -407,25 +409,27 @@ const MyReviews: React.FC = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-700 dark:text-gray-300">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
+              <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 text-center sm:text-left">
                 Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredReviews.length)} of {filteredReviews.length} reviews
               </p>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Previous page"
                 >
                   <FaChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="text-sm text-gray-700 dark:text-gray-300">
+                <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 px-2">
                   Page {currentPage} of {totalPages}
                 </span>
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Next page"
                 >
                   <FaChevronRight className="w-4 h-4" />
                 </button>

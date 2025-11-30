@@ -107,8 +107,8 @@ const EarningsSectionCore: React.FC<EarningsSectionProps> = React.memo(
     }
 
     return (
-      <div className="space-y-4 sm:space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+      <div className="space-y-4 sm:space-y-6 md:space-y-8 lg:space-y-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 lg:gap-8">
           <DashboardCard
             title="This Month"
             value={`$${calculations.currentMonthEarnings.toLocaleString()}`}
@@ -151,9 +151,9 @@ const EarningsSectionCore: React.FC<EarningsSectionProps> = React.memo(
           }}
         />
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
-          <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Earnings Breakdown</h4>
-          <div className="space-y-3 sm:space-y-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 md:p-8 lg:p-10">
+          <h4 className="text-base sm:text-lg md:text-xl font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 md:mb-6">Earnings Breakdown</h4>
+          <div className="space-y-3 sm:space-y-4 md:space-y-6 lg:space-y-8">
             {ownerCars.map((car, index) => {
               // Calculate estimated earnings per car based on rental price and rating
               const estimatedRentals = Math.floor((car.rating || 0) * 5);
@@ -163,32 +163,32 @@ const EarningsSectionCore: React.FC<EarningsSectionProps> = React.memo(
               return (
                 <div
                   key={String(car.id ?? index)}
-                  className="flex justify-between items-center p-3 sm:p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                  className="flex justify-between items-center p-3 sm:p-4 md:p-6 lg:p-8 bg-gray-50 dark:bg-gray-700 rounded-lg"
                 >
-                  <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3 md:gap-4 lg:gap-6">
                     <img
                       src={getPrimaryImageUrl((car as any).images, car.imageUrl)}
                       alt={car.model}
-                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover flex-shrink-0"
+                      className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-lg object-cover flex-shrink-0"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src =
                           "/placeholder-car.jpg";
                       }}
                     />
                     <div className="min-w-0">
-                      <p className="font-medium text-sm sm:text-base truncate">
+                      <p className="font-medium text-sm sm:text-base text-gray-900 dark:text-white truncate">
                         {car.year} {car.brand} {car.model}
                       </p>
-                      <p className="text-xs sm:text-sm text-gray-500">
+                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                         {estimatedRentals} rentals
                       </p>
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="font-semibold text-sm sm:text-base">
+                    <p className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white">
                       ${estimatedEarnings.toLocaleString()}
                     </p>
-                    <p className="text-xs sm:text-sm text-gray-500">Total earned</p>
+                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Total earned</p>
                   </div>
                 </div>
               );

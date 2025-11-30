@@ -11,6 +11,7 @@ import App from "./App";
 import { store } from "./store/store";
 import "./index.css";
 import "./styles/color-overrides.css";
+import "leaflet/dist/leaflet.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {

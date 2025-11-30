@@ -7,9 +7,13 @@ import { useGetCarByIdQuery } from "../store/Car/carApi";
 import useRentals from "../store/hooks/useRentals";
 import { Car } from "../types";
 import { LIBERIA_LOCATIONS } from "../constants/locations";
-import { MapPin, Car as CarIcon } from "lucide-react";
+import { MapPin, Car as CarIcon, Map as MapIcon } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import { useCreateCheckoutSessionMutation } from "../store/Payment/paymentApi";
+import LocationPicker from "./maps/LocationPicker";
+import RouteDisplay from "./maps/RouteDisplay";
+import { Coordinates } from "../types/map";
+import { getCoordsFromLocationName } from "../utils/mapUtils";
 
 // Initialize Stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51234567890abcdef');
@@ -74,6 +78,10 @@ const BookingFlow: React.FC = () => {
     dropoffLocation: "default",
     specialRequests: "",
   });
+
+  const [pickupCoords, setPickupCoords] = useState<Coordinates | null>(null);
+  const [dropoffCoords, setDropoffCoords] = useState<Coordinates | null>(null);
+  const [showRouteMap, setShowRouteMap] = useState(false);
 
   // Check authentication and user role on mount
   useEffect(() => {
@@ -447,58 +455,88 @@ const BookingFlow: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Pickup and Dropoff Locations */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium mb-2 flex items-center text-gray-700">
-                          <MapPin className="w-4 h-4 mr-2 text-green-600" />
-                          Pickup Location
-                        </label>
-                        <select 
-                          value={bookingData.pickupLocation}
-                          onChange={(e) => handleInputChange("pickupLocation", e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900"
-                        >
-                          <option value="default">Select location</option>
-                          {LIBERIA_LOCATIONS.map((location) => (
-                            <option key={location} value={location}>
-                              {location}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-2 flex items-center justify-between text-gray-700">
-                          <span className="flex items-center">
-                            <MapPin className="w-4 h-4 mr-2 text-green-600" />
-                            Drop-off Location
-                          </span>
-                          <label className="flex items-center text-xs font-normal cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={bookingData.dropoffLocation === "default"}
-                              onChange={(e) => handleInputChange("dropoffLocation", e.target.checked ? "default" : bookingData.pickupLocation)}
-                              className="mr-2 rounded text-green-600 focus:ring-green-500"
+                    {/* Pickup and Dropoff Locations with Map */}
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <LocationPicker
+                          selectedLocation={bookingData.pickupLocation !== "default" ? bookingData.pickupLocation : null}
+                          onLocationSelect={(locationName, coordinates) => {
+                            handleInputChange("pickupLocation", locationName);
+                            setPickupCoords(coordinates);
+                            // If dropoff is same as pickup, update it too
+                            if (bookingData.dropoffLocation === "default" || bookingData.dropoffLocation === bookingData.pickupLocation) {
+                              handleInputChange("dropoffLocation", locationName);
+                              setDropoffCoords(coordinates);
+                            }
+                          }}
+                          label="Pickup Location"
+                        />
+                        
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                              <MapPin className="w-4 h-4 inline mr-2 text-green-600" />
+                              Drop-off Location
+                            </label>
+                            <label className="flex items-center text-xs font-normal cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={bookingData.dropoffLocation === "default" || bookingData.dropoffLocation === bookingData.pickupLocation}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    handleInputChange("dropoffLocation", bookingData.pickupLocation);
+                                    setDropoffCoords(pickupCoords);
+                                  } else {
+                                    handleInputChange("dropoffLocation", "default");
+                                  }
+                                }}
+                                className="mr-2 rounded text-green-600 focus:ring-green-500"
+                              />
+                              Same as pickup
+                            </label>
+                          </div>
+                          
+                          {bookingData.dropoffLocation !== bookingData.pickupLocation && (
+                            <LocationPicker
+                              selectedLocation={bookingData.dropoffLocation !== "default" ? bookingData.dropoffLocation : null}
+                              onLocationSelect={(locationName, coordinates) => {
+                                handleInputChange("dropoffLocation", locationName);
+                                setDropoffCoords(coordinates);
+                              }}
+                              label=""
                             />
-                            Same as pickup
-                          </label>
-                        </label>
-                        <select 
-                          value={bookingData.dropoffLocation}
-                          onChange={(e) => handleInputChange("dropoffLocation", e.target.value)}
-                          disabled={bookingData.dropoffLocation === "default"}
-                          className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 ${
-                            bookingData.dropoffLocation === "default" ? "opacity-50 cursor-not-allowed" : ""
-                          }`}
-                        >
-                          <option value="default">Same as Pickup</option>
-                          {LIBERIA_LOCATIONS.map((location) => (
-                            <option key={location} value={location}>
-                              {location}
-                            </option>
-                          ))}
-                        </select>
+                          )}
+                          
+                          {(bookingData.dropoffLocation === "default" || bookingData.dropoffLocation === bookingData.pickupLocation) && (
+                            <div className="px-4 py-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 text-sm">
+                              Same as pickup location
+                            </div>
+                          )}
+                        </div>
                       </div>
+                      
+                      {/* Route Display */}
+                      {pickupCoords && dropoffCoords && bookingData.pickupLocation !== bookingData.dropoffLocation && (
+                        <div className="mt-6">
+                          <button
+                            type="button"
+                            onClick={() => setShowRouteMap(!showRouteMap)}
+                            className="flex items-center text-blue-600 hover:text-blue-800 font-medium mb-4"
+                          >
+                            <MapIcon className="w-4 h-4 mr-2" />
+                            {showRouteMap ? 'Hide Route Map' : 'Show Route Map'}
+                          </button>
+                          
+                          {showRouteMap && (
+                            <RouteDisplay
+                              pickupLocation={pickupCoords}
+                              dropoffLocation={dropoffCoords}
+                              pickupName={bookingData.pickupLocation}
+                              dropoffName={bookingData.dropoffLocation}
+                            />
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Add-ons and Extras */}

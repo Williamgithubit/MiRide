@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../shared/Sidebar';
 import TopNavbar from '../shared/TopNavbar';
@@ -29,6 +29,20 @@ const CustomerDashboard: React.FC = () => {
     hasValidUserId, 
     isAuthenticated 
   } = useCustomerData();
+
+  // Listen for section change events from notifications
+  useEffect(() => {
+    const handleSectionChange = (event: CustomEvent) => {
+      if (event.detail) {
+        setActiveSection(event.detail);
+      }
+    };
+
+    window.addEventListener('changeSection' as any, handleSectionChange);
+    return () => {
+      window.removeEventListener('changeSection' as any, handleSectionChange);
+    };
+  }, []);
 
   // Handle authentication errors
   const handleLogin = () => {

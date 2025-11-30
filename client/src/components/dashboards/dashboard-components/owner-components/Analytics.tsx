@@ -287,19 +287,19 @@ const Analytics: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Analytics</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Analytics</h2>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
           {/* Time Period Filter */}
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-gray-500" />
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Filter className="w-4 h-4 text-gray-500 flex-shrink-0" />
             <select
               value={timePeriod}
               onChange={(e) => setTimePeriod(e.target.value as 'weekly' | 'monthly' | 'yearly')}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="flex-1 sm:flex-none px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
@@ -307,45 +307,46 @@ const Analytics: React.FC = () => {
             </select>
           </div>
 
-          {/* Export Buttons */}
-          <button
-            onClick={() => handleExport('csv')}
-            disabled={isExporting || isGeneratingReport}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
-          >
-            <Download className="w-4 h-4" />
-            CSV
-          </button>
-          
-          <button
-            onClick={() => handleExport('pdf')}
-            disabled={isExporting || isGeneratingReport}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
-          >
-            <Download className="w-4 h-4" />
-            PDF
-          </button>
+          {/* Export and Refresh Buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleExport('csv')}
+              disabled={isExporting || isGeneratingReport}
+              className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs sm:text-sm flex-1 sm:flex-none"
+            >
+              <Download className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span>CSV</span>
+            </button>
+            
+            <button
+              onClick={() => handleExport('pdf')}
+              disabled={isExporting || isGeneratingReport}
+              className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs sm:text-sm flex-1 sm:flex-none"
+            >
+              <Download className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span>PDF</span>
+            </button>
 
-          {/* Refresh Button */}
-          <button
-            onClick={() => refetch()}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Refresh
-          </button>
+            <button
+              onClick={() => refetch()}
+              className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm flex-1 sm:flex-none"
+            >
+              <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         {summaryCards.map((card, index) => (
           <SummaryCard key={index} {...card} />
         ))}
       </div>
 
       {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <SummaryCard
           title="Utilization Rate"
           value={`${(analyticsData?.utilizationRate || 0).toFixed(1)}%`}
@@ -373,7 +374,7 @@ const Analytics: React.FC = () => {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Bookings Trend Chart */}
         <ChartCard title="Bookings & Revenue Trend">
           <ResponsiveContainer width="100%" height={300}>
@@ -501,25 +502,25 @@ const Analytics: React.FC = () => {
 
       {/* Recent Bookings Table */}
       <ChartCard title="Recent Bookings">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+        <div className="overflow-x-auto -mx-6 sm:mx-0">
+          <table className="w-full text-xs sm:text-sm text-left min-w-[640px]">
             <thead className="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th className="px-6 py-3">Booking ID</th>
-                <th className="px-6 py-3">Customer</th>
-                <th className="px-6 py-3">Car</th>
-                <th className="px-6 py-3">Period</th>
-                <th className="px-6 py-3">Amount</th>
-                <th className="px-6 py-3">Status</th>
+                <th className="px-3 sm:px-6 py-2 sm:py-3">Booking ID</th>
+                <th className="px-3 sm:px-6 py-2 sm:py-3">Customer</th>
+                <th className="px-3 sm:px-6 py-2 sm:py-3">Car</th>
+                <th className="px-3 sm:px-6 py-2 sm:py-3">Period</th>
+                <th className="px-3 sm:px-6 py-2 sm:py-3">Amount</th>
+                <th className="px-3 sm:px-6 py-2 sm:py-3">Status</th>
               </tr>
             </thead>
             <tbody>
               {(analyticsData?.recentBookings || []).slice(0, 10).map((booking) => (
                 <tr key={booking.id} className="bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-                  <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 font-medium text-gray-900 dark:text-white">
                     #{booking.id.toString().padStart(4, '0')}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4">
                     <div>
                       <div className="font-medium text-gray-900 dark:text-white">
                         {booking.customerName}
@@ -529,19 +530,19 @@ const Analytics: React.FC = () => {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-gray-900 dark:text-white">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-900 dark:text-white">
                     {booking.carName}
                   </td>
-                  <td className="px-6 py-4 text-gray-900 dark:text-white">
-                    <div className="text-sm">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-900 dark:text-white">
+                    <div className="text-xs sm:text-sm whitespace-nowrap">
                       {new Date(booking.startDate).toLocaleDateString()} - 
                       {new Date(booking.endDate).toLocaleDateString()}
                     </div>
                   </td>
-                  <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 font-medium text-gray-900 dark:text-white">
                     ${booking.totalAmount.toLocaleString()}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4">
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                       booking.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
                       booking.status === 'active' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :

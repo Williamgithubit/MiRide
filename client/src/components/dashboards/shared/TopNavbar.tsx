@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Search, User, Moon, Sun, Settings, LogOut, Menu } from 'lucide-react';
 import useReduxAuth from '../../../store/hooks/useReduxAuth';
 import { useDarkMode } from '../../../contexts/DarkModeContext';
@@ -21,6 +21,7 @@ const TopNavbar: React.FC<TopNavbarProps> = ({
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const { isDarkMode, toggleDarkMode } = useDarkMode();
   const { user, logout } = useReduxAuth();
+  const profileMenuRef = useRef<HTMLDivElement>(null);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +29,23 @@ const TopNavbar: React.FC<TopNavbarProps> = ({
       onSearch(searchQuery);
     }
   };
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    if (showProfileMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showProfileMenu]);
 
 
 
@@ -82,39 +100,45 @@ const TopNavbar: React.FC<TopNavbarProps> = ({
           <NotificationDropdown />
 
           {/* Profile Menu */}
-          <div className="relative">
+          <div className="relative" ref={profileMenuRef}>
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="flex items-center gap-2 p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="flex items-center gap-1 sm:gap-2 p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               aria-label="User menu"
             >
               <User className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="hidden lg:block text-sm font-medium max-w-[100px] truncate">
+              <span className="hidden sm:block text-xs sm:text-sm font-medium max-w-[80px] sm:max-w-[100px] lg:max-w-[120px] truncate">
                 {user?.name || 'User'}
               </span>
             </button>
 
             {showProfileMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+              <div className="absolute right-0 mt-2 w-56 sm:w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+                <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700">
+                  <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-white truncate">
                     {user?.name}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate mt-0.5">
                     {user?.email}
                   </p>
                 </div>
-                <div className="py-2">
-                  <button className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Settings
+                <div className="py-1 sm:py-2">
+                  <button 
+                    onClick={() => setShowProfileMenu(false)}
+                    className="flex items-center w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <Settings className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span>Settings</span>
                   </button>
                   <button 
-                    onClick={logout}
-                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    onClick={() => {
+                      setShowProfileMenu(false);
+                      logout();
+                    }}
+                    className="flex items-center w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Logout
+                    <LogOut className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span>Logout</span>
                   </button>
                 </div>
               </div>

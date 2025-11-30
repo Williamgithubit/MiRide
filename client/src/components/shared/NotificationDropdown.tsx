@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   FaBell, 
   FaCheck, 
@@ -27,11 +28,13 @@ import {
   useGetOwnerUnreadCountQuery,
   useMarkOwnerNotificationAsReadMutation,
   useMarkAllOwnerNotificationsAsReadMutation,
+  OwnerNotification
 } from '../../store/Notification/ownerNotificationApi';
 import { useAppSelector } from '../../store/hooks';
 
 const NotificationDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
   const userRole = useAppSelector((state) => state.auth.user?.role);
   
   // Use owner or customer API based on role
@@ -109,24 +112,24 @@ const NotificationDropdown: React.FC = () => {
     
     switch (type) {
       case 'booking_request':
-        return <FaCar className={`${iconClass} text-blue-600`} />;
+        return <FaCar className={`${iconClass} text-orange-500`} />;
       case 'booking_approved':
-        return <FaCheckCircle className={`${iconClass} text-green-600`} />;
+        return <FaCheckCircle className={`${iconClass} text-orange-500`} />;
       case 'booking_rejected':
         return <FaTimesCircle className={`${iconClass} text-red-600`} />;
       case 'booking_cancelled':
         return <FaTimesCircle className={`${iconClass} text-orange-600`} />;
       case 'payment_successful':
       case 'payment_received':
-        return <FaCreditCard className={`${iconClass} text-green-600`} />;
+        return <FaCreditCard className={`${iconClass} text-orange-500`} />;
       case 'payment_failed':
         return <FaCreditCard className={`${iconClass} text-red-600`} />;
       case 'rental_started':
-        return <FaKey className={`${iconClass} text-blue-600`} />;
+        return <FaKey className={`${iconClass} text-orange-500`} />;
       case 'rental_completed':
-        return <FaFlag className={`${iconClass} text-purple-600`} />;
+        return <FaFlag className={`${iconClass} text-orange-500`} />;
       case 'customer_review':
-        return <FaStar className={`${iconClass} text-yellow-600`} />;
+        return <FaStar className={`${iconClass} text-orange-500`} />;
       case 'system_alert':
         return <FaExclamationTriangle className={`${iconClass} text-orange-600`} />;
       case 'maintenance_reminder':
@@ -136,19 +139,40 @@ const NotificationDropdown: React.FC = () => {
     }
   };
 
-  const getPriorityColor = (priority: Notification['priority']) => {
+  const getPriorityColor = (priority: Notification['priority'] | OwnerNotification['priority']) => {
     switch (priority) {
       case 'urgent':
         return 'text-red-600 dark:text-red-400';
       case 'high':
-        return 'text-orange-600 dark:text-orange-400';
+        return 'text-orange-500 dark:text-orange-400';
       case 'medium':
-        return 'text-blue-600 dark:text-blue-400';
+        return 'text-orange-500 dark:text-orange-400';
       case 'low':
-        return 'text-gray-600 dark:text-gray-400';
+        return 'text-orange-500 dark:text-orange-400';
       default:
-        return 'text-gray-600 dark:text-gray-400';
+        return 'text-orange-500 dark:text-orange-400';
     }
+  };
+
+  const handleNotificationClick = async (notification: Notification | OwnerNotification) => {
+    // Mark as read if unread
+    if (!notification.isRead) {
+      await handleMarkAsRead(notification.id);
+    }
+    
+    // Close dropdown
+    setIsOpen(false);
+    
+    // Dispatch event to change section to notifications
+    // The dashboard is already loaded, just need to change the active section
+    window.dispatchEvent(new CustomEvent('changeSection', { detail: 'notifications' }));
+  };
+
+  const handleViewAllNotifications = () => {
+    setIsOpen(false);
+    
+    // Dispatch event to change section to notifications
+    window.dispatchEvent(new CustomEvent('changeSection', { detail: 'notifications' }));
   };
 
   const formatTimeAgo = (dateString: string) => {
@@ -214,7 +238,8 @@ const NotificationDropdown: React.FC = () => {
                 notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-4 border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
+                    onClick={() => handleNotificationClick(notification)}
+                    className={`p-4 border-b border-gray-100 dark:border-gray-700 last:border-b-0 cursor-pointer ${
                       !notification.isRead 
                         ? 'bg-blue-50 dark:bg-blue-900/20' 
                         : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
@@ -238,8 +263,11 @@ const NotificationDropdown: React.FC = () => {
                             </span>
                             {!notification.isRead && (
                               <button
-                                onClick={() => handleMarkAsRead(notification.id)}
-                                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMarkAsRead(notification.id);
+                                }}
+                                className="text-orange-500 dark:text-orange-400 hover:text-orange-600 dark:hover:text-orange-300"
                                 title="Mark as read"
                               >
                                 <FaCheck className="w-3 h-3" />
@@ -247,11 +275,11 @@ const NotificationDropdown: React.FC = () => {
                             )}
                           </div>
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 line-clamp-2">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
                           {notification.message}
                         </p>
                         {!notification.isRead && (
-                          <div className="w-2 h-2 bg-blue-500 rounded-full mt-2" />
+                          <div className="w-2 h-2 bg-orange-500 rounded-full mt-2" />
                         )}
                       </div>
                     </div>
@@ -264,11 +292,8 @@ const NotificationDropdown: React.FC = () => {
             {notifications.length > 0 && (
               <div className="p-3 border-t border-gray-200 dark:border-gray-700">
                 <button
-                  onClick={() => {
-                    setIsOpen(false);
-                    // Navigate to full notifications page if you have one
-                  }}
-                  className="w-full text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-center"
+                  onClick={handleViewAllNotifications}
+                  className="w-full text-sm text-orange-500 dark:text-orange-400 hover:text-orange-600 dark:hover:text-orange-300 text-center font-medium"
                 >
                   View all notifications
                 </button>

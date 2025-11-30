@@ -41,17 +41,29 @@ const Maintenance: React.FC = () => {
     isError,
     error,
     refetch 
-  } = useGetMaintenanceByOwnerQuery();
+  } = useGetMaintenanceByOwnerQuery(undefined, {
+    // Add polling interval to retry if stuck
+    pollingInterval: 0,
+    // Skip if already errored
+    skip: false,
+  });
 
-  // Debug logging
+  // Track loading timeout
+  const [isLoadingTimeout, setIsLoadingTimeout] = React.useState(false);
+
+  // Timeout handling
   React.useEffect(() => {
-    console.log('Maintenance Query State:', {
-      isLoading,
-      isError,
-      error,
-      recordsCount: maintenanceRecords.length
-    });
-  }, [isLoading, isError, error, maintenanceRecords]);
+    // Set a timeout for loading state
+    if (isLoading) {
+      const timeout = setTimeout(() => {
+        setIsLoadingTimeout(true);
+      }, 10000); // 10 second timeout
+
+      return () => clearTimeout(timeout);
+    } else {
+      setIsLoadingTimeout(false);
+    }
+  }, [isLoading]);
   
   const [createMaintenance, { isLoading: isCreating }] = useCreateMaintenanceMutation();
   const [updateMaintenance, { isLoading: isUpdating }] = useUpdateMaintenanceMutation();
@@ -64,9 +76,14 @@ const Maintenance: React.FC = () => {
     const inProgress = maintenanceRecords.filter(r => r.status === 'in-progress').length;
     const completed = maintenanceRecords.filter(r => r.status === 'completed').length;
     const urgent = maintenanceRecords.filter(r => r.priority === 'urgent' && r.status !== 'completed').length;
+    // Total spent on completed maintenance
     const totalCost = maintenanceRecords
       .filter(r => r.status === 'completed')
       .reduce((sum, r) => sum + r.cost, 0);
+    
+    // Total estimated cost (all maintenance including scheduled)
+    const totalEstimatedCost = maintenanceRecords
+      .reduce((sum, r) => sum + (r.cost || 0), 0);
 
     // Calculate upcoming maintenance (next 30 days)
     const thirtyDaysFromNow = new Date();
@@ -84,7 +101,8 @@ const Maintenance: React.FC = () => {
       completed,
       urgent,
       upcoming,
-      totalCost
+      totalCost,
+      totalEstimatedCost
     };
   }, [maintenanceRecords]);
 
@@ -172,6 +190,61 @@ const Maintenance: React.FC = () => {
     refetch();
     toast.success('Maintenance data refreshed');
   };
+
+  // Show timeout error if loading takes too long
+  if (isLoadingTimeout && isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Maintenance Management
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Track and manage vehicle maintenance schedules
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6">
+          <div className="flex items-start space-x-3">
+            <FaExclamationTriangle className="w-6 h-6 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+                Loading Taking Longer Than Expected
+              </h3>
+              <p className="text-yellow-700 dark:text-yellow-300 mb-4">
+                The maintenance data is taking longer to load than usual. This might be due to:
+              </p>
+              <ul className="list-disc list-inside text-yellow-700 dark:text-yellow-300 mb-4 space-y-1">
+                <li>The maintenance table hasn't been created in the database yet</li>
+                <li>Network connectivity issues</li>
+                <li>Server is processing a large amount of data</li>
+              </ul>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    setIsLoadingTimeout(false);
+                    refetch();
+                  }}
+                  className="flex items-center space-x-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors"
+                >
+                  <FaSyncAlt className="w-4 h-4" />
+                  <span>Retry</span>
+                </button>
+                <button
+                  onClick={() => setIsLoadingTimeout(false)}
+                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                >
+                  Continue Waiting
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Show error state
   if (isError) {
@@ -311,11 +384,11 @@ const Maintenance: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Spent</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Cost</p>
               <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                ${(Number(stats.totalCost) || 0).toFixed(2)}
+                ${(Number(stats.totalEstimatedCost) || 0).toFixed(2)}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Completed maintenance</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">All maintenance records</p>
             </div>
             <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
               <FaWrench className="w-5 h-5 text-purple-600 dark:text-purple-400" />

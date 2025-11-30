@@ -5,6 +5,8 @@ import toast from "react-hot-toast";
 import { ImageUpload } from "../../../common/ImageUpload";
 import { LIBERIA_LOCATIONS } from "../../../../constants/locations";
 import { CAR_FEATURES } from "../../../../constants/features";
+import LocationPicker from "../../../maps/LocationPicker";
+import { Coordinates } from "../../../../types/map";
 
 interface CreateCarData {
   name: string;
@@ -14,6 +16,7 @@ interface CreateCarData {
   rentalPricePerDay: number;
   seats: number;
   fuelType: 'Petrol' | 'Diesel' | 'Electric' | 'Hybrid';
+  transmission: 'Automatic' | 'Manual';
   location: string;
   features: string[];
   rating: number;
@@ -41,6 +44,7 @@ const AddCarModal: React.FC<AddCarModalProps> = ({
     rentalPricePerDay: 0,
     seats: 5,
     fuelType: "Petrol",
+    transmission: "Automatic",
     location: "",
     features: [],
     rating: 0,
@@ -52,6 +56,7 @@ const AddCarModal: React.FC<AddCarModalProps> = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [locationCoords, setLocationCoords] = useState<Coordinates | null>(null);
   const [addCar] = useAddCarMutation();
   const [uploadCarImages] = useUploadCarImagesMutation();
 
@@ -128,6 +133,7 @@ const AddCarModal: React.FC<AddCarModalProps> = ({
         rentalPricePerDay: 0,
         seats: 5,
         fuelType: "Petrol",
+        transmission: "Automatic",
         location: "",
         features: [],
         rating: 0,
@@ -224,22 +230,15 @@ const AddCarModal: React.FC<AddCarModalProps> = ({
               required
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Location</label>
-            <select
-              name="location"
-              value={formData.location}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700"
-              required
-            >
-              <option value="">Select location</option>
-              {LIBERIA_LOCATIONS.map((location) => (
-                <option key={location} value={location}>
-                  {location}
-                </option>
-              ))}
-            </select>
+          <div className="md:col-span-2">
+            <LocationPicker
+              selectedLocation={formData.location || null}
+              onLocationSelect={(locationName, coordinates) => {
+                setFormData(prev => ({ ...prev, location: locationName }));
+                setLocationCoords(coordinates);
+              }}
+              label="Car Location"
+            />
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -258,18 +257,31 @@ const AddCarModal: React.FC<AddCarModalProps> = ({
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Car Name (Optional)
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
+            <label className="block text-sm font-medium mb-2">Transmission Type</label>
+            <select
+              name="transmission"
+              value={formData.transmission}
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700"
-              placeholder="Will auto-generate if empty"
-            />
+              required
+            >
+              <option value="Automatic">Automatic</option>
+              <option value="Manual">Manual</option>
+            </select>
           </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Car Name (Optional)
+          </label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700"
+            placeholder="Will auto-generate if empty"
+          />
         </div>
 
         {/* Features & Amenities Section */}

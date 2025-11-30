@@ -7,6 +7,7 @@ export interface User {
   phone: string;
   role: 'customer' | 'owner' | 'admin';
   isActive: boolean;
+  avatar?: string;
   createdAt: string;
   updatedAt: string;
 }

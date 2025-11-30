@@ -27,6 +27,7 @@ import CarDetailsModal from "../dashboard-components/owner-components/CarDetails
 import EditCarModal from "../dashboard-components/owner-components/EditCarModal";
 import DeleteConfirmationModal from "../dashboard-components/owner-components/DeleteConfirmationModal";
 import AddCarModal from "../dashboard-components/owner-components/AddCarModal";
+import OwnerProfile from "../dashboard-components/owner-components/OwnerProfile";
 
 const OwnerDashboard: React.FC = () => {
   const [activeSection, setActiveSection] = useState("overview");
@@ -168,6 +169,20 @@ const OwnerDashboard: React.FC = () => {
       toast.error("Failed to load rental data");
     }
   }, [carsError, rentalsError]);
+
+  // Listen for section change events from notifications
+  useEffect(() => {
+    const handleSectionChange = (event: CustomEvent) => {
+      if (event.detail) {
+        setActiveSection(event.detail);
+      }
+    };
+
+    window.addEventListener('changeSection' as any, handleSectionChange);
+    return () => {
+      window.removeEventListener('changeSection' as any, handleSectionChange);
+    };
+  }, []);
 
   const handleCarAdded = () => {
     refetchCars(); // Refresh the car list
@@ -456,6 +471,9 @@ const OwnerDashboard: React.FC = () => {
 
       case "notifications":
         return <OwnerNotifications />;
+
+      case "profile":
+        return <OwnerProfile />;
 
       default:
         return (

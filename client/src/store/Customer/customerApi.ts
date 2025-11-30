@@ -8,10 +8,20 @@ export interface Customer {
   email: string;
   phone?: string;
   address?: string;
+  dateOfBirth?: string;
   driverLicense?: string;
+  avatar?: string;
   createdAt: string;
   updatedAt: string;
   role?: string;
+}
+
+export interface UpdateProfileData {
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  dateOfBirth?: string;
 }
 
 export const customerApi = createApi({
@@ -90,6 +100,29 @@ export const customerApi = createApi({
       }),
       providesTags: [{ type: 'Customer', id: 'SEARCH' }],
     }),
+    // Get current user's profile
+    getCurrentProfile: builder.query<Customer, void>({
+      query: () => '/customers/profile',
+      providesTags: [{ type: 'Customer', id: 'PROFILE' }],
+    }),
+    // Update current user's profile
+    updateProfile: builder.mutation<Customer, UpdateProfileData>({
+      query: (profileData) => ({
+        url: '/customers/profile',
+        method: 'PUT',
+        body: profileData,
+      }),
+      invalidatesTags: [{ type: 'Customer', id: 'PROFILE' }],
+    }),
+    // Upload avatar
+    uploadAvatar: builder.mutation<{ avatar: string }, FormData>({
+      query: (formData) => ({
+        url: '/customers/profile/avatar',
+        method: 'POST',
+        body: formData,
+      }),
+      invalidatesTags: [{ type: 'Customer', id: 'PROFILE' }],
+    }),
   }),
 });
 
@@ -100,4 +133,7 @@ export const {
   useUpdateCustomerMutation,
   useDeleteCustomerMutation,
   useSearchCustomersQuery,
+  useGetCurrentProfileQuery,
+  useUpdateProfileMutation,
+  useUploadAvatarMutation,
 } = customerApi;
