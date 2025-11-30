@@ -285,6 +285,53 @@ export const getOwnerStats = async (req, res) => {
   }
 };
 
+// Get public owner stats (for viewing other owners' profiles)
+export const getPublicOwnerStats = async (req, res) => {
+  try {
+    // Get owner ID from params or body
+    const ownerId = req.params.ownerId || req.body.ownerId;
+    
+    if (!ownerId) {
+      return res.status(400).json({ message: 'Owner ID is required' });
+    }
+
+    // Get current date
+    const now = new Date();
+
+    // Query to get public stats
+    const [ownerStats] = await db.sequelize.query(`
+      WITH owner_cars AS (
+        SELECT id FROM cars WHERE owner_id = :ownerId
+      ),
+      rental_stats AS (
+        SELECT 
+          COUNT(*) as total_bookings
+        FROM rentals r
+        WHERE r.car_id IN (SELECT id FROM owner_cars)
+          AND status IN ('approved', 'active', 'completed')
+      )
+      SELECT 
+        (SELECT COUNT(*) FROM owner_cars) as total_cars,
+        COALESCE(rs.total_bookings, 0) as total_bookings
+      FROM rental_stats rs
+    `, {
+      replacements: { ownerId, now },
+      type: db.sequelize.QueryTypes.SELECT
+    });
+
+    // Parse the results
+    const stats = {
+      totalCars: parseInt(ownerStats.total_cars) || 0,
+      totalBookings: parseInt(ownerStats.total_bookings) || 0,
+    };
+
+    return res.status(200).json(stats);
+  } catch (error) {
+    console.error('Error fetching public owner stats:', error);
+    return res.status(500).json({ message: 'Internal server error', error: error.message });
+  }
+};
+
 // Get revenue data for charts - optimized for owner-specific data
 export const getRevenueData = async (req, res) => {
   try {

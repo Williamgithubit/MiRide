@@ -239,3 +239,170 @@ export const getCustomerStats = async (req, res) => {
         return res.status(500).json({ message: "Internal server error", error: error.message });
     }
 };
+
+// Get current user's profile
+export const getCurrentProfile = async (req, res) => {
+    try {
+        console.log('=== GET CURRENT PROFILE ===');
+        console.log('req.userId:', req.userId);
+        console.log('req.user:', req.user);
+        
+        const userId = req.userId || req.user?.id;
+        
+        if (!userId) {
+            console.log('ERROR: No userId found');
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        
+        console.log('Fetching user with ID:', userId);
+        const user = await db.User.findByPk(userId, {
+            attributes: { exclude: ['password'] },
+            include: [{
+                model: db.CustomerProfile,
+                as: 'customerProfile',
+                required: false
+            }]
+        });
+        
+        if (!user) {
+            console.log('ERROR: User not found for ID:', userId);
+            return res.status(404).json({ message: "User not found" });
+        }
+        
+        // Flatten the response to include customerProfile fields at root level
+        const userData = user.toJSON();
+        if (userData.customerProfile) {
+            userData.driverLicense = userData.customerProfile.driverLicense;
+            delete userData.customerProfile;
+        }
+        
+        console.log('User found:', user.name, user.email);
+        console.log('User data:', JSON.stringify(userData, null, 2));
+        return res.status(200).json(userData);
+    } catch (error) {
+        console.error("Error fetching current profile:", error);
+        return res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+};
+
+// Update current user's profile
+export const updateCurrentProfile = async (req, res) => {
+    try {
+        console.log('=== UPDATE CURRENT PROFILE ===');
+        console.log('req.userId:', req.userId);
+        console.log('req.user:', req.user);
+        console.log('req.body:', req.body);
+        
+        const userId = req.userId || req.user?.id;
+        
+        if (!userId) {
+            console.log('ERROR: No userId found');
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        
+        const { name, email, phone, address, dateOfBirth } = req.body;
+        console.log('Update data:', { name, email, phone, address, dateOfBirth });
+        
+        const user = await db.User.findByPk(userId);
+        
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        
+        // Check if email is being changed and if it's already in use
+        if (email && email !== user.email) {
+            const existingUser = await db.User.findOne({ where: { email } });
+            if (existingUser) {
+                return res.status(400).json({ message: "Email already in use" });
+            }
+        }
+        
+        // Update allowed fields
+        const updates = {};
+        if (name !== undefined) updates.name = name;
+        if (email !== undefined) updates.email = email;
+        if (phone !== undefined) updates.phone = phone;
+        if (address !== undefined) updates.address = address;
+        if (dateOfBirth !== undefined) updates.dateOfBirth = dateOfBirth;
+        
+        await user.update(updates);
+        
+        // Don't return the password
+        const userData = user.toJSON();
+        delete userData.password;
+        
+        return res.status(200).json(userData);
+    } catch (error) {
+        console.error("Error updating profile:", error);
+        return res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+};
+
+// Upload avatar for current user
+export const uploadAvatar = async (req, res) => {
+    try {
+        console.log('=== UPLOAD AVATAR ===');
+        const userId = req.userId || req.user?.id;
+        
+        if (!userId) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        
+        if (!req.file) {
+            return res.status(400).json({ message: "No file uploaded" });
+        }
+        
+        console.log('File uploaded:', req.file.filename);
+        const user = await db.User.findByPk(userId);
+        
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        
+        // Store the file path or URL
+        const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+        await user.update({ avatar: avatarUrl });
+        
+        console.log('Avatar updated to:', avatarUrl);
+        return res.status(200).json({ avatar: avatarUrl });
+    } catch (error) {
+        console.error("Error uploading avatar:", error);
+        return res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+};
+
+// Upload driver's license for current user
+export const uploadDriverLicense = async (req, res) => {
+    try {
+        console.log('=== UPLOAD DRIVER LICENSE ===');
+        const userId = req.userId || req.user?.id;
+        
+        if (!userId) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        
+        if (!req.file) {
+            return res.status(400).json({ message: "No file uploaded" });
+        }
+        
+        console.log('File uploaded:', req.file.filename);
+        
+        // Find or create customer profile
+        let customerProfile = await db.CustomerProfile.findOne({ where: { userId } });
+        
+        if (!customerProfile) {
+            console.log('Creating new customer profile');
+            customerProfile = await db.CustomerProfile.create({ userId });
+        }
+        
+        // Store the file path or URL
+        const licenseUrl = `/uploads/licenses/${req.file.filename}`;
+        await customerProfile.update({ driverLicense: licenseUrl });
+        
+        console.log('Driver license updated to:', licenseUrl);
+        return res.status(200).json({ driverLicense: licenseUrl });
+    } catch (error) {
+        console.error("Error uploading driver license:", error);
+        return res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+};

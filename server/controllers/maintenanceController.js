@@ -5,33 +5,25 @@ import { Op } from 'sequelize';
 // Get all maintenance records for owner's cars
 export const getMaintenanceByOwner = async (req, res) => {
   try {
-    console.log('=== getMaintenanceByOwner called ===');
     const ownerId = req.userId || req.user?.id || req.params.ownerId;
-    console.log('Owner ID:', ownerId);
     
     if (!ownerId) {
-      console.log('No owner ID provided');
       return res.status(400).json({ message: 'Owner ID is required' });
     }
 
     // First, check if the owner has any cars
-    console.log('Checking for owner cars...');
     const ownerCars = await db.Car.findAll({
       where: { ownerId },
       attributes: ['id', 'name']
     });
-    console.log('Owner cars found:', ownerCars.length);
 
     if (!ownerCars || ownerCars.length === 0) {
-      console.log('Owner has no cars, returning empty array');
       return res.json([]);
     }
 
     const carIds = ownerCars.map(car => car.id);
-    console.log('Car IDs:', carIds);
     
-    // Check if maintenance table exists and has records
-    console.log('Fetching maintenance records...');
+    // Fetch maintenance records
     const maintenanceRecords = await db.Maintenance.findAll({
       where: {
         carId: { [Op.in]: carIds }
@@ -40,7 +32,7 @@ export const getMaintenanceByOwner = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'make', 'year'],
+          attributes: ['id', 'name', 'model', 'brand', 'year'],
           include: [{
             model: db.CarImage,
             as: 'images',
@@ -51,8 +43,6 @@ export const getMaintenanceByOwner = async (req, res) => {
       ],
       order: [['createdAt', 'DESC']],
     });
-
-    console.log('Maintenance records found:', maintenanceRecords.length);
     
     // Transform the response to ensure imageUrl is properly included
     const transformedRecords = maintenanceRecords.map(record => {
@@ -72,7 +62,6 @@ export const getMaintenanceByOwner = async (req, res) => {
     res.json(transformedRecords);
   } catch (error) {
     console.error('Error fetching maintenance records:', error);
-    console.error('Error stack:', error.stack);
     res.status(500).json({ 
       message: 'Failed to fetch maintenance records',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -91,7 +80,7 @@ export const getMaintenanceByCar = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'make', 'year'],
+          attributes: ['id', 'name', 'model', 'brand', 'year'],
           include: [{
             model: db.CarImage,
             as: 'images',
@@ -132,10 +121,6 @@ export const getMaintenanceByCar = async (req, res) => {
 // Create new maintenance record
 export const createMaintenance = async (req, res) => {
   try {
-    console.log('=== createMaintenance called ===');
-    console.log('Request body:', req.body);
-    console.log('User ID:', req.userId || req.user?.id);
-    
     const {
       carId,
       type,
@@ -149,17 +134,14 @@ export const createMaintenance = async (req, res) => {
     } = req.body;
 
     // Verify car ownership
-    console.log('Verifying car ownership for carId:', carId, 'ownerId:', req.userId || req.user?.id);
     const car = await db.Car.findOne({
       where: { 
         id: carId, 
         ownerId: req.userId || req.user?.id 
       },
     });
-    console.log('Car found:', car ? 'Yes' : 'No');
 
     if (!car) {
-      console.log('Car not found or not owned by user');
       return res.status(404).json({ message: 'Car not found or not owned by user' });
     }
 
@@ -181,7 +163,7 @@ export const createMaintenance = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'make', 'year'],
+          attributes: ['id', 'name', 'model', 'brand', 'year'],
           include: [{
             model: db.CarImage,
             as: 'images',
@@ -203,11 +185,9 @@ export const createMaintenance = async (req, res) => {
       recordData.car.imageUrl = null;
     }
 
-    console.log('Maintenance record created successfully:', recordData.id);
     res.status(201).json(recordData);
   } catch (error) {
     console.error('Error creating maintenance record:', error);
-    console.error('Error stack:', error.stack);
     res.status(500).json({ 
       message: 'Failed to create maintenance record',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -247,7 +227,7 @@ export const updateMaintenance = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'make', 'year'],
+          attributes: ['id', 'name', 'model', 'brand', 'year'],
           include: [{
             model: db.CarImage,
             as: 'images',

@@ -29,9 +29,9 @@ carRouter.get('/', getCars);
 // Available cars route - check availability based on dates (MUST come before /:id)
 carRouter.get('/available', getAvailableCars);
 
-// Owner routes - only car owners can create and manage their cars (MUST come before /:id)
-carRouter.get('/owner/:ownerId', auth(['owner']), getCarsByOwner);
-carRouter.get('/owner', auth(['owner']), getCarsByOwner);
+// Owner routes - public can view, but /owner without ID requires auth (MUST come before /:id)
+carRouter.get('/owner/:ownerId', getCarsByOwner); // Public - anyone can see owner's cars
+carRouter.get('/owner', auth(['owner']), getCarsByOwner); // Protected - owner's own cars
 
 // Public route for single car (MUST come after /owner and /available routes)
 carRouter.get('/:id', getCar);

@@ -4,6 +4,7 @@ import {
   getCustomerStats,
   getAdminStats,
   getOwnerStats,
+  getPublicOwnerStats,
   getRevenueData,
   getCarUtilizationData,
   generateReport,
@@ -14,7 +15,11 @@ import {
 
 const router = express.Router();
 
-// Apply authentication middleware to all dashboard routes
+// Public routes (no authentication required)
+router.get('/public-owner-stats/:ownerId', getPublicOwnerStats);
+router.post('/public-owner-stats', getPublicOwnerStats);
+
+// Apply authentication middleware to all other dashboard routes
 router.use(authenticate);
 
 // Customer dashboard routes
@@ -36,19 +41,21 @@ router.get('/debug/auth', authenticate, (req, res) => {
     userFromToken: req.user?.role,
     userObject: req.user ? {
       id: req.user.id,
-      name: req.user.name,
       email: req.user.email,
       role: req.user.role
     } : null
   });
 });
 
+// Public owner stats (no authorization required - public info)
+router.get('/public-owner-stats/:ownerId', getPublicOwnerStats);
+router.post('/public-owner-stats', getPublicOwnerStats);
+
 // Owner analytics route
 router.get('/owner/analytics', authorize(['owner', 'admin']), getOwnerAnalytics);
 
 // Revenue charts data
 router.get('/revenue-data', authorize(['owner', 'admin']), getRevenueData);
-router.get('/revenue/data', authorize(['owner', 'admin']), getRevenueData);
 
 // Car utilization data
 router.get('/cars/utilization', authorize(['owner', 'admin']), getCarUtilizationData);

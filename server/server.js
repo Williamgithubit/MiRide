@@ -23,6 +23,7 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import userManagementRoutes from './routes/userManagementRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
+import ownerProfileRoutes from './routes/ownerProfileRoutes.js';
 import BookingExpirationService from './services/bookingExpirationService.js';
 
 // Load environment variables
@@ -90,6 +91,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin/users', userManagementRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/owners', ownerProfileRoutes);
 
 // Default route
 app.get('/', (req, res) => {
@@ -107,9 +109,9 @@ app.use((err, req, res, next) => {
 
 
 // Sync database and start server
-const startServer = async () => {
+const startServer = async() => {
   try {
-    await db.sequelize.authenticate(); //
+    await db.sequelize.sync({ force: true }); //
     console.log('Database connection has been established successfully.');
     
     // In development, you may want to sync the models with the database

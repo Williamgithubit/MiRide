@@ -271,30 +271,41 @@ export const getCustomerRentals = async (req, res) => {
         { 
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'rentalPricePerDay', 'brand', 'year', 'imageUrl'],
-          include: [{
-            model: db.CarImage,
-            as: 'images',
-            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
-            separate: true, // Use separate query to get all images
-            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
-          }]
+          attributes: ['id', 'name', 'model', 'rentalPricePerDay', 'brand', 'year'],
+          required: false
         },
         {
           model: db.User,
           as: 'customer',
-          attributes: ['id', 'name', 'email']
+          attributes: ['id', 'name', 'email'],
+          required: false
         }
       ],
       order: [['startDate', 'DESC']]
     });
 
     console.log(`getCustomerRentals - Found ${rentals.length} rentals`);
-    console.log('getCustomerRentals - Sample rental:', rentals.length > 0 ? JSON.stringify(rentals[0], null, 2) : 'No rentals');
+    if (rentals.length > 0) {
+      console.log('getCustomerRentals - Sample rental with payment info:', {
+        id: rentals[0].id,
+        paymentStatus: rentals[0].paymentStatus,
+        totalAmount: rentals[0].totalAmount,
+        totalCost: rentals[0].totalCost,
+        status: rentals[0].status,
+        createdAt: rentals[0].createdAt
+      });
+    }
     res.json(rentals);
   } catch (error) {
-    console.error('getCustomerRentals - Error:', error);
-    res.status(500).json({ error: error.message });
+    console.error('getCustomerRentals - Error Details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    res.status(500).json({ 
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 

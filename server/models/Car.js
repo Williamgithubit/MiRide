@@ -65,6 +65,11 @@ const Car = (sequelize, DataTypes) => {
       field: 'fuel_type',
       defaultValue: 'Petrol',
     },
+    transmission: {
+      type: DataTypes.ENUM('Automatic', 'Manual'),
+      allowNull: false,
+      defaultValue: 'Automatic',
+    },
     location: {
       type: DataTypes.STRING,
       allowNull: false,
