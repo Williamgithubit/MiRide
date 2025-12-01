@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import Sidebar from '../shared/Sidebar';
 import TopNavbar from '../shared/TopNavbar';
 import CustomerOverview from '../dashboard-components/customer-components/CustomerOverview';
@@ -13,9 +14,16 @@ import Notifications from '../dashboard-components/customer-components/Notificat
 import AuthErrorMessage from '../dashboard-components/customer-components/AuthErrorMessage';
 import { useCustomerData } from '../dashboard-components/customer-components/useCustomerData';
 import useReduxAuth from '../../../store/hooks/useReduxAuth';
+import { checkTermsStatus } from '../../../store/Terms/termsSlice';
+import { AppDispatch, RootState } from '../../../store/store';
+import TermsModal from '../../shared/TermsModal';
 
 const CustomerDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
+  const { termsAccepted } = useSelector((state: RootState) => state.terms);
+  const { user } = useSelector((state: RootState) => state.auth);
+  
   const [activeSection, setActiveSection] = useState('overview');
   const [selectedCar, setSelectedCar] = useState<any>(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -29,6 +37,13 @@ const CustomerDashboard: React.FC = () => {
     hasValidUserId, 
     isAuthenticated 
   } = useCustomerData();
+
+  // Check terms status on mount
+  useEffect(() => {
+    if (user) {
+      dispatch(checkTermsStatus());
+    }
+  }, [dispatch, user]);
 
   // Listen for section change events from notifications
   useEffect(() => {
@@ -84,30 +99,34 @@ const CustomerDashboard: React.FC = () => {
   // Authentication/Error state - show error message if there are auth issues
   if (!isAuthenticated || !hasValidUserId) {
     return (
-      <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-        <Sidebar 
-          role="customer" 
-          activeSection={activeSection} 
-          onSectionChange={setActiveSection}
-          isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
-        />
-        <div className="flex-1 flex flex-col w-full md:ml-64">
-          <TopNavbar 
-            title="Customer Dashboard" 
-            onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+      <>
+        <TermsModal isOpen={!termsAccepted} userRole={user?.role || 'customer'} />
+        
+        <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+          <Sidebar 
+            role="customer" 
+            activeSection={activeSection} 
+            onSectionChange={setActiveSection}
+            isOpen={isSidebarOpen}
+            onClose={() => setIsSidebarOpen(false)}
           />
-          <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 w-full">
-            <AuthErrorMessage
-              hasValidUserId={hasValidUserId}
-              isAuthenticated={isAuthenticated}
-              customerError={customerError || statsError}
-              onRetry={handleRetry}
-              onLogin={handleLogin}
+          <div className="flex-1 flex flex-col w-full md:ml-64">
+            <TopNavbar 
+              title="Customer Dashboard" 
+              onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
             />
-          </main>
+            <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 w-full">
+              <AuthErrorMessage
+                hasValidUserId={hasValidUserId}
+                isAuthenticated={isAuthenticated}
+                customerError={customerError || statsError}
+                onRetry={handleRetry}
+                onLogin={handleLogin}
+              />
+            </main>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -155,24 +174,27 @@ const CustomerDashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-      <Sidebar 
-        role="customer" 
-        activeSection={activeSection} 
-        onSectionChange={setActiveSection}
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-      />
+    <>
+      <TermsModal isOpen={!termsAccepted} userRole={user?.role || 'customer'} />
       
-      <div className="flex-1 flex flex-col w-full md:ml-64">
-        <TopNavbar 
-          title="Customer Dashboard" 
-          onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+      <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+        <Sidebar 
+          role="customer" 
+          activeSection={activeSection} 
+          onSectionChange={setActiveSection}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
         />
-        <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 w-full">{renderContent()}</main>
+        
+        <div className="flex-1 flex flex-col w-full md:ml-64">
+          <TopNavbar 
+            title="Customer Dashboard" 
+            onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          />
+          <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 w-full">{renderContent()}</main>
+        </div>
       </div>
-
-    </div>
+    </>
   );
 };
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Eye, Edit, Trash2 } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
 import Sidebar from "../shared/Sidebar";
 import TopNavbar from "../shared/TopNavbar";
 import {
@@ -13,10 +14,13 @@ import {
   Rental,
 } from "../../../store/Rental/rentalApi";
 import toast from "react-hot-toast";
+import { checkTermsStatus } from "../../../store/Terms/termsSlice";
+import { AppDispatch, RootState } from "../../../store/store";
+import TermsModal from "../../shared/TermsModal";
 import OverviewSection from "../dashboard-components/owner-components/OverviewSection";
 import CarListingsSection from "../dashboard-components/owner-components/CarListingsSection";
 import { BookingRequestsSection } from "../dashboard-components/owner-components/BookingRequestsSection";
-import EarningsSection from "../dashboard-components/owner-components/EarningsSection";
+import EnhancedEarningsSection from "../dashboard-components/owner-components/EnhancedEarningsSection";
 import Analytics from "../dashboard-components/owner-components/Analytics";
 import Maintenance from "../dashboard-components/owner-components/maintenance-components/Maintenance";
 import { ReviewsSection } from "../dashboard-components/owner-components/ReviewsSection";
@@ -30,6 +34,10 @@ import AddCarModal from "../dashboard-components/owner-components/AddCarModal";
 import OwnerProfile from "../dashboard-components/owner-components/OwnerProfile";
 
 const OwnerDashboard: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { termsAccepted } = useSelector((state: RootState) => state.terms);
+  const { user } = useSelector((state: RootState) => state.auth);
+  
   const [activeSection, setActiveSection] = useState("overview");
   const [showAddCarModal, setShowAddCarModal] = useState(false);
   const [showEditCarModal, setShowEditCarModal] = useState(false);
@@ -39,6 +47,13 @@ const OwnerDashboard: React.FC = () => {
   const [deletingCar, setDeletingCar] = useState<Car | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Check terms status on mount
+  useEffect(() => {
+    if (user) {
+      dispatch(checkTermsStatus());
+    }
+  }, [dispatch, user]);
 
   // Use RTK Query hooks
   const {
@@ -90,9 +105,11 @@ const OwnerDashboard: React.FC = () => {
     () => {
       if (!Array.isArray(ownerRentalsData)) return 0;
       return ownerRentalsData.reduce((sum, rental) => {
-        // Only count completed rentals for earnings
-        if (rental.status === 'completed') {
-          const amount = Number(rental.totalAmount) || Number(rental.totalCost) || 0;
+        // Count approved, active, and completed rentals with paid status for earnings
+        if ((rental.status === 'approved' || rental.status === 'active' || rental.status === 'completed') && 
+            rental.paymentStatus === 'paid') {
+          // Use owner payout (90% after commission) if available, otherwise calculate from total
+          const amount = Number(rental.ownerPayout) || (Number(rental.totalAmount) || Number(rental.totalCost) || 0) * 0.9;
           return sum + (isNaN(amount) ? 0 : amount);
         }
         return sum;
@@ -450,12 +467,7 @@ const OwnerDashboard: React.FC = () => {
       case "booking-requests":
         return <BookingRequestsSection />;
       case "earnings":
-        return (
-          <EarningsSection
-            totalEarnings={totalEarnings}
-            ownerCars={sanitizedOwnerCars}
-          />
-        );
+        return <EnhancedEarningsSection />;
 
       case "analytics":
         return <Analytics />;
@@ -487,58 +499,60 @@ const OwnerDashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-      <Sidebar
-        role="owner"
-        activeSection={activeSection}
-        onSectionChange={setActiveSection}
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-      />
+    <>
+      <TermsModal isOpen={!termsAccepted} userRole={user?.role || 'owner'} />
+      
+      <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+        <Sidebar
+          role="owner"
+          activeSection={activeSection}
+          onSectionChange={setActiveSection}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+        />
+        <div className="flex-1 flex flex-col overflow-hidden md:ml-64">
+          <TopNavbar
+            title="Owner Dashboard"
+            onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          />
+          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900 p-6">
+            {renderContent()}
+          </main>
+        </div>
 
-      <div className="flex-1 flex flex-col w-full md:ml-64">
-        <TopNavbar 
-          title="Owner Dashboard" 
-          onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        <AddCarModal
+          isOpen={showAddCarModal}
+          onClose={() => setShowAddCarModal(false)}
+          onCarAdded={handleCarAdded}
         />
 
-        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 w-full">
-          {renderContent()}
-        </main>
+        <CarDetailsModal
+          isOpen={!!selectedCar}
+          onClose={() => setSelectedCar(null)}
+          selectedCar={selectedCar}
+        />
+
+        {editingCar && (
+          <EditCarModal
+            isOpen={showEditCarModal}
+            onClose={() => {
+              setShowEditCarModal(false);
+              setEditingCar(null);
+            }}
+            car={editingCar}
+            onCarUpdated={handleCarUpdated}
+          />
+        )}
+
+        <DeleteConfirmationModal
+          isOpen={showDeleteModal}
+          onClose={cancelDelete}
+          onConfirm={confirmDeleteCar}
+          car={deletingCar}
+          isDeleting={isDeleting}
+        />
       </div>
-
-      <AddCarModal
-        isOpen={showAddCarModal}
-        onClose={() => setShowAddCarModal(false)}
-        onCarAdded={handleCarAdded}
-      />
-
-      <CarDetailsModal
-        isOpen={!!selectedCar}
-        onClose={() => setSelectedCar(null)}
-        selectedCar={selectedCar}
-      />
-
-      {editingCar && (
-        <EditCarModal
-          isOpen={showEditCarModal}
-          onClose={() => {
-            setShowEditCarModal(false);
-            setEditingCar(null);
-          }}
-          car={editingCar}
-          onCarUpdated={handleCarUpdated}
-        />
-      )}
-
-      <DeleteConfirmationModal
-        isOpen={showDeleteModal}
-        onClose={cancelDelete}
-        onConfirm={confirmDeleteCar}
-        car={deletingCar}
-        isDeleting={isDeleting}
-      />
-    </div>
+    </>
   );
 };
 

@@ -73,6 +73,10 @@ import adminReportsReducer from "./Admin/adminReportsSlice";
 import adminSettingsReducer from "./Admin/adminSettingsSlice";
 // Import owner profile slice
 import ownerProfileReducer from "./Owner/ownerProfileSlice";
+// Import Stripe Connect API
+import { stripeConnectApi } from "./StripeConnect/stripeConnectApi";
+// Import Terms slice
+import termsReducer from "./Terms/termsSlice";
 
 // Define the root state type
 // Note: _persist property removed since we're temporarily bypassing persistence
@@ -103,6 +107,7 @@ const persistConfig = {
     userManagementApi.reducerPath,
     carManagementApi.reducerPath,
     messageApi.reducerPath,
+    stripeConnectApi.reducerPath,
   ],
 };
 
@@ -115,6 +120,7 @@ const appReducer = {
   adminReports: adminReportsReducer,
   adminSettings: adminSettingsReducer,
   ownerProfile: ownerProfileReducer,
+  terms: termsReducer,
   [authApi.reducerPath]: authApi.reducer,
   [carApi.reducerPath]: carApi.reducer,
   [rentalApi.reducerPath]: rentalApi.reducer,
@@ -133,6 +139,7 @@ const appReducer = {
   [carManagementApi.reducerPath]: carManagementApi.reducer,
   [adminBookingsApi.reducerPath]: adminBookingsApi.reducer,
   [messageApi.reducerPath]: messageApi.reducer,
+  [stripeConnectApi.reducerPath]: stripeConnectApi.reducer,
 };
 // Create the root reducer
 const rootReducer = combineReducers(appReducer);
@@ -167,6 +174,7 @@ export const store = configureStore({
       .concat(carManagementApi.middleware)
       .concat(adminBookingsApi.middleware)
       .concat(messageApi.middleware)
+      .concat(stripeConnectApi.middleware)
       .concat(authMiddleware),
   devTools: process.env.NODE_ENV !== "production",
 });

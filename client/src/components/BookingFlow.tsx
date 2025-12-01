@@ -65,7 +65,7 @@ const BookingFlow: React.FC = () => {
     endDate: "",
     totalDays: 0,
     totalPrice: 0,
-    paymentMethod: "credit-card",
+    paymentMethod: "stripe",
     cardNumber: "",
     expiryDate: "",
     cvv: "",
@@ -202,7 +202,12 @@ const BookingFlow: React.FC = () => {
   };
 
   const validateStep2 = () => {
-    // No validation needed for step 2 since we're redirecting to Stripe
+    // Check if mobile money is selected (not yet available)
+    if (bookingData.paymentMethod === "orange-money" || bookingData.paymentMethod === "mtn-money") {
+      toast.error('Mobile money payments are coming soon. Please select Stripe payment method.');
+      return false;
+    }
+    // No other validation needed for step 2 since we're redirecting to Stripe
     return true;
   };
 
@@ -610,9 +615,9 @@ const BookingFlow: React.FC = () => {
                     </div>
                     
                     {bookingData.startDate && bookingData.endDate && (
-                      <div className="mt-6 p-4 bg-green-50 rounded-lg">
-                        <h3 className="font-medium text-green-800 mb-2">Rental Summary</h3>
-                        <div className="text-sm text-green-700 space-y-1">
+                      <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        <h3 className="font-medium text-green-800 dark:text-white mb-2">Rental Summary</h3>
+                        <div className="text-sm text-green-700 dark:text-white space-y-1">
                           <div className="flex justify-between">
                             <span>Car rental ({bookingData.totalDays} days)</span>
                             <span>${(bookingData.totalDays * ((car as any).rentalPricePerDay || car.dailyRate || 0)).toFixed(2)}</span>
@@ -654,23 +659,126 @@ const BookingFlow: React.FC = () => {
 
                 {/* Step 2: Payment */}
                 {currentStep === 2 && (
-                  <div>
+                  <div className="space-y-6">
                     <h2 className="text-2xl font-bold text-gray-800 mb-6">Payment Information</h2>
                     
-                    <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-                      <div className="flex items-start space-x-3">
-                        <svg className="w-6 h-6 text-green-600 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                        </svg>
-                        <div>
-                          <h4 className="font-semibold text-green-900 mb-2">Secure Payment with Stripe</h4>
-                          <p className="text-green-800 text-sm leading-relaxed">
-                            When you click "Next", you will be redirected to our secure Stripe checkout page to complete your payment. 
-                            Your booking details and personal information are protected with industry-standard encryption.
-                          </p>
-                        </div>
+                    {/* Payment Method Selection */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-3">Select Payment Method</label>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Stripe */}
+                        <button
+                          type="button"
+                          onClick={() => handleInputChange("paymentMethod", "stripe")}
+                          className={`p-4 border-2 rounded-lg transition-all ${
+                            bookingData.paymentMethod === "stripe"
+                              ? "border-blue-600 bg-blue-50"
+                              : "border-gray-300 hover:border-blue-300"
+                          }`}
+                        >
+                          <div className="flex flex-col items-center text-center">
+                            <svg className="w-8 h-8 mb-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                            </svg>
+                            <h4 className="font-semibold text-gray-900">Stripe</h4>
+                            <p className="text-xs text-gray-500 mt-1">Credit/Debit Card</p>
+                          </div>
+                        </button>
+
+                        {/* Orange Money */}
+                        <button
+                          type="button"
+                          onClick={() => handleInputChange("paymentMethod", "orange-money")}
+                          className={`p-4 border-2 rounded-lg transition-all ${
+                            bookingData.paymentMethod === "orange-money"
+                              ? "border-orange-600 bg-orange-50"
+                              : "border-gray-300 hover:border-orange-300"
+                          }`}
+                        >
+                          <div className="flex flex-col items-center text-center">
+                            <svg className="w-8 h-8 mb-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            <h4 className="font-semibold text-gray-900">Orange Money</h4>
+                            <p className="text-xs text-gray-500 mt-1">Mobile Money</p>
+                            <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded mt-1">Coming Soon</span>
+                          </div>
+                        </button>
+
+                        {/* Lonestar MTN */}
+                        <button
+                          type="button"
+                          onClick={() => handleInputChange("paymentMethod", "mtn-money")}
+                          className={`p-4 border-2 rounded-lg transition-all ${
+                            bookingData.paymentMethod === "mtn-money"
+                              ? "border-yellow-600 bg-yellow-50"
+                              : "border-gray-300 hover:border-yellow-300"
+                          }`}
+                        >
+                          <div className="flex flex-col items-center text-center">
+                            <svg className="w-8 h-8 mb-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            <h4 className="font-semibold text-gray-900">Lonestar MTN</h4>
+                            <p className="text-xs text-gray-500 mt-1">Mobile Money</p>
+                            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded mt-1">Coming Soon</span>
+                          </div>
+                        </button>
                       </div>
                     </div>
+
+                    {/* Payment Method Details */}
+                    {bookingData.paymentMethod === "stripe" && (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-start space-x-3">
+                          <svg className="w-6 h-6 text-blue-600 dark:text-blue-400 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                          </svg>
+                          <div>
+                            <h4 className="font-semibold text-blue-900 dark:text-white mb-2">Secure Payment with Stripe</h4>
+                            <p className="text-blue-800 dark:text-white text-sm leading-relaxed">
+                              When you click "Continue to Payment", you will be redirected to our secure Stripe checkout page to complete your payment. 
+                              Your booking details and personal information are protected with industry-standard encryption.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {(bookingData.paymentMethod === "orange-money" || bookingData.paymentMethod === "mtn-money") && (
+                      <div className={`p-6 rounded-lg border-2 ${
+                        bookingData.paymentMethod === "orange-money"
+                          ? "bg-orange-50 border-orange-200"
+                          : "bg-yellow-50 border-yellow-200"
+                      }`}>
+                        <div className="flex items-start space-x-3">
+                          <svg className={`w-6 h-6 mt-1 ${
+                            bookingData.paymentMethod === "orange-money" ? "text-orange-600" : "text-yellow-600"
+                          }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                          </svg>
+                          <div>
+                            <h4 className={`font-semibold mb-2 ${
+                              bookingData.paymentMethod === "orange-money" ? "text-orange-900" : "text-yellow-900"
+                            }`}>
+                              {bookingData.paymentMethod === "orange-money" ? "Orange Money" : "Lonestar MTN Mobile Money"} - Coming Soon!
+                            </h4>
+                            <p className={`text-sm leading-relaxed mb-3 ${
+                              bookingData.paymentMethod === "orange-money" ? "text-orange-800" : "text-yellow-800"
+                            }`}>
+                              We're working on integrating mobile money payments. For now, please use Stripe to complete your booking.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => handleInputChange("paymentMethod", "stripe")}
+                              className="text-sm font-medium text-blue-600 hover:text-blue-800 underline"
+                            >
+                              Switch to Stripe Payment
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -686,7 +794,11 @@ const BookingFlow: React.FC = () => {
                   
                   <button
                     onClick={handleNext}
-                    disabled={isSubmitting || isRedirectingToStripe}
+                    disabled={
+                      isSubmitting || 
+                      isRedirectingToStripe || 
+                      (currentStep === 2 && (bookingData.paymentMethod === 'orange-money' || bookingData.paymentMethod === 'mtn-money'))
+                    }
                     className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isRedirectingToStripe ? (
@@ -709,8 +821,8 @@ const BookingFlow: React.FC = () => {
 
             {/* Car Summary Sidebar */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl shadow-lg p-6 sticky top-24">
-                <h3 className="text-lg font-bold text-gray-800 mb-4">Your Selection</h3>
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sticky top-24">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Your Selection</h3>
                 <div className="space-y-4">
                   <img
                     src={car.imageUrl || "/car-placeholder.jpg"}
@@ -718,23 +830,23 @@ const BookingFlow: React.FC = () => {
                     className="w-full h-32 object-cover rounded-lg"
                   />
                   <div>
-                    <h4 className="font-medium text-gray-800">{car.brand} {car.model}</h4>
-                    <p className="text-sm text-gray-600">{car.year}</p>
+                    <h4 className="font-medium text-gray-800 dark:text-white">{car.brand} {car.model}</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{car.year}</p>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Daily Rate</span>
-                    <span className="font-medium">${(car as any).rentalPricePerDay || car.dailyRate || (car as any).dailyRate || 0}</span>
+                    <span className="text-gray-600 dark:text-gray-400">Daily Rate</span>
+                    <span className="font-medium text-gray-800 dark:text-white">${(car as any).rentalPricePerDay || car.dailyRate || (car as any).dailyRate || 0}</span>
                   </div>
                   {bookingData.totalDays > 0 && (
                     <>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Duration</span>
-                        <span className="font-medium">{bookingData.totalDays} days</span>
+                        <span className="text-gray-600 dark:text-gray-400">Duration</span>
+                        <span className="font-medium text-gray-800 dark:text-white">{bookingData.totalDays} days</span>
                       </div>
-                      <div className="border-t pt-2">
+                      <div className="border-t border-gray-200 dark:border-gray-700 pt-2">
                         <div className="flex items-center justify-between font-bold">
-                          <span>Total</span>
-                          <span className="text-green-600">${bookingData.totalPrice}</span>
+                          <span className="text-gray-800 dark:text-white">Total</span>
+                          <span className="text-blue-600 dark:text-white">${bookingData.totalPrice}</span>
                         </div>
                       </div>
                     </>

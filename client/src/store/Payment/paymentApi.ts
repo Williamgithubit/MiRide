@@ -43,6 +43,52 @@ export interface CreatePaymentIntentResponse {
   error?: string;
 }
 
+// New Stripe Connect Payment Intent
+export interface CreateConnectPaymentIntentRequest {
+  carId: number;
+  startDate: string;
+  endDate: string;
+  totalDays: number;
+  totalPrice: number;
+  insurance: boolean;
+  gps: boolean;
+  childSeat: boolean;
+  additionalDriver: boolean;
+  pickupLocation: string;
+  dropoffLocation: string;
+  specialRequests?: string;
+}
+
+export interface CreateConnectPaymentIntentResponse {
+  clientSecret: string;
+  paymentIntentId: string;
+  totalAmount: number;
+  platformFee: number;
+  ownerPayout: number;
+}
+
+export interface ConfirmPaymentRequest {
+  paymentIntentId: string;
+  carId: number;
+  startDate: string;
+  endDate: string;
+  totalDays: number;
+  totalPrice: number;
+  insurance: boolean;
+  gps: boolean;
+  childSeat: boolean;
+  additionalDriver: boolean;
+  pickupLocation: string;
+  dropoffLocation: string;
+  specialRequests?: string;
+}
+
+export interface ConfirmPaymentResponse {
+  success: boolean;
+  rental: any;
+  payment: any;
+}
+
 export const paymentApi = createApi({
   reducerPath: 'paymentApi',
   baseQuery: fetchBaseQuery({
@@ -74,10 +120,31 @@ export const paymentApi = createApi({
         body: paymentData,
       }),
     }),
+
+    // New Stripe Connect Payment Intent (with commission)
+    createConnectPaymentIntent: builder.mutation<CreateConnectPaymentIntentResponse, CreateConnectPaymentIntentRequest>({
+      query: (bookingData) => ({
+        url: '/create-payment-intent',
+        method: 'POST',
+        body: bookingData,
+      }),
+    }),
+
+    // Confirm Payment and Create Booking
+    confirmPayment: builder.mutation<ConfirmPaymentResponse, ConfirmPaymentRequest>({
+      query: (paymentData) => ({
+        url: '/confirm-payment',
+        method: 'POST',
+        body: paymentData,
+      }),
+      invalidatesTags: ['Payment'],
+    }),
   }),
 });
 
 export const {
   useCreateCheckoutSessionMutation,
   useCreatePaymentIntentMutation,
+  useCreateConnectPaymentIntentMutation,
+  useConfirmPaymentMutation,
 } = paymentApi;

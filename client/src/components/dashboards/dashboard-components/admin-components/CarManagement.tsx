@@ -37,6 +37,7 @@ import {
   useDeleteCarImageMutation,
   useSetPrimaryImageMutation
 } from '../../../../store/Car/carApi';
+import { getPrimaryImageUrl } from '../../../../utils/imageUtils';
 import CarActionModals from './car-management-components/CarActionModals';
 
 const CarManagement: React.FC = () => {
@@ -559,9 +560,9 @@ const CarManagement: React.FC = () => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center">
-                          {car.imageUrl ? (
+                          {getPrimaryImageUrl(car.images) ? (
                             <img 
-                              src={car.imageUrl} 
+                              src={getPrimaryImageUrl(car.images)} 
                               alt={car.name}
                               className="w-12 h-12 object-cover rounded-lg"
                               onError={(e) => {
@@ -570,7 +571,7 @@ const CarManagement: React.FC = () => {
                               }}
                             />
                           ) : null}
-                          <div className={`w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-lg flex items-center justify-center ${car.imageUrl ? 'hidden' : ''}`}>
+                          <div className={`w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-lg flex items-center justify-center ${getPrimaryImageUrl(car.images) ? 'hidden' : ''}`}>
                             <CarIcon className="w-6 h-6 text-gray-500 dark:text-gray-400" />
                           </div>
                           <div className="ml-3">

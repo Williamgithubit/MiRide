@@ -30,6 +30,7 @@ import {
   type CreateUserData,
   type UpdateUserData
 } from '../../../../store/User/userManagementApi';
+import UserDetailsModal from './UserDetailsModal';
 
 const UserManagement: React.FC = () => {
   // State management
@@ -59,6 +60,7 @@ const UserManagement: React.FC = () => {
     phone: '',
     isActive: true
   });
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [editUserData, setEditUserData] = useState<UpdateUserData>({});
 
   // API queries and mutations
@@ -151,6 +153,13 @@ const UserManagement: React.FC = () => {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate password match
+    if (newUserData.password !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    
     try {
       await createUser(newUserData).unwrap();
       toast.success('User created successfully');
@@ -163,6 +172,7 @@ const UserManagement: React.FC = () => {
         phone: '',
         isActive: true
       });
+      setConfirmPassword('');
     } catch (error: any) {
       toast.error(error?.data?.message || 'Failed to create user');
     }
@@ -648,47 +658,10 @@ const UserManagement: React.FC = () => {
 
       {/* Modals */}
       {showDetailsModal && (
-        <div className="fixed inset-0 backdrop-blur-sm bg-gray-900/30 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">User Details</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Name</label>
-                <p className="text-gray-900 dark:text-white">{showDetailsModal.name}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Email</label>
-                <p className="text-gray-900 dark:text-white">{showDetailsModal.email}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Role</label>
-                <p className="text-gray-900 dark:text-white">{showDetailsModal.role}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Status</label>
-                <p className="text-gray-900 dark:text-white">{showDetailsModal.isActive ? 'Active' : 'Inactive'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Join Date</label>
-                <p className="text-gray-900 dark:text-white">{new Date(showDetailsModal.createdAt).toLocaleDateString()}</p>
-              </div>
-              {showDetailsModal.lastLogin && (
-                <div>
-                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Last Login</label>
-                  <p className="text-gray-900 dark:text-white">{new Date(showDetailsModal.lastLogin).toLocaleDateString()}</p>
-                </div>
-              )}
-            </div>
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={() => setShowDetailsModal(null)}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
+        <UserDetailsModal
+          user={showDetailsModal}
+          onClose={() => setShowDetailsModal(null)}
+        />
       )}
 
       {showDeleteModal && (
@@ -763,6 +736,19 @@ const UserManagement: React.FC = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Confirm Password *
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Phone
                 </label>
                 <input
@@ -815,6 +801,7 @@ const UserManagement: React.FC = () => {
                       phone: '',
                       isActive: true
                     });
+                    setConfirmPassword('');
                   }}
                   className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
                 >

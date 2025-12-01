@@ -112,17 +112,17 @@ const AdminOverview: React.FC = () => {
       {/* Recent Users and System Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h4 className="text-lg font-semibold mb-4">Recent Users</h4>
+          <h4 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Recent Users</h4>
           <div className="space-y-3">
             {stats.recentRentals.slice(0, 5).map((rental: AdminStats['recentRentals'][0]) => (
               <div key={rental.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div>
-                  <p className="font-medium">{rental.customer.name}</p>
-                  <p className="text-sm text-gray-500">{rental.customer.email}</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{rental.customer.name}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{rental.customer.email}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium">{rental.car.brand} {rental.car.model}</p>
-                  <p className="text-xs text-gray-500">${rental.totalCost.toLocaleString()}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{rental.car.brand} {rental.car.model}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">${rental.totalCost.toLocaleString()}</p>
                 </div>
               </div>
             ))}
@@ -130,23 +130,23 @@ const AdminOverview: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h4 className="text-lg font-semibold mb-4">System Stats</h4>
+          <h4 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">System Stats</h4>
           <div className="space-y-4">
             <div className="flex justify-between">
-              <span>Car Utilization</span>
-              <span className="font-semibold">{((stats.availableCars / stats.totalCars) * 100).toFixed(1)}%</span>
+              <span className="text-gray-700 dark:text-gray-300">Car Utilization</span>
+              <span className="font-semibold text-gray-900 dark:text-white">{((stats.availableCars / stats.totalCars) * 100).toFixed(1)}%</span>
             </div>
             <div className="flex justify-between">
-              <span>Active Users</span>
-              <span className="font-semibold">{stats.totalCustomers}</span>
+              <span className="text-gray-700 dark:text-gray-300">Active Users</span>
+              <span className="font-semibold text-gray-900 dark:text-white">{stats.totalCustomers}</span>
             </div>
             <div className="flex justify-between">
-              <span>Monthly Revenue</span>
-              <span className="font-semibold">${stats.revenueThisMonth.toLocaleString()}</span>
+              <span className="text-gray-700 dark:text-gray-300">Monthly Revenue</span>
+              <span className="font-semibold text-gray-900 dark:text-white">${stats.revenueThisMonth.toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
-              <span>Total Rentals</span>
-              <span className="font-semibold">{stats.totalRentals}</span>
+              <span className="text-gray-700 dark:text-gray-300">Total Rentals</span>
+              <span className="font-semibold text-gray-900 dark:text-white">{stats.totalRentals}</span>
             </div>
           </div>
         </div>

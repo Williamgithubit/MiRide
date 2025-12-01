@@ -37,7 +37,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange })
   };
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow space-y-4">
+    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Search Input */}
         <div className="relative">
@@ -46,10 +46,10 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange })
             placeholder="Search bookings..."
             value={filters.search}
             onChange={handleSearchChange}
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-green-500 dark:focus:border-green-400"
           />
           <svg
-            className="absolute right-3 top-2.5 h-5 w-5 text-gray-400"
+            className="absolute right-3 top-2.5 h-5 w-5 text-gray-400 dark:text-gray-500"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -69,7 +69,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange })
           <select
             value={filters.status || 'All'}
             onChange={handleStatusChange}
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-green-500 dark:focus:border-green-400"
           >
             {bookingStatuses.map((status) => (
               <option key={status} value={status}>
@@ -85,7 +85,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange })
             selected={filters.startDate ? new Date(filters.startDate) : null}
             onChange={(date) => handleDateChange('start', date)}
             placeholderText="Start Date"
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-green-500 dark:focus:border-green-400"
             dateFormat="MM/dd/yyyy"
           />
         </div>
@@ -95,7 +95,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange })
             selected={filters.endDate ? new Date(filters.endDate) : null}
             onChange={(date) => handleDateChange('end', date)}
             placeholderText="End Date"
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-green-500 dark:focus:border-green-400"
             dateFormat="MM/dd/yyyy"
             minDate={filters.startDate ? new Date(filters.startDate) : undefined}
           />
@@ -111,7 +111,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange })
             startDate: null,
             endDate: null,
           })}
-          className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+          className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
         >
           Clear Filters
         </button>

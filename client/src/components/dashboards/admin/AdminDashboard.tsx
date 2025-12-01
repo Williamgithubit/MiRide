@@ -1,6 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import Sidebar from "../shared/Sidebar";
 import TopNavbar from "../shared/TopNavbar";
+import { checkTermsStatus } from "../../../store/Terms/termsSlice";
+import { AppDispatch, RootState } from "../../../store/store";
+import TermsModal from "../../shared/TermsModal";
 import {
   AdminOverview,
   UserManagement,
@@ -10,14 +14,25 @@ import {
   AdminReports,
   AdminSettings,
 } from "../dashboard-components/admin-components";
-import RevenuePayments from "../dashboard-components/admin-components/RevenuePayments/RevenuePayments";
+import EnhancedRevenueSection from "../dashboard-components/admin-components/RevenuePayments/EnhancedRevenueSection";
 import { BookingsManagement } from "../dashboard-components/admin-components/BookingsManagement";
 
 const AdminDashboard: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { termsAccepted } = useSelector((state: RootState) => state.terms);
+  const { user } = useSelector((state: RootState) => state.auth);
+  
   const [activeSection, setActiveSection] = useState("overview");
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedCar, setSelectedCar] = useState<any>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Check terms status on mount
+  useEffect(() => {
+    if (user) {
+      dispatch(checkTermsStatus());
+    }
+  }, [dispatch, user]);
 
   // Handler functions for modal interactions
   // const handleViewUser = (user: any) => {
@@ -51,7 +66,7 @@ const AdminDashboard: React.FC = () => {
         return <BookingsManagement />;
 
       case "revenue":
-        return <RevenuePayments />;
+        return <EnhancedRevenueSection />;
 
       case "notifications":
         return <AdminNotifications />;
@@ -74,9 +89,12 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-      <Sidebar
-        role="admin"
+    <>
+      <TermsModal isOpen={!termsAccepted} userRole={user?.role || 'admin'} />
+      
+      <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+        <Sidebar
+          role="admin"
         activeSection={activeSection}
         onSectionChange={setActiveSection}
         isOpen={isSidebarOpen}
@@ -91,13 +109,14 @@ const AdminDashboard: React.FC = () => {
         <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 w-full">{renderContent()}</main>
       </div>
 
-      <AdminModals
-        selectedUser={selectedUser}
-        selectedCar={selectedCar}
-        onCloseUserModal={handleCloseUserModal}
-        onCloseCarModal={handleCloseCarModal}
-      />
-    </div>
+        <AdminModals
+          selectedUser={selectedUser}
+          selectedCar={selectedCar}
+          onCloseUserModal={handleCloseUserModal}
+          onCloseCarModal={handleCloseCarModal}
+        />
+      </div>
+    </>
   );
 };
 

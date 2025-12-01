@@ -11,6 +11,15 @@ export interface User {
   role: 'admin' | 'owner' | 'customer';
   isActive: boolean;
   phone?: string;
+  avatar?: string;
+  address?: string;
+  dateOfBirth?: string;
+  driverLicense?: string;
+  stripeCustomerId?: string;
+  stripeAccountId?: string;
+  businessName?: string;
+  termsAccepted?: boolean;
+  termsAcceptedAt?: string;
   createdAt: string;
   updatedAt: string;
   lastLogin?: string;

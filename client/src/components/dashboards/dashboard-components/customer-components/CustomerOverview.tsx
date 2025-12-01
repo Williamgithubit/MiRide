@@ -79,7 +79,7 @@ const CustomerOverview: React.FC<CustomerOverviewProps> = ({ onSectionChange }) 
           </div>
           <button 
             onClick={() => onSectionChange('bookings')}
-            className="mt-4 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium"
+            className="mt-4 text-blue-600 hover:text-blue-800 dark:text-white dark:hover:text-gray-200 text-sm font-medium"
           >
             View all bookings →
           </button>

@@ -29,6 +29,7 @@ export interface Rental {
   gpsCost?: number;
   childSeatCost?: number;
   additionalDriverCost?: number;
+  ownerPayout?: number;
   createdAt: string;
   updatedAt: string;
   approvedAt?: string;

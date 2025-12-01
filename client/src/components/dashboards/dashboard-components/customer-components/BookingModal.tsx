@@ -5,9 +5,10 @@ import toast from 'react-hot-toast';
 import useReduxAuth from '../../../../store/hooks/useReduxAuth';
 import useRentals from '../../../../store/hooks/useRentals';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
-import { useCreateCheckoutSessionMutation } from '../../../../store/Payment/paymentApi';
+import { useCreateCheckoutSessionMutation, useCreateConnectPaymentIntentMutation, useConfirmPaymentMutation } from '../../../../store/Payment/paymentApi';
 import { getPrimaryImageUrl } from '../../../../utils/imageUtils';
 import { LIBERIA_LOCATIONS } from '../../../../constants/locations';
+import EnhancedLocationPicker from './EnhancedLocationPicker';
 
 // Initialize Stripe with fallback
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51234567890abcdef');
@@ -43,6 +44,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedCa
   const { user, isAuthenticated } = useReduxAuth();
   const { addRental } = useRentals();
   const [createCheckoutSession] = useCreateCheckoutSessionMutation();
+  const [createConnectPaymentIntent] = useCreateConnectPaymentIntentMutation();
+  const [confirmPayment] = useConfirmPaymentMutation();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stripeLoaded, setStripeLoaded] = useState(false);
@@ -54,7 +57,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedCa
     endDate: '',
     totalDays: 0,
     totalPrice: 0,
-    paymentMethod: 'credit-card',
+    paymentMethod: 'stripe',
     cardNumber: '',
     expiryDate: '',
     cvv: '',
@@ -187,7 +190,12 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedCa
   };
 
   const validateStep2 = () => {
-    // No validation needed for step 2 since we're redirecting to Stripe
+    // Check if mobile money is selected (not yet available)
+    if (bookingData.paymentMethod === 'orange-money' || bookingData.paymentMethod === 'mtn-money') {
+      toast.error('Mobile money payments are coming soon. Please select Stripe payment method.');
+      return false;
+    }
+    // No other validation needed for step 2 since we're redirecting to Stripe
     return true;
   };
 
@@ -516,31 +524,20 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedCa
                 </div>
 
                 {/* Pickup and Dropoff Locations */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <EnhancedLocationPicker
+                    label="Pickup Location"
+                    value={bookingData.pickupLocation}
+                    onChange={(value) => handleInputChange('pickupLocation', value)}
+                    placeholder="Select location"
+                  />
+                  
                   <div>
-                    <label className="block text-sm font-medium mb-2 flex items-center text-gray-700 dark:text-gray-300">
-                      <MapPin className="w-4 h-4 mr-2 text-blue-600" />
-                      Pickup Location
-                    </label>
-                    <select 
-                      value={bookingData.pickupLocation}
-                      onChange={(e) => handleInputChange('pickupLocation', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      <option value="default">Select location</option>
-                      {LIBERIA_LOCATIONS.map((location) => (
-                        <option key={location} value={location}>
-                          {location}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2 flex items-center justify-between text-gray-700 dark:text-gray-300">
-                      <span className="flex items-center">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
                         <MapPin className="w-4 h-4 mr-2 text-blue-600" />
                         Drop-off Location
-                      </span>
+                      </label>
                       <label className="flex items-center text-xs font-normal cursor-pointer">
                         <input
                           type="checkbox"
@@ -550,24 +547,23 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedCa
                         />
                         Same as pickup
                       </label>
-                    </label>
-                    <select 
-                      value={bookingData.dropoffLocation}
-                      onChange={(e) => handleInputChange('dropoffLocation', e.target.value)}
-                      disabled={bookingData.dropoffLocation === 'default'}
-                      className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                        bookingData.dropoffLocation === 'default' ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      <option value="default">Same as Pickup</option>
-                      {LIBERIA_LOCATIONS.map((location) => (
-                        <option key={location} value={location}>
-                          {location}
-                        </option>
-                      ))}
-                    </select>
+                    </div>
+                    {bookingData.dropoffLocation === 'default' ? (
+                      <div className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 flex items-center justify-center">
+                        Same as pickup location
+                      </div>
+                    ) : (
+                      <EnhancedLocationPicker
+                        label=""
+                        value={bookingData.dropoffLocation}
+                        onChange={(value) => handleInputChange('dropoffLocation', value)}
+                        placeholder="Select drop-off location"
+                        disabled={bookingData.dropoffLocation === 'default'}
+                      />
+                    )}
                   </div>
                 </div>
+
 
                 {/* Add-ons and Extras */}
                 <div>
@@ -649,18 +645,119 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedCa
                   Payment Information
                 </h3>
                 
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <div className="flex items-start space-x-3">
-                    <CreditCard className="w-6 h-6 text-blue-600 mt-1" />
-                    <div>
-                      <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Secure Payment with Stripe</h4>
-                      <p className="text-black dark:text-white text-sm leading-relaxed">
-                        When you click "Continue", you will be redirected to our secure Stripe checkout page to complete your payment. 
-                        Your booking details and personal information are protected with industry-standard encryption.
-                      </p>
-                    </div>
+                {/* Payment Method Selection */}
+                <div>
+                  <label className="block text-sm font-medium mb-3">Select Payment Method</label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Stripe */}
+                    <button
+                      type="button"
+                      onClick={() => handleInputChange('paymentMethod', 'stripe')}
+                      className={`p-4 border-2 rounded-lg transition-all ${
+                        bookingData.paymentMethod === 'stripe'
+                          ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-300 dark:border-gray-600 hover:border-blue-300'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center text-center">
+                        <CreditCard className="w-8 h-8 mb-2 text-blue-600" />
+                        <h4 className="font-semibold text-gray-900 dark:text-white">Stripe</h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Credit/Debit Card</p>
+                      </div>
+                    </button>
+
+                    {/* Orange Money */}
+                    <button
+                      type="button"
+                      onClick={() => handleInputChange('paymentMethod', 'orange-money')}
+                      className={`p-4 border-2 rounded-lg transition-all ${
+                        bookingData.paymentMethod === 'orange-money'
+                          ? 'border-orange-600 bg-orange-50 dark:bg-orange-900/20'
+                          : 'border-gray-300 dark:border-gray-600 hover:border-orange-300'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center text-center">
+                        <svg className="w-8 h-8 mb-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">Orange Money</h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Mobile Money</p>
+                        <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded mt-1">Coming Soon</span>
+                      </div>
+                    </button>
+
+                    {/* Lonestar MTN */}
+                    <button
+                      type="button"
+                      onClick={() => handleInputChange('paymentMethod', 'mtn-money')}
+                      className={`p-4 border-2 rounded-lg transition-all ${
+                        bookingData.paymentMethod === 'mtn-money'
+                          ? 'border-yellow-600 bg-yellow-50 dark:bg-yellow-900/20'
+                          : 'border-gray-300 dark:border-gray-600 hover:border-yellow-300'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center text-center">
+                        <svg className="w-8 h-8 mb-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">Lonestar MTN</h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Mobile Money</p>
+                        <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded mt-1">Coming Soon</span>
+                      </div>
+                    </button>
                   </div>
                 </div>
+
+                {/* Payment Method Details */}
+                {bookingData.paymentMethod === 'stripe' && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="flex items-start space-x-3">
+                      <CreditCard className="w-6 h-6 text-blue-600 mt-1" />
+                      <div>
+                        <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Secure Payment with Stripe</h4>
+                        <p className="text-blue-800 dark:text-blue-200 text-sm leading-relaxed">
+                          When you click "Continue to Payment", you will be redirected to our secure Stripe checkout page to complete your payment. 
+                          Your booking details and personal information are protected with industry-standard encryption.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {(bookingData.paymentMethod === 'orange-money' || bookingData.paymentMethod === 'mtn-money') && (
+                  <div className={`p-6 rounded-lg border-2 ${
+                    bookingData.paymentMethod === 'orange-money'
+                      ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
+                      : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                  }`}>
+                    <div className="flex items-start space-x-3">
+                      <svg className={`w-6 h-6 mt-1 ${
+                        bookingData.paymentMethod === 'orange-money' ? 'text-orange-600' : 'text-yellow-600'
+                      }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                      </svg>
+                      <div>
+                        <h4 className={`font-semibold mb-2 ${
+                          bookingData.paymentMethod === 'orange-money' ? 'text-orange-900 dark:text-orange-100' : 'text-yellow-900 dark:text-yellow-100'
+                        }`}>
+                          {bookingData.paymentMethod === 'orange-money' ? 'Orange Money' : 'Lonestar MTN Mobile Money'} - Coming Soon!
+                        </h4>
+                        <p className={`text-sm leading-relaxed mb-3 ${
+                          bookingData.paymentMethod === 'orange-money' ? 'text-orange-800 dark:text-orange-200' : 'text-yellow-800 dark:text-yellow-200'
+                        }`}>
+                          We're working on integrating mobile money payments. For now, please use Stripe to complete your booking.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => handleInputChange('paymentMethod', 'stripe')}
+                          className="text-sm font-medium text-blue-600 hover:text-blue-800 underline"
+                        >
+                          Switch to Stripe Payment
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -748,7 +845,11 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedCa
               {currentStep < 3 ? (
                 <button
                   onClick={handleNext}
-                  disabled={isSubmitting || isRedirectingToStripe}
+                  disabled={
+                    isSubmitting || 
+                    isRedirectingToStripe || 
+                    (currentStep === 2 && (bookingData.paymentMethod === 'orange-money' || bookingData.paymentMethod === 'mtn-money'))
+                  }
                   className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {currentStep === 2 ? (

@@ -10,6 +10,7 @@ import {
   type UpdateCarStatusData
 } from '../../../../../store/Car/carManagementApi';
 import type { Car } from '../../../../../store/Car/carManagementApi';
+import { getPrimaryImageUrl } from '../../../../../utils/imageUtils';
 
 interface CarActionModalsProps {
   // Details Modal
@@ -224,7 +225,18 @@ const CarActionModals: React.FC<CarActionModalsProps> = ({
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Car Image */}
                 <div className="space-y-4">
-                  <div className="w-full h-64 bg-gray-300 dark:bg-gray-600 rounded-lg flex items-center justify-center">
+                  {getPrimaryImageUrl(showDetailsModal.images) ? (
+                    <img
+                      src={getPrimaryImageUrl(showDetailsModal.images)}
+                      alt={showDetailsModal.name}
+                      className="w-full h-64 object-cover rounded-lg"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
+                  <div className={`w-full h-64 bg-gray-300 dark:bg-gray-600 rounded-lg flex items-center justify-center ${getPrimaryImageUrl(showDetailsModal.images) ? 'hidden' : ''}`}>
                     <CarIcon className="w-16 h-16 text-gray-500 dark:text-gray-400" />
                   </div>
 

@@ -30,6 +30,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  ComposedChart,
 } from 'recharts';
 import { useGetOwnerAnalyticsQuery, useLazyGenerateReportQuery } from '../../../../store/Dashboard/dashboardApi';
 import toast from 'react-hot-toast';
@@ -378,7 +379,7 @@ const Analytics: React.FC = () => {
         {/* Bookings Trend Chart */}
         <ChartCard title="Bookings & Revenue Trend">
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={analyticsData?.bookingsTrend || []}>
+            <ComposedChart data={analyticsData?.bookingsTrend || []}>
               <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
               <XAxis 
                 dataKey="period" 
@@ -421,7 +422,7 @@ const Analytics: React.FC = () => {
                 name="Revenue ($)"
                 dot={{ fill: COLORS.secondary, strokeWidth: 2, r: 4 }}
               />
-            </LineChart>
+            </ComposedChart>
           </ResponsiveContainer>
         </ChartCard>
 
