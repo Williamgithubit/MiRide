@@ -85,6 +85,12 @@ export const getCars = async (req, res) => {
           attributes: ['id', 'name', 'email'],
           where: Object.keys(ownerWhereClause).length > 0 ? ownerWhereClause : undefined,
           required: false // Allow cars without owners
+        },
+        {
+          model: db.CarImage,
+          as: 'images',
+          attributes: ['id', 'imageUrl', 'isPrimary'],
+          required: false
         }
       ],
       order: [[sortBy, sortOrder.toUpperCase()]],

@@ -36,7 +36,52 @@ export default (sequelize, DataTypes) => {
         isEmail: true,
       },
     },
-    // Add any other owner-specific fields here
+    // Stripe Connect fields
+    stripeAccountId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+    },
+    stripeOnboardingComplete: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false,
+    },
+    stripeChargesEnabled: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false,
+    },
+    stripePayoutsEnabled: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false,
+    },
+    stripeDetailsSubmitted: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false,
+    },
+    totalEarnings: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0.00,
+      allowNull: false,
+    },
+    availableBalance: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0.00,
+      allowNull: false,
+    },
+    pendingBalance: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0.00,
+      allowNull: false,
+    },
+    totalWithdrawn: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0.00,
+      allowNull: false,
+    },
   }, {
     tableName: 'owner_profiles',
     timestamps: true,

@@ -352,19 +352,22 @@ export const uploadAvatar = async (req, res) => {
             return res.status(400).json({ message: "No file uploaded" });
         }
         
-        console.log('File uploaded:', req.file.filename);
+        console.log('File uploaded to Cloudinary:', req.file.path);
         const user = await db.User.findByPk(userId);
         
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
         
-        // Store the file path or URL
-        const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+        // Store the Cloudinary URL
+        const avatarUrl = req.file.path; // Cloudinary URL
         await user.update({ avatar: avatarUrl });
         
         console.log('Avatar updated to:', avatarUrl);
-        return res.status(200).json({ avatar: avatarUrl });
+        return res.status(200).json({ 
+            avatar: avatarUrl,
+            message: 'Profile picture uploaded successfully'
+        });
     } catch (error) {
         console.error("Error uploading avatar:", error);
         return res.status(500).json({ message: "Internal server error", error: error.message });

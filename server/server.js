@@ -24,6 +24,8 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import userManagementRoutes from './routes/userManagementRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
 import ownerProfileRoutes from './routes/ownerProfileRoutes.js';
+import stripeConnectRoutes from './routes/stripeConnectRoutes.js';
+import termsRoutes from './routes/termsRoutes.js';
 import BookingExpirationService from './services/bookingExpirationService.js';
 
 // Load environment variables
@@ -92,6 +94,8 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin/users', userManagementRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/owners', ownerProfileRoutes);
+app.use('/api/stripe', stripeConnectRoutes);
+app.use('/api/terms', termsRoutes);
 
 // Default route
 app.get('/', (req, res) => {
@@ -111,13 +115,13 @@ app.use((err, req, res, next) => {
 // Sync database and start server
 const startServer = async() => {
   try {
-    await db.sequelize.authenticate(); //
+    await db.sequelize.sync(); //
     console.log('Database connection has been established successfully.');
     
     // In development, you may want to sync the models with the database
     // In production, use migrations instead
     if (process.env.NODE_ENV !== 'development') {
-      await db.sequelize.sync(); // Normal sync without dropping tables
+      await db.sequelize.sync({ force: true }); // Normal sync without dropping tables
       console.log('Database synchronized');
     }
     

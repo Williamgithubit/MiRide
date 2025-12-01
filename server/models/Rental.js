@@ -147,6 +147,26 @@ const RentalModel = (sequelize, DataTypes) => {
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    // Stripe Connect commission fields
+    platformFee: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0.00,
+      allowNull: false,
+    },
+    ownerPayout: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0.00,
+      allowNull: false,
+    },
+    stripeTransferId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    payoutStatus: {
+      type: DataTypes.ENUM('pending', 'paid', 'failed'),
+      defaultValue: 'pending',
+      allowNull: false,
+    },
   }, {
     timestamps: true,
     tableName: 'rentals',

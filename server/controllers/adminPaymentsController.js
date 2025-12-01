@@ -8,7 +8,7 @@ const { Rental, User, Car } = db;
  */
 export const getPaymentStats = async (req, res) => {
   try {
-    // Calculate total revenue from all completed rentals
+    // Calculate total revenue from platform fees (commission) only
     const completedRentals = await Rental.findAll({
       where: {
         paymentStatus: 'paid',
@@ -16,7 +16,24 @@ export const getPaymentStats = async (req, res) => {
       }
     });
 
-    const totalRevenue = completedRentals.reduce((sum, rental) => sum + parseFloat(rental.totalAmount || rental.totalCost || 0), 0);
+    console.log('📈 Admin Payment Stats Debug:');
+    console.log(`Total rentals found: ${completedRentals.length}`);
+    if (completedRentals.length > 0) {
+      console.log('Sample rental:', {
+        id: completedRentals[0].id,
+        totalAmount: completedRentals[0].totalAmount,
+        platformFee: completedRentals[0].platformFee,
+        ownerPayout: completedRentals[0].ownerPayout,
+        status: completedRentals[0].status,
+        paymentStatus: completedRentals[0].paymentStatus
+      });
+    }
+
+    // Platform revenue is the commission (platformFee), not the full amount
+    const totalRevenue = completedRentals.reduce((sum, rental) => sum + parseFloat(rental.platformFee || 0), 0);
+    const platformCommission = totalRevenue; // Same as totalRevenue since we only count commission
+    
+    console.log(`Total Revenue (from Rentals): $${totalRevenue.toFixed(2)}`);
 
     // Calculate monthly revenue (current month)
     const startOfMonth = new Date();
@@ -31,7 +48,7 @@ export const getPaymentStats = async (req, res) => {
       }
     });
 
-    const monthlyRevenue = monthlyRentals.reduce((sum, rental) => sum + parseFloat(rental.totalAmount || rental.totalCost || 0), 0);
+    const monthlyRevenue = monthlyRentals.reduce((sum, rental) => sum + parseFloat(rental.platformFee || 0), 0);
 
     // Count pending payments
     const pendingPayments = await Rental.count({
@@ -47,9 +64,6 @@ export const getPaymentStats = async (req, res) => {
         status: { [Op.in]: ['approved', 'active', 'completed'] }
       }
     });
-
-    // Calculate platform commission (assuming 10% commission)
-    const platformCommission = totalRevenue * 0.10;
 
     res.json({
       totalRevenue: parseFloat(totalRevenue.toFixed(2)),

@@ -652,6 +652,61 @@ export const approveBooking = async (req, res) => {
       { where: { id: rental.carId } }
     );
 
+    // Create Payment record if it doesn't exist (for bookings that were paid but payment record wasn't created)
+    const existingPayment = await db.Payment.findOne({
+      where: { rentalId: rental.id }
+    });
+
+    if (!existingPayment && rental.paymentStatus === 'paid') {
+      console.log(`Creating missing payment record for rental ${rental.id}`);
+      
+      // Ensure commission fields are calculated
+      if (!rental.platformFee || !rental.ownerPayout) {
+        const platformFee = parseFloat((rental.totalAmount * 0.10).toFixed(2));
+        const ownerPayout = parseFloat((rental.totalAmount * 0.90).toFixed(2));
+        
+        await rental.update({
+          platformFee,
+          ownerPayout
+        });
+      }
+
+      // Get owner profile for stripe account ID
+      const ownerProfile = await db.OwnerProfile.findOne({
+        where: { userId: rental.ownerId }
+      });
+
+      // Create payment record
+      await db.Payment.create({
+        rentalId: rental.id,
+        ownerId: rental.ownerId,
+        customerId: rental.customerId,
+        stripePaymentIntentId: rental.paymentIntentId || `manual_${rental.id}`,
+        stripeAccountId: ownerProfile?.stripeAccountId,
+        totalAmount: rental.totalAmount,
+        platformFee: rental.platformFee,
+        ownerAmount: rental.ownerPayout,
+        currency: 'usd',
+        paymentStatus: 'succeeded',
+        payoutStatus: 'paid',
+        metadata: {
+          rentalId: rental.id,
+          carId: rental.carId,
+          createdVia: 'booking_approval'
+        }
+      });
+
+      // Update owner balance
+      if (ownerProfile) {
+        await ownerProfile.update({
+          totalEarnings: parseFloat(ownerProfile.totalEarnings || 0) + parseFloat(rental.ownerPayout),
+          availableBalance: parseFloat(ownerProfile.availableBalance || 0) + parseFloat(rental.ownerPayout)
+        });
+      }
+
+      console.log(`✅ Payment record created for rental ${rental.id}`);
+    }
+
     console.log(`Booking ${rental.id} approved by owner ${req.user.id}`);
     
     // Send notification to customer about approval

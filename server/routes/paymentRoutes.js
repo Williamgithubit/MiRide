@@ -4,10 +4,19 @@ import dotenv from 'dotenv';
 import db from '../models/index.js';
 import NotificationService from '../services/notificationService.js';
 import auth from '../middleware/auth.js';
+import { 
+  createPaymentIntent, 
+  confirmPayment, 
+  handleStripeWebhook 
+} from '../controllers/stripePaymentController.js';
 dotenv.config();
 
 const paymentRouter = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2022-11-15' });
+
+// New Stripe Connect payment endpoints
+paymentRouter.post('/create-payment-intent', auth(), createPaymentIntent);
+paymentRouter.post('/confirm-payment', auth(), confirmPayment);
 
 // Create Checkout Session for car rental booking
 paymentRouter.post('/create-checkout-session', auth(), async (req, res) => {
@@ -195,8 +204,11 @@ paymentRouter.post('/create-checkout-session', auth(), async (req, res) => {
   }
 });
 
-// Webhook endpoint for handling successful payments
-paymentRouter.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+// Enhanced webhook endpoint for Stripe Connect events
+paymentRouter.post('/webhook', express.raw({ type: 'application/json' }), handleStripeWebhook);
+
+// Legacy webhook endpoint for handling successful payments (keeping for backward compatibility)
+paymentRouter.post('/webhook-legacy', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   let event;
 

@@ -180,8 +180,8 @@ export const deleteUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Delete user
-    await user.destroy();
+    // Delete user (force: true for hard delete, bypassing paranoid mode)
+    await user.destroy({ force: true });
 
     res.status(200).json({ message: 'User deleted successfully' });
 
@@ -349,14 +349,11 @@ export const createUser = async (req, res) => {
       return res.status(400).json({ message: 'User with this email already exists' });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create user
+    // Create user (password will be hashed automatically by the model hook)
     const newUser = await db.User.create({
       name,
       email,
-      password: hashedPassword,
+      password, // Don't hash here - the beforeCreate hook in the model will hash it
       role,
       phone,
       isActive

@@ -170,12 +170,18 @@ export const getBookingById = async (req, res) => {
         {
           model: db.Car,
           as: 'car',
-          attributes: ['id', 'name', 'model', 'brand', 'year', 'imageUrl', 'rentalPricePerDay'],
+          attributes: ['id', 'name', 'model', 'brand', 'year', 'rentalPricePerDay'],
           include: [
             {
               model: db.User,
               as: 'owner',
               attributes: ['id', 'name', 'email', 'phone']
+            },
+            {
+              model: db.CarImage,
+              as: 'images',
+              attributes: ['id', 'imageUrl', 'isPrimary'],
+              required: false
             }
           ]
         },
@@ -191,6 +197,10 @@ export const getBookingById = async (req, res) => {
       return res.status(404).json({ message: 'Booking not found' });
     }
 
+    // Get primary image or first image
+    const primaryImage = booking.car?.images?.find(img => img.isPrimary) || booking.car?.images?.[0];
+    const imageUrl = primaryImage?.imageUrl || 'https://via.placeholder.com/200x150?text=Car';
+
     // Transform data to match frontend interface
     const transformedBooking = {
       id: booking.id.toString(),
@@ -198,7 +208,7 @@ export const getBookingById = async (req, res) => {
         id: booking.car?.id?.toString() || '',
         name: booking.car?.name || 'Unknown Car',
         model: booking.car?.model || '',
-        imageUrl: booking.car?.imageUrl || 'https://via.placeholder.com/200x150?text=Car'
+        imageUrl: imageUrl
       },
       customer: {
         id: booking.customer?.id?.toString() || '',

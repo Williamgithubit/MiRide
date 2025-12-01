@@ -176,9 +176,8 @@ export const uploadOwnerAvatar = async (req, res) => {
       return res.status(400).json({ message: 'User is not an owner' });
     }
 
-    // Update avatar path
-    // Store the path relative to the uploads directory
-    const avatarPath = `/uploads/avatars/${req.file.filename}`;
+    // Update avatar path with Cloudinary URL
+    const avatarPath = req.file.path; // Cloudinary URL
     await owner.update({ avatar: avatarPath });
 
     // Count registered cars
