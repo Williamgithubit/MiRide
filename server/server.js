@@ -115,13 +115,13 @@ app.use((err, req, res, next) => {
 // Sync database and start server
 const startServer = async() => {
   try {
-    await db.sequelize.sync(); //
+    await db.sequelize.sync({force: true}); //
     console.log('Database connection has been established successfully.');
     
     // In development, you may want to sync the models with the database
     // In production, use migrations instead
     if (process.env.NODE_ENV !== 'development') {
-      await db.sequelize.sync({ force: true }); // Normal sync without dropping tables
+      await db.sequelize.sync(); // Normal sync without dropping tables
       console.log('Database synchronized');
     }
     
