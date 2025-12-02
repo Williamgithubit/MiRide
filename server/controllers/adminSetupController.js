@@ -45,9 +45,16 @@ export const createAdminUser = async (req, res) => {
     }
     
     console.log('🔧 Admin setup initiated for:', email);
+    console.log('📊 Database info:', {
+      dialect: db.sequelize.options.dialect,
+      database: db.sequelize.config.database,
+      host: db.sequelize.config.host
+    });
     
     // Check if admin already exists
+    console.log('🔍 Checking if user exists...');
     const existingAdmin = await db.User.findOne({ where: { email } });
+    console.log('Existing admin found:', !!existingAdmin);
     
     if (existingAdmin) {
       console.log('📝 Updating existing admin user...');
@@ -62,7 +69,7 @@ export const createAdminUser = async (req, res) => {
         password: hashedPassword,
         role: 'admin',
         isActive: true,
-        termsAccepted: false,
+        termsAccepted: true,
         termsAcceptedAt: new Date()
       }, {
         // Skip hooks to prevent double-hashing
@@ -86,8 +93,11 @@ export const createAdminUser = async (req, res) => {
       
       // Create new admin user
       // Hash the password manually
+      console.log('🔐 Hashing password...');
       const hashedPassword = await bcrypt.hash(password, 10);
+      console.log('✅ Password hashed, length:', hashedPassword.length);
       
+      console.log('💾 Attempting to create user in database...');
       const newAdmin = await db.User.create({
         name,
         email,
@@ -103,6 +113,19 @@ export const createAdminUser = async (req, res) => {
       });
       
       console.log('✅ Admin user created successfully');
+      console.log('📝 Created user details:', {
+        id: newAdmin.id,
+        email: newAdmin.email,
+        role: newAdmin.role,
+        isActive: newAdmin.isActive
+      });
+      
+      // Verify the user was actually saved
+      const verifyUser = await db.User.findOne({ where: { email } });
+      console.log('🔍 Verification - User exists in DB:', !!verifyUser);
+      if (!verifyUser) {
+        throw new Error('User creation succeeded but user not found in database!');
+      }
       
       return res.status(201).json({
         success: true,
@@ -117,9 +140,16 @@ export const createAdminUser = async (req, res) => {
     }
   } catch (error) {
     console.error('❌ Admin setup error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      sql: error.sql || 'N/A'
+    });
     return res.status(500).json({ 
       message: 'Internal server error',
-      error: error.message 
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };
