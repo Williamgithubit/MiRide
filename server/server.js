@@ -26,6 +26,7 @@ import messageRoutes from './routes/messageRoutes.js';
 import ownerProfileRoutes from './routes/ownerProfileRoutes.js';
 import stripeConnectRoutes from './routes/stripeConnectRoutes.js';
 import termsRoutes from './routes/termsRoutes.js';
+import adminSetupRoutes from './routes/adminSetup.js';
 import BookingExpirationService from './services/bookingExpirationService.js';
 
 // Load environment variables
@@ -96,6 +97,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/owners', ownerProfileRoutes);
 app.use('/api/stripe', stripeConnectRoutes);
 app.use('/api/terms', termsRoutes);
+app.use('/api/admin-setup', adminSetupRoutes); // Secret admin setup endpoint
 
 // Default route
 app.get('/', (req, res) => {
@@ -115,7 +117,7 @@ app.use((err, req, res, next) => {
 // Sync database and start server
 const startServer = async() => {
   try {
-    await db.sequelize.authenticate(); //
+    await db.sequelize.sync(); //
     console.log('Database connection has been established successfully.');
     
     // In development, you may want to sync the models with the database
