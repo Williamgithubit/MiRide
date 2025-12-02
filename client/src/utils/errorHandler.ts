@@ -53,11 +53,20 @@ export const errorHandler = {
     
     // Check if this is an auth error
     if (errorHandler.isAuthError(error) && shouldLogout) {
-      console.log('Authentication error detected, logging out user');
+      console.log('Session expired, clearing auth data and redirecting to login...');
       tokenStorage.removeToken();
       
-      // Redirect to login page with a small delay to allow current operation to complete
+      // Clear user data from localStorage
       if (typeof window !== 'undefined') {
+        localStorage.removeItem('user');
+      }
+      
+      // Redirect to login page immediately for 401 errors (session expired)
+      const statusCode = error?.response?.status;
+      if (typeof window !== 'undefined' && statusCode === 401) {
+        window.location.href = '/login';
+      } else if (typeof window !== 'undefined') {
+        // For other auth errors, use a small delay
         setTimeout(() => {
           window.location.href = '/login';
         }, 100);

@@ -38,11 +38,17 @@ export const authApi = createApi({
   baseQuery: async (args, api, extraOptions) => {
     const result = await baseQuery(args, api, extraOptions);
     
-    // If we get a 401, clear the token
+    // If we get a 401, clear the token and redirect to login
     if (result.error && result.error.status === 401) {
-      console.log('Authentication error, clearing token');
+      console.log('Session expired (401), clearing token and redirecting to login...');
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       setAuthToken(null);
+      
+      // Redirect to login page
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
     }
     
     return result;

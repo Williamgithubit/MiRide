@@ -195,10 +195,15 @@ export const useReduxAuth = () => {
         
         // Clear invalid auth data if token is invalid or user not found
         if (error?.status === 401 || error?.status === 403 || error?.status === 404) {
-          console.log('Token is invalid or expired, logging out...');
+          console.log('Token is invalid or expired, logging out and redirecting...');
           localStorage.removeItem('user');
           localStorage.removeItem('token');
           dispatch(logout());
+          
+          // Redirect to login page for 401 errors (session expired)
+          if (error?.status === 401 && typeof window !== 'undefined') {
+            window.location.href = '/login';
+          }
         }
       }
     };

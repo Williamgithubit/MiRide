@@ -31,11 +31,14 @@ export const authenticatedRequest = async <T = any>(config: any): Promise<T> => 
   } catch (error: any) {
     console.error('API Request Error:', error);
     
-    // Handle 401 Unauthorized
+    // Handle 401 Unauthorized - Session expired
     if (error.response?.status === 401) {
-      // Clear token and redirect to login
+      console.log('Session expired (401), clearing auth data and redirecting to login...');
+      // Clear all authentication data
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       setAuthToken(null);
+      // Redirect to login page
       window.location.href = '/login';
     }
     
