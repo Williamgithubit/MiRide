@@ -33,13 +33,22 @@ export const authenticatedRequest = async <T = any>(config: any): Promise<T> => 
     
     // Handle 401 Unauthorized - Session expired
     if (error.response?.status === 401) {
-      console.log('Session expired (401), clearing auth data and redirecting to login...');
+      console.log('Session expired (401), clearing auth data...');
       // Clear all authentication data
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       setAuthToken(null);
-      // Redirect to login page
-      window.location.href = '/login';
+      
+      // Only redirect if not already on login/signup pages
+      const currentPath = window.location.pathname;
+      const isAuthPage = currentPath === '/login' || currentPath === '/signup';
+      
+      if (!isAuthPage) {
+        console.log('Redirecting to login from:', currentPath);
+        window.location.href = '/login';
+      } else {
+        console.log('Already on auth page, skipping redirect');
+      }
     }
     
     throw error.response?.data || error.message || 'An error occurred';

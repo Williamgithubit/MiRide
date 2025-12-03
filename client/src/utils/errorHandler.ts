@@ -63,13 +63,23 @@ export const errorHandler = {
       
       // Redirect to login page immediately for 401 errors (session expired)
       const statusCode = error?.response?.status;
-      if (typeof window !== 'undefined' && statusCode === 401) {
-        window.location.href = '/login';
-      } else if (typeof window !== 'undefined') {
-        // For other auth errors, use a small delay
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 100);
+      if (typeof window !== 'undefined') {
+        const currentPath = window.location.pathname;
+        const isAuthPage = currentPath === '/login' || currentPath === '/signup';
+        
+        if (!isAuthPage) {
+          if (statusCode === 401) {
+            console.log('Redirecting to login from:', currentPath);
+            window.location.href = '/login';
+          } else {
+            // For other auth errors, use a small delay
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 100);
+          }
+        } else {
+          console.log('Already on auth page, skipping redirect');
+        }
       }
     }
     

@@ -119,8 +119,13 @@ export const useReduxAuth = () => {
   // RTK Query hooks
   const [loginMutation, loginResult] = useLoginMutation();
   const [registerMutation, registerResult] = useRegisterMutation();
+  
+  // Check if we're on an auth page to avoid unnecessary API calls
+  const isAuthPage = typeof window !== 'undefined' && 
+    (window.location.pathname === '/login' || window.location.pathname === '/signup');
+  
   const { data: currentUser, refetch } = useGetCurrentUserQuery(undefined, {
-    skip: !auth.token,
+    skip: !auth.token || isAuthPage,
   });
 
   // Initialize authentication state when component mounts
@@ -195,14 +200,22 @@ export const useReduxAuth = () => {
         
         // Clear invalid auth data if token is invalid or user not found
         if (error?.status === 401 || error?.status === 403 || error?.status === 404) {
-          console.log('Token is invalid or expired, logging out and redirecting...');
+          console.log('Token is invalid or expired, logging out...');
           localStorage.removeItem('user');
           localStorage.removeItem('token');
           dispatch(logout());
           
           // Redirect to login page for 401 errors (session expired)
           if (error?.status === 401 && typeof window !== 'undefined') {
-            window.location.href = '/login';
+            const currentPath = window.location.pathname;
+            const isAuthPage = currentPath === '/login' || currentPath === '/signup';
+            
+            if (!isAuthPage) {
+              console.log('Redirecting to login from:', currentPath);
+              window.location.href = '/login';
+            } else {
+              console.log('Already on auth page, skipping redirect');
+            }
           }
         }
       }

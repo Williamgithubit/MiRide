@@ -16,16 +16,23 @@ axiosInstance.interceptors.response.use(
   (error) => {
     // Check if error is due to session expiration (401)
     if (error.response?.status === 401) {
-      console.log('Session expired (401), redirecting to login...');
+      console.log('Session expired (401), clearing auth data...');
       
       // Clear authentication data
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       
-      // Redirect to login page
-      // Use window.location to ensure a full page reload and state reset
+      // Only redirect if not already on login/signup pages
       if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+        const currentPath = window.location.pathname;
+        const isAuthPage = currentPath === '/login' || currentPath === '/signup';
+        
+        if (!isAuthPage) {
+          console.log('Redirecting to login from:', currentPath);
+          window.location.href = '/login';
+        } else {
+          console.log('Already on auth page, skipping redirect');
+        }
       }
     }
     
