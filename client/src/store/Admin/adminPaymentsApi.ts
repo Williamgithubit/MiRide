@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { RootState } from "../store";
-import { API_BASE_URL } from '../../config/api';
+import { API_BASE_URL } from "../../config/api";
 
 interface PaymentStats {
   totalRevenue: number;
@@ -22,6 +22,11 @@ export interface TransactionItem {
   status: "success" | "pending" | "failed";
   createdAt: string;
   meta?: any;
+  // Optional legacy / alternative naming for platform fee and owner payout
+  platformFee?: number;
+  platform_fee?: number;
+  ownerAmount?: number;
+  owner_amount?: number;
 }
 
 interface TransactionsResponse {

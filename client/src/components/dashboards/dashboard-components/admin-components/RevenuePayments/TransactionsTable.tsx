@@ -189,11 +189,15 @@ const TransactionsTable: React.FC<Props> = ({
           <thead className="bg-slate-700">
             <tr>
               <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm">ID</th>
-              <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm hidden md:table-cell">Owner</th>
+              <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm hidden md:table-cell">
+                Owner
+              </th>
               <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm">Customer</th>
               <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm">Amount</th>
               <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm">Status</th>
-              <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm hidden lg:table-cell">Date</th>
+              <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm hidden lg:table-cell">
+                Date
+              </th>
               <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm">Action</th>
             </tr>
           </thead>
@@ -221,10 +225,12 @@ const TransactionsTable: React.FC<Props> = ({
                     #{t.id}
                   </td>
                   <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden md:table-cell">
-                    {(t as any).ownerName || 'N/A'}
+                    {(t as any).owner?.name || (t as any).ownerName || "N/A"}
                   </td>
                   <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
-                    {(t as any).customerName || 'N/A'}
+                    {(t as any).customer?.name ||
+                      (t as any).customerName ||
+                      "N/A"}
                   </td>
                   <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-semibold text-green-400">
                     ${t.amount}
@@ -232,18 +238,20 @@ const TransactionsTable: React.FC<Props> = ({
                   <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
                     <span
                       className={`px-2 py-1 rounded text-xs ${
-                        t.status === 'success'
-                          ? 'bg-green-600/20 text-green-400'
-                          : t.status === 'pending'
-                          ? 'bg-yellow-600/20 text-yellow-400'
-                          : 'bg-red-600/20 text-red-400'
+                        t.status === "success"
+                          ? "bg-green-600/20 text-green-400"
+                          : t.status === "pending"
+                          ? "bg-yellow-600/20 text-yellow-400"
+                          : "bg-red-600/20 text-red-400"
                       }`}
                     >
                       {t.status}
                     </span>
                   </td>
                   <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden lg:table-cell text-slate-400">
-                    {(t as any).date || 'N/A'}
+                    {(t as any).createdAt
+                      ? new Date((t as any).createdAt).toLocaleDateString()
+                      : (t as any).date || "N/A"}
                   </td>
                   <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
                     <button className="text-indigo-400 hover:text-indigo-300 font-medium">

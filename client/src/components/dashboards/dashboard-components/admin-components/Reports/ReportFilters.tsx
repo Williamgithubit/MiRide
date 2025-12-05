@@ -1,6 +1,6 @@
-import React from 'react';
-import { ReportFilters as FiltersType } from '../../../../../store/Admin/adminReportsSlice';
-import { FaSearch, FaUndo } from 'react-icons/fa';
+import React from "react";
+import { ReportFilters as FiltersType } from "../../../../../store/Admin/adminReportsSlice";
+import { FaSearch, FaUndo } from "react-icons/fa";
 
 interface ReportFiltersProps {
   filters: FiltersType;
@@ -50,7 +50,7 @@ const ReportFilters: React.FC<ReportFiltersProps> = ({
             User Type
           </label>
           <select
-            value={filters.userType || 'all'}
+            value={filters.userType || "all"}
             onChange={(e) => onFilterChange({ userType: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
@@ -67,7 +67,7 @@ const ReportFilters: React.FC<ReportFiltersProps> = ({
             Car Category
           </label>
           <select
-            value={filters.carCategory || 'all'}
+            value={filters.carCategory || "all"}
             onChange={(e) => onFilterChange({ carCategory: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
@@ -87,7 +87,7 @@ const ReportFilters: React.FC<ReportFiltersProps> = ({
             Booking Status
           </label>
           <select
-            value={filters.bookingStatus || 'all'}
+            value={filters.bookingStatus || "all"}
             onChange={(e) => onFilterChange({ bookingStatus: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
@@ -100,6 +100,29 @@ const ReportFilters: React.FC<ReportFiltersProps> = ({
           </select>
         </div>
 
+        {/* Activity Type */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Activity Type
+          </label>
+          <select
+            value={(filters as any).activityType || "all"}
+            onChange={(e) => onFilterChange({ activityType: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="all">All Types</option>
+            <option value="rental">Rental</option>
+            <option value="registration">Registration</option>
+            <option value="payment">Payment</option>
+            <option value="payout">Payout</option>
+            <option value="refund">Refund</option>
+            <option value="login">Login</option>
+            <option value="update">Update</option>
+            <option value="withdrawal">Withdrawal</option>
+            <option value="approval">Approval</option>
+          </select>
+        </div>
+
         {/* Search Query */}
         <div className="md:col-span-2 lg:col-span-3">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -109,7 +132,7 @@ const ReportFilters: React.FC<ReportFiltersProps> = ({
             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              value={filters.searchQuery || ''}
+              value={filters.searchQuery || ""}
               onChange={(e) => onFilterChange({ searchQuery: e.target.value })}
               placeholder="Search by ID, name, or keyword..."
               className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"

@@ -4,28 +4,35 @@ import {
   useGetOwnerBookingsQuery,
   useApproveBookingMutation,
   useRejectBookingMutation,
-  Rental
+  Rental,
 } from "../../../../store/Rental/rentalApi";
-import BookingRequestsTable, { BookingRequest } from './booking-requests/BookingRequestsTable';
-import { ApprovalModal, RejectionModal } from './booking-requests/BookingActionModals';
-import BookingDetailsModal from './booking-requests/BookingDetailsModal';
-import { FaSync } from 'react-icons/fa';
-import { API_BASE_URL } from '../../../../config/api';
+import BookingRequestsTable, {
+  BookingRequest,
+} from "./booking-requests/BookingRequestsTable";
+import {
+  ApprovalModal,
+  RejectionModal,
+} from "./booking-requests/BookingActionModals";
+import BookingDetailsModal from "./booking-requests/BookingDetailsModal";
+import { FaSync } from "react-icons/fa";
+import { API_BASE_URL } from "../../../../config/api";
 
 export const BookingRequestsSection = () => {
   const [updating, setUpdating] = useState<Record<string, boolean>>({});
-  const [selectedBooking, setSelectedBooking] = useState<BookingRequest | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<BookingRequest | null>(
+    null
+  );
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Use RTK Query hooks
   const {
     data: rentals = [],
     isLoading: loading,
     error: rentalsError,
-    refetch
+    refetch,
   } = useGetOwnerBookingsQuery();
 
   const [approveBooking] = useApproveBookingMutation();
@@ -34,27 +41,41 @@ export const BookingRequestsSection = () => {
   // Transform Rental[] to BookingRequest[] with filtering
   const allBookings: BookingRequest[] = rentals.map((rental: Rental) => {
     // Extract image URL from car.images array or use imageUrl directly
-    let carImageUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K';
-    
-    if (rental.car?.images && Array.isArray(rental.car.images) && rental.car.images.length > 0) {
+    let carImageUrl =
+      "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K";
+
+    if (
+      rental.car?.images &&
+      Array.isArray(rental.car.images) &&
+      rental.car.images.length > 0
+    ) {
       // Find primary image or use first image
       const primaryImage = rental.car.images.find((img: any) => img.isPrimary);
-      const rawImageUrl = primaryImage?.imageUrl || rental.car.images[0]?.imageUrl;
-      
+      const rawImageUrl =
+        primaryImage?.imageUrl || rental.car.images[0]?.imageUrl;
+
       // Convert relative URLs to absolute URLs
       if (rawImageUrl) {
-        carImageUrl = rawImageUrl.startsWith('http') ? rawImageUrl : `${API_BASE_URL}${rawImageUrl}`;
+        carImageUrl = rawImageUrl.startsWith("http")
+          ? rawImageUrl
+          : `${API_BASE_URL}${rawImageUrl}`;
       }
     } else if (rental.car?.imageUrl) {
       // Convert relative URLs to absolute URLs
-      carImageUrl = rental.car.imageUrl.startsWith('http') ? rental.car.imageUrl : `${API_BASE_URL}${rental.car.imageUrl}`;
+      carImageUrl = rental.car.imageUrl.startsWith("http")
+        ? rental.car.imageUrl
+        : `${API_BASE_URL}${rental.car.imageUrl}`;
     }
 
     return {
       id: rental.id.toString(),
       car: {
         id: rental.car?.id?.toString() || rental.carId.toString(),
-        make: rental.car?.brand || rental.car?.brand || rental.car?.name?.split(" ")[0] || "Unknown",
+        make:
+          rental.car?.brand ||
+          rental.car?.brand ||
+          rental.car?.name?.split(" ")[0] ||
+          "Unknown",
         model: rental.car?.model || rental.car?.name || "Unknown",
         year: rental.car?.year || new Date().getFullYear(),
         image: carImageUrl,
@@ -64,6 +85,8 @@ export const BookingRequestsSection = () => {
         name: rental.customer?.name || "Unknown Customer",
         email: rental.customer?.email || "unknown@email.com",
       },
+      pickupLocation: rental.pickupLocation || rental.pickup_location || "",
+      dropoffLocation: rental.dropoffLocation || rental.dropoff_location || "",
       startDate: rental.startDate,
       endDate: rental.endDate,
       totalCost: Number(rental.totalAmount) || Number(rental.totalCost) || 0,
@@ -75,14 +98,14 @@ export const BookingRequestsSection = () => {
 
   // Filter bookings based on status
   const bookings = React.useMemo(() => {
-    if (statusFilter === 'all') {
+    if (statusFilter === "all") {
       return allBookings;
     }
-    return allBookings.filter(booking => booking.status === statusFilter);
+    return allBookings.filter((booking) => booking.status === statusFilter);
   }, [allBookings, statusFilter]);
 
   const handleApprove = (bookingId: string) => {
-    const booking = bookings.find(b => b.id === bookingId);
+    const booking = bookings.find((b) => b.id === bookingId);
     if (booking) {
       setSelectedBooking(booking);
       setShowApprovalModal(true);
@@ -90,7 +113,7 @@ export const BookingRequestsSection = () => {
   };
 
   const handleReject = (bookingId: string) => {
-    const booking = bookings.find(b => b.id === bookingId);
+    const booking = bookings.find((b) => b.id === bookingId);
     if (booking) {
       setSelectedBooking(booking);
       setShowRejectionModal(true);
@@ -104,9 +127,9 @@ export const BookingRequestsSection = () => {
 
   const confirmApproval = async () => {
     if (!selectedBooking) return;
-    
+
     try {
-      setUpdating(prev => ({ ...prev, [selectedBooking.id]: true }));
+      setUpdating((prev) => ({ ...prev, [selectedBooking.id]: true }));
       await approveBooking(parseInt(selectedBooking.id)).unwrap();
       toast.success("Booking approved successfully!");
       setShowApprovalModal(false);
@@ -115,18 +138,18 @@ export const BookingRequestsSection = () => {
       console.error("Error approving booking:", error);
       toast.error("Failed to approve booking");
     } finally {
-      setUpdating(prev => ({ ...prev, [selectedBooking.id]: false }));
+      setUpdating((prev) => ({ ...prev, [selectedBooking.id]: false }));
     }
   };
 
   const confirmRejection = async (reason: string) => {
     if (!selectedBooking) return;
-    
+
     try {
-      setUpdating(prev => ({ ...prev, [selectedBooking.id]: true }));
-      await rejectBooking({ 
-        id: parseInt(selectedBooking.id), 
-        reason 
+      setUpdating((prev) => ({ ...prev, [selectedBooking.id]: true }));
+      await rejectBooking({
+        id: parseInt(selectedBooking.id),
+        reason,
       }).unwrap();
       toast.success("Booking rejected successfully!");
       setShowRejectionModal(false);
@@ -135,10 +158,9 @@ export const BookingRequestsSection = () => {
       console.error("Error rejecting booking:", error);
       toast.error("Failed to reject booking");
     } finally {
-      setUpdating(prev => ({ ...prev, [selectedBooking.id]: false }));
+      setUpdating((prev) => ({ ...prev, [selectedBooking.id]: false }));
     }
   };
-
 
   // Handle errors
   React.useEffect(() => {
@@ -157,13 +179,18 @@ export const BookingRequestsSection = () => {
             Booking Requests
           </h2>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Manage and review customer booking requests ({bookings.length} {statusFilter === 'all' ? 'total' : statusFilter.replace('_', ' ')} bookings)
+            Manage and review customer booking requests ({bookings.length}{" "}
+            {statusFilter === "all" ? "total" : statusFilter.replace("_", " ")}{" "}
+            bookings)
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
           {/* Status Filter */}
           <div className="flex items-center gap-2">
-            <label htmlFor="status-filter" className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+            <label
+              htmlFor="status-filter"
+              className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap"
+            >
               Status:
             </label>
             <select
@@ -181,13 +208,17 @@ export const BookingRequestsSection = () => {
               <option value="cancelled">Cancelled</option>
             </select>
           </div>
-          
+
           <button
             onClick={() => refetch()}
             disabled={loading}
             className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center gap-2"
           >
-            <FaSync className={`w-3 h-3 sm:w-4 sm:h-4 ${loading ? 'animate-spin' : ''}`} />
+            <FaSync
+              className={`w-3 h-3 sm:w-4 sm:h-4 ${
+                loading ? "animate-spin" : ""
+              }`}
+            />
             <span>{loading ? "Refreshing..." : "Refresh"}</span>
           </button>
         </div>
@@ -212,7 +243,7 @@ export const BookingRequestsSection = () => {
         }}
         onConfirm={confirmApproval}
         booking={selectedBooking}
-        loading={updating[selectedBooking?.id || '']}
+        loading={updating[selectedBooking?.id || ""]}
       />
 
       <RejectionModal
@@ -223,7 +254,7 @@ export const BookingRequestsSection = () => {
         }}
         onConfirm={confirmRejection}
         booking={selectedBooking}
-        loading={updating[selectedBooking?.id || '']}
+        loading={updating[selectedBooking?.id || ""]}
       />
 
       <BookingDetailsModal

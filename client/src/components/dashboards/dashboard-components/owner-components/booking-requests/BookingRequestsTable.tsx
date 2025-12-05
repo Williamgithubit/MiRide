@@ -1,16 +1,16 @@
-import React, { useState, useMemo } from 'react';
-import { 
-  FaEye, 
-  FaCheck, 
-  FaTimes, 
-  FaSearch, 
+import React, { useState, useMemo } from "react";
+import {
+  FaEye,
+  FaCheck,
+  FaTimes,
+  FaSearch,
   FaFilter,
   FaChevronLeft,
   FaChevronRight,
-  FaUser
-} from 'react-icons/fa';
-import BookingStatusBadge from '../../customer-components/booking-components/BookingStatusBadge';
-import { format } from 'date-fns';
+  FaUser,
+} from "react-icons/fa";
+import BookingStatusBadge from "../../customer-components/booking-components/BookingStatusBadge";
+import { format } from "date-fns";
 
 export interface BookingRequest {
   id: string;
@@ -27,12 +27,20 @@ export interface BookingRequest {
     email: string;
     avatar?: string;
   };
+  pickupLocation?: string;
+  dropoffLocation?: string;
   startDate: string;
   endDate: string;
   totalCost: number;
-  status: 'pending_approval' | 'approved' | 'rejected' | 'active' | 'completed' | 'cancelled';
+  status:
+    | "pending_approval"
+    | "approved"
+    | "rejected"
+    | "active"
+    | "completed"
+    | "cancelled";
   createdAt?: string;
-  paymentStatus?: 'pending' | 'paid' | 'refunded' | 'failed';
+  paymentStatus?: "pending" | "paid" | "refunded" | "failed";
 }
 
 interface BookingRequestsTableProps {
@@ -50,23 +58,30 @@ const BookingRequestsTable: React.FC<BookingRequestsTableProps> = ({
   onApprove,
   onReject,
   onViewDetails,
-  updating = {}
+  updating = {},
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
 
   // Filter and search bookings
   const filteredBookings = useMemo(() => {
-    return bookings.filter(booking => {
-      const matchesSearch = 
-        booking.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        `${booking.car.make} ${booking.car.model}`.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
-      
+    return bookings.filter((booking) => {
+      const matchesSearch =
+        booking.customer.name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        booking.customer.email
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        `${booking.car.make} ${booking.car.model}`
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+
+      const matchesStatus =
+        statusFilter === "all" || booking.status === statusFilter;
+
       return matchesSearch && matchesStatus;
     });
   }, [bookings, searchTerm, statusFilter]);
@@ -74,7 +89,10 @@ const BookingRequestsTable: React.FC<BookingRequestsTableProps> = ({
   // Pagination
   const totalPages = Math.ceil(filteredBookings.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
-  const paginatedBookings = filteredBookings.slice(startIndex, startIndex + pageSize);
+  const paginatedBookings = filteredBookings.slice(
+    startIndex,
+    startIndex + pageSize
+  );
 
   // Reset to first page when filters change
   React.useEffect(() => {
@@ -82,11 +100,11 @@ const BookingRequestsTable: React.FC<BookingRequestsTableProps> = ({
   }, [searchTerm, statusFilter]);
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'MMM d, yyyy');
+    return format(new Date(dateString), "MMM d, yyyy");
   };
 
   const formatTime = (dateString: string) => {
-    return format(new Date(dateString), 'h:mm a');
+    return format(new Date(dateString), "h:mm a");
   };
 
   const calculateDuration = (startDate: string, endDate: string) => {
@@ -98,13 +116,13 @@ const BookingRequestsTable: React.FC<BookingRequestsTableProps> = ({
   };
 
   const statusOptions = [
-    { value: 'all', label: 'All Status' },
-    { value: 'pending_approval', label: 'Pending Approval' },
-    { value: 'approved', label: 'Approved' },
-    { value: 'active', label: 'Active' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'cancelled', label: 'Cancelled' },
-    { value: 'rejected', label: 'Rejected' }
+    { value: "all", label: "All Status" },
+    { value: "pending_approval", label: "Pending Approval" },
+    { value: "approved", label: "Approved" },
+    { value: "active", label: "Active" },
+    { value: "completed", label: "Completed" },
+    { value: "cancelled", label: "Cancelled" },
+    { value: "rejected", label: "Rejected" },
   ];
 
   if (loading) {
@@ -164,7 +182,8 @@ const BookingRequestsTable: React.FC<BookingRequestsTableProps> = ({
 
         {/* Results Summary */}
         <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-          Showing {paginatedBookings.length} of {filteredBookings.length} booking requests
+          Showing {paginatedBookings.length} of {filteredBookings.length}{" "}
+          booking requests
         </div>
       </div>
 
@@ -179,10 +198,9 @@ const BookingRequestsTable: React.FC<BookingRequestsTableProps> = ({
               No booking requests found
             </h3>
             <p className="text-gray-500 dark:text-gray-400">
-              {searchTerm || statusFilter !== 'all' 
-                ? 'Try adjusting your search or filter criteria.'
-                : 'No booking requests available at the moment.'
-              }
+              {searchTerm || statusFilter !== "all"
+                ? "Try adjusting your search or filter criteria."
+                : "No booking requests available at the moment."}
             </p>
           </div>
         ) : (
@@ -214,16 +232,23 @@ const BookingRequestsTable: React.FC<BookingRequestsTableProps> = ({
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {paginatedBookings.map((booking) => (
-                    <tr key={booking.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <tr
+                      key={booking.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
                       {/* Car Details */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center space-x-3">
                           <img
-                            src={booking.car.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K'}
+                            src={
+                              booking.car.image ||
+                              "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K"
+                            }
                             alt={`${booking.car.make} ${booking.car.model}`}
                             className="w-16 h-16 rounded-lg object-cover"
                             onError={(e) => {
-                              e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K';
+                              e.currentTarget.src =
+                                "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K";
                             }}
                           />
                           <div>
@@ -265,9 +290,16 @@ const BookingRequestsTable: React.FC<BookingRequestsTableProps> = ({
                       {/* Rental Period */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900 dark:text-white">
-                          <div>{formatDate(booking.startDate)} - {formatDate(booking.endDate)}</div>
+                          <div>
+                            {formatDate(booking.startDate)} -{" "}
+                            {formatDate(booking.endDate)}
+                          </div>
                           <div className="text-gray-500 dark:text-gray-400">
-                            {calculateDuration(booking.startDate, booking.endDate)} days
+                            {calculateDuration(
+                              booking.startDate,
+                              booking.endDate
+                            )}{" "}
+                            days
                           </div>
                         </div>
                       </td>
@@ -295,7 +327,7 @@ const BookingRequestsTable: React.FC<BookingRequestsTableProps> = ({
                             <FaEye className="w-4 h-4" />
                           </button>
 
-                          {booking.status === 'pending_approval' && (
+                          {booking.status === "pending_approval" && (
                             <>
                               <button
                                 onClick={() => onApprove(booking.id)}
@@ -322,7 +354,7 @@ const BookingRequestsTable: React.FC<BookingRequestsTableProps> = ({
                 </tbody>
               </table>
             </div>
-            
+
             {/* Mobile Cards */}
             <div className="lg:hidden divide-y divide-gray-200 dark:divide-gray-700">
               {paginatedBookings.map((booking) => (
@@ -330,16 +362,21 @@ const BookingRequestsTable: React.FC<BookingRequestsTableProps> = ({
                   {/* Car and Customer Info */}
                   <div className="flex items-start space-x-3">
                     <img
-                      src={booking.car.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K'}
+                      src={
+                        booking.car.image ||
+                        "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K"
+                      }
                       alt={`${booking.car.make} ${booking.car.model}`}
                       className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
                       onError={(e) => {
-                        e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K';
+                        e.currentTarget.src =
+                          "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K";
                       }}
                     />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-gray-900 dark:text-white">
-                        {booking.car.make} {booking.car.model} ({booking.car.year})
+                        {booking.car.make} {booking.car.model} (
+                        {booking.car.year})
                       </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                         {booking.customer.name} • {booking.customer.email}
@@ -351,16 +388,22 @@ const BookingRequestsTable: React.FC<BookingRequestsTableProps> = ({
                   {/* Rental Details */}
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <div className="text-gray-500 dark:text-gray-400">Rental Period</div>
+                      <div className="text-gray-500 dark:text-gray-400">
+                        Rental Period
+                      </div>
                       <div className="text-gray-900 dark:text-white">
-                        {formatDate(booking.startDate)} - {formatDate(booking.endDate)}
+                        {formatDate(booking.startDate)} -{" "}
+                        {formatDate(booking.endDate)}
                       </div>
                       <div className="text-gray-500 dark:text-gray-400">
-                        {calculateDuration(booking.startDate, booking.endDate)} days
+                        {calculateDuration(booking.startDate, booking.endDate)}{" "}
+                        days
                       </div>
                     </div>
                     <div>
-                      <div className="text-gray-500 dark:text-gray-400">Total Cost</div>
+                      <div className="text-gray-500 dark:text-gray-400">
+                        Total Cost
+                      </div>
                       <div className="text-lg font-medium text-gray-900 dark:text-white">
                         ${(Number(booking.totalCost) || 0).toFixed(2)}
                       </div>
@@ -377,7 +420,7 @@ const BookingRequestsTable: React.FC<BookingRequestsTableProps> = ({
                       <span>View</span>
                     </button>
 
-                    {booking.status === 'pending_approval' && (
+                    {booking.status === "pending_approval" && (
                       <>
                         <button
                           onClick={() => onApprove(booking.id)}
@@ -408,45 +451,64 @@ const BookingRequestsTable: React.FC<BookingRequestsTableProps> = ({
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="text-sm text-gray-700 dark:text-gray-300 order-2 sm:order-1">
                     <span className="hidden sm:inline">
-                      Showing {startIndex + 1} to {Math.min(startIndex + pageSize, filteredBookings.length)} of {filteredBookings.length} results
+                      Showing {startIndex + 1} to{" "}
+                      {Math.min(startIndex + pageSize, filteredBookings.length)}{" "}
+                      of {filteredBookings.length} results
                     </span>
                     <span className="sm:hidden">
-                      {startIndex + 1}-{Math.min(startIndex + pageSize, filteredBookings.length)} of {filteredBookings.length}
+                      {startIndex + 1}-
+                      {Math.min(startIndex + pageSize, filteredBookings.length)}{" "}
+                      of {filteredBookings.length}
                     </span>
                   </div>
                   <div className="flex items-center space-x-2 order-1 sm:order-2">
                     <button
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
                       disabled={currentPage === 1}
                       className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <FaChevronLeft className="w-4 h-4" />
                     </button>
-                    
+
                     <div className="flex items-center space-x-1">
                       {[...Array(totalPages)].map((_, index) => {
                         const page = index + 1;
                         const isCurrentPage = page === currentPage;
                         // Show fewer pages on mobile
                         const isMobile = window.innerWidth < 640;
-                        const showPage = isMobile 
-                          ? (page === 1 || page === totalPages || page === currentPage)
-                          : (page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1);
-                        
-                        if (!showPage && page !== 2 && page !== totalPages - 1) {
+                        const showPage = isMobile
+                          ? page === 1 ||
+                            page === totalPages ||
+                            page === currentPage
+                          : page === 1 ||
+                            page === totalPages ||
+                            Math.abs(page - currentPage) <= 1;
+
+                        if (
+                          !showPage &&
+                          page !== 2 &&
+                          page !== totalPages - 1
+                        ) {
                           return page === 2 || page === totalPages - 1 ? (
-                            <span key={page} className="px-2 text-gray-500 hidden sm:inline">...</span>
+                            <span
+                              key={page}
+                              className="px-2 text-gray-500 hidden sm:inline"
+                            >
+                              ...
+                            </span>
                           ) : null;
                         }
-                        
+
                         return (
                           <button
                             key={page}
                             onClick={() => setCurrentPage(page)}
                             className={`px-3 py-1 text-sm rounded-md ${
                               isCurrentPage
-                                ? 'bg-blue-600 text-white'
-                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                ? "bg-blue-600 text-white"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                             }`}
                           >
                             {page}
@@ -454,9 +516,11 @@ const BookingRequestsTable: React.FC<BookingRequestsTableProps> = ({
                         );
                       })}
                     </div>
-                    
+
                     <button
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                      }
                       disabled={currentPage === totalPages}
                       className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >

@@ -1,9 +1,17 @@
-import React from 'react';
-import { FaTimes, FaUser, FaCar, FaCalendarAlt, FaDollarSign, FaMapMarkerAlt, FaInfoCircle } from 'react-icons/fa';
-import { format } from 'date-fns';
-import { BookingRequest } from './BookingRequestsTable';
-import BookingStatusBadge from '../../customer-components/booking-components/BookingStatusBadge';
-import PaymentStatusBadge from '../../customer-components/booking-components/PaymentStatusBadge';
+import React from "react";
+import {
+  FaTimes,
+  FaUser,
+  FaCar,
+  FaCalendarAlt,
+  FaDollarSign,
+  FaMapMarkerAlt,
+  FaInfoCircle,
+} from "react-icons/fa";
+import { format } from "date-fns";
+import { BookingRequest } from "./BookingRequestsTable";
+import BookingStatusBadge from "../../customer-components/booking-components/BookingStatusBadge";
+import PaymentStatusBadge from "../../customer-components/booking-components/PaymentStatusBadge";
 
 interface BookingDetailsModalProps {
   isOpen: boolean;
@@ -14,16 +22,16 @@ interface BookingDetailsModalProps {
 const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
   isOpen,
   onClose,
-  booking
+  booking,
 }) => {
   if (!isOpen || !booking) return null;
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'EEEE, MMMM d, yyyy');
+    return format(new Date(dateString), "EEEE, MMMM d, yyyy");
   };
 
   const formatTime = (dateString: string) => {
-    return format(new Date(dateString), 'h:mm a');
+    return format(new Date(dateString), "h:mm a");
   };
 
   const calculateDuration = (startDate: string, endDate: string) => {
@@ -35,14 +43,14 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
   };
 
   const formatDateTime = (dateString: string) => {
-    return format(new Date(dateString), 'MMM d, yyyy • h:mm a');
+    return format(new Date(dateString), "MMM d, yyyy • h:mm a");
   };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         {/* Background overlay */}
-        <div 
+        <div
           className="fixed inset-0 transition-opacity backdrop-blur-sm bg-gray-900/30"
           onClick={onClose}
         />
@@ -74,7 +82,10 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
               <div className="flex items-center space-x-3">
                 <BookingStatusBadge status={booking.status} size="md" />
                 {booking.paymentStatus && (
-                  <PaymentStatusBadge status={booking.paymentStatus} size="md" />
+                  <PaymentStatusBadge
+                    status={booking.paymentStatus}
+                    size="md"
+                  />
                 )}
               </div>
               {booking.createdAt && (
@@ -88,15 +99,21 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
               <div className="flex items-center space-x-2 mb-3">
                 <FaCar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                <h4 className="font-medium text-gray-900 dark:text-white">Vehicle Information</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Vehicle Information
+                </h4>
               </div>
               <div className="flex items-start space-x-4">
                 <img
-                  src={booking.car.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA5NiA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9Ijk2IiBoZWlnaHQ9Ijk2IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0yNCAzNkg3Mkw2OCA1NEg2MFY0OEg1NFY1NEg0NVY0OEgzOVY1NEgzMFY0OEgyN1Y1NEgyNEwzNiAzNloiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K'}
+                  src={
+                    booking.car.image ||
+                    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA5NiA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9Ijk2IiBoZWlnaHQ9Ijk2IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0yNCAzNkg3Mkw2OCA1NEg2MFY0OEg1NFY1NEg0NVY0OEgzOVY1NEgzMFY0OEgyN1Y1NEgyNEwzNiAzNloiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K"
+                  }
                   alt={`${booking.car.make} ${booking.car.model}`}
                   className="w-24 h-24 rounded-lg object-cover flex-shrink-0"
                   onError={(e) => {
-                    e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA5NiA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9Ijk2IiBoZWlnaHQ9Ijk2IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0yNCAzNkg3Mkw2OCA1NEg2MFY0OEg1NFY1NEg0NVY0OEgzOVY1NEgzMFY0OEgyN1Y1NEgyNEwzNiAzNloiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K';
+                    e.currentTarget.src =
+                      "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA5NiA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9Ijk2IiBoZWlnaHQ9Ijk2IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0yNCAzNkg3Mkw2OCA1NEg2MFY0OEg1NFY1NEg0NVY0OEgzOVY1NEgzMFY0OEgyN1Y1NEgyNEwzNiAzNloiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K";
                   }}
                 />
                 <div className="flex-1">
@@ -115,7 +132,9 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
               <div className="flex items-center space-x-2 mb-3">
                 <FaUser className="w-5 h-5 text-green-600 dark:text-green-400" />
-                <h4 className="font-medium text-gray-900 dark:text-white">Customer Information</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Customer Information
+                </h4>
               </div>
               <div className="flex items-start space-x-4">
                 <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center flex-shrink-0">
@@ -145,28 +164,70 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
               <div className="flex items-center space-x-2 mb-3">
                 <FaCalendarAlt className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                <h4 className="font-medium text-gray-900 dark:text-white">Rental Period</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Rental Period
+                </h4>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Start Date & Time</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    Start Date & Time
+                  </div>
                   <div className="text-gray-900 dark:text-white">
-                    <div className="font-medium">{formatDate(booking.startDate)}</div>
-                    <div className="text-sm">{formatTime(booking.startDate)}</div>
+                    <div className="font-medium">
+                      {formatDate(booking.startDate)}
+                    </div>
+                    <div className="text-sm">
+                      {formatTime(booking.startDate)}
+                    </div>
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">End Date & Time</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    End Date & Time
+                  </div>
                   <div className="text-gray-900 dark:text-white">
-                    <div className="font-medium">{formatDate(booking.endDate)}</div>
+                    <div className="font-medium">
+                      {formatDate(booking.endDate)}
+                    </div>
                     <div className="text-sm">{formatTime(booking.endDate)}</div>
                   </div>
                 </div>
               </div>
               <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Total Duration</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Total Duration
+                </div>
                 <div className="text-lg font-medium text-gray-900 dark:text-white">
                   {calculateDuration(booking.startDate, booking.endDate)} days
+                </div>
+              </div>
+            </div>
+
+            {/* Pickup & Drop-off Locations */}
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+              <div className="flex items-center space-x-2 mb-3">
+                <FaMapMarkerAlt className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Pickup & Drop-off
+                </h4>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <div className="text-gray-500 dark:text-gray-400">
+                    Pickup Location
+                  </div>
+                  <div className="text-gray-900 dark:text-white font-medium">
+                    {booking.pickupLocation || "Not provided"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-gray-500 dark:text-gray-400">
+                    Drop-off Location
+                  </div>
+                  <div className="text-gray-900 dark:text-white font-medium">
+                    {booking.dropoffLocation || "Not provided"}
+                  </div>
                 </div>
               </div>
             </div>
@@ -175,42 +236,52 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
               <div className="flex items-center space-x-2 mb-3">
                 <FaDollarSign className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                <h4 className="font-medium text-gray-900 dark:text-white">Pricing Information</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Pricing Information
+                </h4>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-300">Total Amount</span>
+                  <span className="text-gray-600 dark:text-gray-300">
+                    Total Amount
+                  </span>
                   <span className="text-xl font-bold text-gray-900 dark:text-white">
                     ${(Number(booking.totalCost) || 0).toFixed(2)}
                   </span>
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">
-                  Average per day: ${((Number(booking.totalCost) || 0) / calculateDuration(booking.startDate, booking.endDate)).toFixed(2)}
+                  Average per day: $
+                  {(
+                    (Number(booking.totalCost) || 0) /
+                    calculateDuration(booking.startDate, booking.endDate)
+                  ).toFixed(2)}
                 </div>
               </div>
             </div>
 
             {/* Additional Information */}
-            {(booking.status === 'rejected' || booking.status === 'cancelled') && (
+            {(booking.status === "rejected" ||
+              booking.status === "cancelled") && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                 <div className="flex items-start space-x-2">
                   <FaInfoCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5" />
                   <div>
                     <h4 className="font-medium text-red-800 dark:text-red-200">
-                      {booking.status === 'rejected' ? 'Rejection Reason' : 'Cancellation Information'}
+                      {booking.status === "rejected"
+                        ? "Rejection Reason"
+                        : "Cancellation Information"}
                     </h4>
                     <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-                      {booking.status === 'rejected' 
-                        ? 'This booking was rejected by the owner.'
-                        : 'This booking was cancelled.'
-                      }
+                      {booking.status === "rejected"
+                        ? "This booking was rejected by the owner."
+                        : "This booking was cancelled."}
                     </p>
                   </div>
                 </div>
               </div>
             )}
 
-            {booking.status === 'pending_approval' && (
+            {booking.status === "pending_approval" && (
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <div className="flex items-start space-x-2">
                   <FaInfoCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
@@ -219,8 +290,9 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
                       Pending Your Approval
                     </h4>
                     <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                      This booking request is waiting for your approval. The customer has completed payment 
-                      and is waiting for confirmation.
+                      This booking request is waiting for your approval. The
+                      customer has completed payment and is waiting for
+                      confirmation.
                     </p>
                   </div>
                 </div>

@@ -49,7 +49,7 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ user, onClose }) =>
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl max-w-4xl w-full shadow-2xl border border-gray-200/20 dark:border-gray-700/20 my-8">
         {/* Header */}
-        <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-700 p-6 rounded-t-2xl">
+        <div className="relative bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-700 dark:to-emerald-700 p-6 rounded-t-2xl">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-lg transition-colors"
@@ -85,7 +85,7 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ user, onClose }) =>
             {/* User Info */}
             <div className="flex-1">
               <h2 className="text-2xl font-bold text-white mb-1">{user.name}</h2>
-              <p className="text-blue-100 text-sm mb-2">{user.email}</p>
+              <p className="text-green-100 text-sm mb-2">{user.email}</p>
               <div className="flex items-center gap-2">
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeColor(user.role)}`}>
                   {user.role?.charAt(0).toUpperCase() + user.role?.slice(1)}
