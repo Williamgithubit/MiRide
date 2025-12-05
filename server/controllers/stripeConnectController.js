@@ -616,4 +616,119 @@ export const getWithdrawalHistory = async (req, res) => {
   }
 };
 
+/**
+ * Fix payment records with 0 platform fees (admin only)
+ */
+export const fixPaymentPlatformFees = async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    console.log('🔧 Starting payment platform fees fix...');
+
+    // Find all payments with 0 platform fee
+    const paymentsToFix = await db.Payment.findAll({
+      where: {
+        platformFee: 0.00,
+      },
+      include: [
+        {
+          model: db.Rental,
+          as: 'rental',
+          attributes: ['id', 'totalAmount', 'platformFee', 'ownerPayout'],
+        },
+      ],
+    });
+
+    console.log(`Found ${paymentsToFix.length} payment(s) with 0 platform fee`);
+
+    if (paymentsToFix.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No payments need fixing',
+        fixed: 0,
+        errors: 0,
+      });
+    }
+
+    let fixedCount = 0;
+    let errorCount = 0;
+    const fixedPayments = [];
+
+    for (const payment of paymentsToFix) {
+      try {
+        const totalAmount = parseFloat(payment.totalAmount);
+        
+        // Calculate correct commission
+        const { platformFee, ownerPayout } = calculateCommission(totalAmount);
+
+        console.log(`Fixing payment ${payment.id}: $${totalAmount} -> Fee: $${platformFee}, Owner: $${ownerPayout}`);
+
+        // Update payment record
+        await payment.update({
+          platformFee: platformFee,
+          ownerAmount: ownerPayout,
+        });
+
+        // Update rental record if it exists and has 0 fees
+        if (payment.rental && parseFloat(payment.rental.platformFee) === 0) {
+          await db.Rental.update(
+            {
+              platformFee: platformFee,
+              ownerPayout: ownerPayout,
+            },
+            {
+              where: { id: payment.rentalId },
+            }
+          );
+        }
+
+        // Update owner profile balance
+        const ownerProfile = await db.OwnerProfile.findOne({
+          where: { userId: payment.ownerId },
+        });
+
+        if (ownerProfile) {
+          // Add the owner payout to their balance
+          const newTotalEarnings = parseFloat(ownerProfile.totalEarnings || 0) + parseFloat(ownerPayout);
+          const newAvailableBalance = parseFloat(ownerProfile.availableBalance || 0) + parseFloat(ownerPayout);
+
+          await ownerProfile.update({
+            totalEarnings: newTotalEarnings,
+            availableBalance: newAvailableBalance,
+          });
+        }
+
+        fixedPayments.push({
+          paymentId: payment.id,
+          rentalId: payment.rentalId,
+          totalAmount,
+          platformFee,
+          ownerPayout,
+        });
+
+        fixedCount++;
+      } catch (error) {
+        console.error(`Error fixing payment ${payment.id}:`, error.message);
+        errorCount++;
+      }
+    }
+
+    console.log(`✅ Fixed ${fixedCount} payments, ${errorCount} errors`);
+
+    res.json({
+      success: true,
+      message: `Fixed ${fixedCount} payment(s)`,
+      fixed: fixedCount,
+      errors: errorCount,
+      payments: fixedPayments,
+    });
+  } catch (error) {
+    console.error('Error fixing payment platform fees:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export { calculateCommission };

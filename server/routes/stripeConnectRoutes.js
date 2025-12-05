@@ -9,6 +9,7 @@ import {
   withdrawOwnerEarnings,
   withdrawPlatformRevenue,
   getWithdrawalHistory,
+  fixPaymentPlatformFees,
 } from '../controllers/stripeConnectController.js';
 
 const router = express.Router();
@@ -28,5 +29,8 @@ router.get('/platform-balance', auth(), getPlatformBalance);
 router.post('/withdraw-owner-earnings', auth(), withdrawOwnerEarnings);
 router.post('/withdraw-platform-revenue', auth(), withdrawPlatformRevenue);
 router.get('/withdrawal-history', auth(), getWithdrawalHistory);
+
+// Admin utility routes
+router.post('/fix-payment-fees', auth(), fixPaymentPlatformFees);
 
 export default router;

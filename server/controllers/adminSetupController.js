@@ -69,7 +69,7 @@ export const createAdminUser = async (req, res) => {
         password: hashedPassword,
         role: 'admin',
         isActive: true,
-        termsAccepted: true,
+        termsAccepted: false,
         termsAcceptedAt: new Date()
       }, {
         // Skip hooks to prevent double-hashing
@@ -168,12 +168,6 @@ export const healthCheck = async (req, res) => {
 
 /**
  * Test password hash verification
- * POST /api/admin-setup/verify-password
- * Body: {
- *   secret: "your-secret-key",
- *   email: "admin@miride.com",
- *   password: "Admin@123456"
- * }
  */
 export const verifyPassword = async (req, res) => {
   try {

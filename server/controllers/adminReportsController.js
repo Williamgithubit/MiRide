@@ -11,8 +11,11 @@ export const getUserReport = async (req, res) => {
     // Build where clause for date filtering
     const dateFilter = {};
     if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
       dateFilter.createdAt = {
-        [Op.between]: [new Date(startDate), new Date(endDate)],
+        [Op.between]: [start, end],
       };
     }
 
@@ -246,18 +249,43 @@ export const getBookingReport = async (req, res) => {
   try {
     const { startDate, endDate, bookingStatus, searchQuery } = req.query;
 
-    // Build where clause for date filtering
+    // Build where clause for date filtering (make endDate inclusive to include the full day)
     const dateFilter = {};
     if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
       dateFilter.createdAt = {
-        [Op.between]: [new Date(startDate), new Date(endDate)],
+        [Op.between]: [start, end],
       };
     }
 
-    // Build where clause for booking status
+    // Map frontend bookingStatus values to DB status values
+    // Frontend uses: pending, confirmed, active, completed, cancelled
+    // DB uses: pending_approval, approved, active, completed, cancelled
     const statusFilter = {};
     if (bookingStatus && bookingStatus !== "all") {
-      statusFilter.status = bookingStatus;
+      switch (bookingStatus) {
+        case "pending":
+          statusFilter.status = "pending_approval";
+          break;
+        case "confirmed":
+          // 'confirmed' should include approved and active in our DB
+          statusFilter.status = { [Op.in]: ["approved", "active"] };
+          break;
+        case "active":
+          statusFilter.status = "active";
+          break;
+        case "completed":
+          statusFilter.status = "completed";
+          break;
+        case "cancelled":
+          statusFilter.status = "cancelled";
+          break;
+        default:
+          // fallback to whatever was provided
+          statusFilter.status = bookingStatus;
+      }
     }
 
     const whereClause = { ...dateFilter, ...statusFilter };
@@ -340,8 +368,11 @@ export const getBookingReport = async (req, res) => {
       completedBookings,
       cancelledBookings,
       dailyTrend: dailyTrend.map((item) => ({
-        date: item.date,
-        count: parseInt(item.count),
+        date:
+          item.date && item.date instanceof Date
+            ? item.date.toISOString().split("T")[0]
+            : String(item.date),
+        count: parseInt(item.count, 10),
       })),
       weeklyTrend: weeklyTrend.map((item, index) => ({
         week: `Week ${index + 1}`,
@@ -376,16 +407,23 @@ export const getRevenueReport = async (req, res) => {
       };
     }
 
-    // Get all completed rentals for revenue calculation
+    // Get all completed rentals for revenue calculation and include stored fee fields
+    // We select COALESCE columns to ensure numeric values even if columns are null
     const completedRentals = await db.Rental.findAll({
       where: {
         ...dateFilter,
-        status: "completed",
+        paymentStatus: "paid",
+        status: { [Op.in]: ["approved", "active", "completed"] },
       },
       attributes: [
-        "totalAmount",
         "createdAt",
         [db.sequelize.literal("COALESCE(total_amount, 0)"), "totalAmount"],
+        [db.sequelize.literal("COALESCE(platform_fee, 0)"), "platformFee"],
+        [db.sequelize.literal("COALESCE(owner_payout, 0)"), "ownerPayout"],
+        [
+          db.sequelize.literal("COALESCE(payout_status, 'pending')"),
+          "payoutStatus",
+        ],
       ],
       include: [
         {
@@ -394,52 +432,232 @@ export const getRevenueReport = async (req, res) => {
           attributes: ["brand"],
         },
       ],
+      raw: false,
     });
 
-    // Calculate totals
-    const totalRevenue = completedRentals.reduce(
-      (sum, rental) => sum + parseFloat(rental.get("totalAmount") || 0),
-      0
-    );
+    // Calculate totals. Prefer Payment records when available because they represent real transactions.
+    let totalRevenue = 0;
+    let totalCommissions = 0;
+    let totalPayouts = 0;
+    let pendingPayouts = 0;
 
-    // Assuming 15% commission rate
-    const commissionRate = 0.15;
-    const totalCommissions = totalRevenue * commissionRate;
-    const totalPayouts = totalRevenue - totalCommissions;
+    const fallbackCommissionRate = 0.15;
 
-    // Get pending payouts (completed bookings not yet paid out)
-    const pendingPayouts = totalPayouts * 0.1; // Assuming 10% is pending
+    // Try to compute sums from Payments table first
+    const paymentWhere = {
+      ...(dateFilter.createdAt ? { createdAt: dateFilter.createdAt } : {}),
+      paymentStatus: { [Op.in]: ["succeeded", "processing"] },
+    };
+
+    const payments = await db.Payment.findAll({
+      where: paymentWhere,
+      attributes: [
+        [
+          db.sequelize.fn(
+            "COALESCE",
+            db.sequelize.fn("SUM", db.sequelize.col("total_amount")),
+            0
+          ),
+          "totalRevenue",
+        ],
+        [
+          db.sequelize.fn(
+            "COALESCE",
+            db.sequelize.fn("SUM", db.sequelize.col("platform_fee")),
+            0
+          ),
+          "totalCommissions",
+        ],
+        [
+          db.sequelize.fn(
+            "COALESCE",
+            db.sequelize.fn("SUM", db.sequelize.col("owner_amount")),
+            0
+          ),
+          "totalPayouts",
+        ],
+      ],
+      raw: true,
+    });
+
+    if (
+      payments &&
+      payments.length > 0 &&
+      (Number(payments[0].totalRevenue) > 0 ||
+        Number(payments[0].totalCommissions) > 0 ||
+        Number(payments[0].totalPayouts) > 0)
+    ) {
+      totalRevenue = parseFloat(payments[0].totalRevenue || 0);
+      totalCommissions = parseFloat(payments[0].totalCommissions || 0);
+      totalPayouts = parseFloat(payments[0].totalPayouts || 0);
+
+      // Pending payouts: payments with payout_status != 'paid'
+      const pendingRows = await db.Payment.findAll({
+        where: {
+          ...(dateFilter.createdAt ? { createdAt: dateFilter.createdAt } : {}),
+          payoutStatus: { [Op.ne]: "paid" },
+        },
+        attributes: [
+          [
+            db.sequelize.fn(
+              "COALESCE",
+              db.sequelize.fn("SUM", db.sequelize.col("owner_amount")),
+              0
+            ),
+            "pendingPayouts",
+          ],
+        ],
+        raw: true,
+      });
+      pendingPayouts = parseFloat(pendingRows[0].pendingPayouts || 0);
+    } else {
+      // Fallback to rental-level stored fields
+      completedRentals.forEach((rental) => {
+        const revenue = parseFloat(rental.get("totalAmount") || 0);
+        const platformFee = parseFloat(rental.get("platformFee") || 0);
+        let ownerPayout = parseFloat(rental.get("ownerPayout") || 0);
+        const payoutStatus = rental.get("payoutStatus") || "pending";
+
+        if (!ownerPayout) {
+          ownerPayout = Math.max(0, revenue - platformFee);
+        }
+
+        const commission =
+          platformFee > 0
+            ? platformFee
+            : parseFloat((revenue * fallbackCommissionRate).toFixed(2));
+
+        totalRevenue += revenue;
+        totalCommissions += commission;
+        totalPayouts += ownerPayout;
+
+        if (payoutStatus !== "paid") {
+          pendingPayouts += ownerPayout;
+        }
+      });
+    }
 
     // Revenue by month
     const revenueByMonth = {};
-    completedRentals.forEach((rental) => {
-      const month = new Date(rental.createdAt).toLocaleDateString("en-US", {
-        month: "short",
-        year: "numeric",
+    const revenueByCategory = {};
+
+    // If payments were used, aggregate by payments grouped by month and by category (via rental->car)
+    const paymentsUsed =
+      payments &&
+      payments.length > 0 &&
+      (Number(payments[0].totalRevenue) > 0 ||
+        Number(payments[0].totalCommissions) > 0 ||
+        Number(payments[0].totalPayouts) > 0);
+
+    if (paymentsUsed) {
+      // Aggregate monthly sums from payments
+      const paymentsMonthly = await db.Payment.findAll({
+        where: paymentWhere,
+        attributes: [
+          [
+            db.sequelize.fn(
+              "to_char",
+              db.sequelize.col("created_at"),
+              "Mon YYYY"
+            ),
+            "month",
+          ],
+          [
+            db.sequelize.fn(
+              "COALESCE",
+              db.sequelize.fn("SUM", db.sequelize.col("total_amount")),
+              0
+            ),
+            "revenue",
+          ],
+          [
+            db.sequelize.fn(
+              "COALESCE",
+              db.sequelize.fn("SUM", db.sequelize.col("owner_amount")),
+              0
+            ),
+            "payouts",
+          ],
+          [
+            db.sequelize.fn(
+              "COALESCE",
+              db.sequelize.fn("SUM", db.sequelize.col("platform_fee")),
+              0
+            ),
+            "commissions",
+          ],
+        ],
+        group: ["month"],
+        order: [[db.sequelize.literal("MIN(created_at)"), "ASC"]],
+        raw: true,
       });
-      if (!revenueByMonth[month]) {
+
+      paymentsMonthly.forEach((row) => {
+        const month = row.month;
         revenueByMonth[month] = {
           month,
-          revenue: 0,
-          payouts: 0,
-          commissions: 0,
+          revenue: parseFloat(row.revenue || 0),
+          payouts: parseFloat(row.payouts || 0),
+          commissions: parseFloat(row.commissions || 0),
         };
-      }
-      const revenue = parseFloat(rental.totalAmount || 0);
-      revenueByMonth[month].revenue += revenue;
-      revenueByMonth[month].commissions += revenue * commissionRate;
-      revenueByMonth[month].payouts += revenue * (1 - commissionRate);
-    });
+      });
 
-    // Revenue by category (using brand)
-    const revenueByCategory = {};
-    completedRentals.forEach((rental) => {
-      const category = rental.car?.brand || "Unknown";
-      if (!revenueByCategory[category]) {
-        revenueByCategory[category] = 0;
-      }
-      revenueByCategory[category] += parseFloat(rental.totalAmount || 0);
-    });
+      // Revenue by category using payments joined to rentals and cars
+      const paymentsWithCar = await db.Payment.findAll({
+        where: paymentWhere,
+        include: [
+          {
+            model: db.Rental,
+            as: "rental",
+            include: [{ model: db.Car, as: "car", attributes: ["brand"] }],
+            attributes: [],
+            required: true,
+          },
+        ],
+        attributes: ["id", "total_amount"],
+        raw: true,
+      });
+
+      paymentsWithCar.forEach((p) => {
+        const category = p["rental.car.brand"] || "Unknown";
+        revenueByCategory[category] =
+          (revenueByCategory[category] || 0) + parseFloat(p.total_amount || 0);
+      });
+    } else {
+      // Fallback to rental-level aggregates
+      completedRentals.forEach((rental) => {
+        const month = new Date(rental.createdAt).toLocaleDateString("en-US", {
+          month: "short",
+          year: "numeric",
+        });
+        if (!revenueByMonth[month]) {
+          revenueByMonth[month] = {
+            month,
+            revenue: 0,
+            payouts: 0,
+            commissions: 0,
+          };
+        }
+        const revenue = parseFloat(rental.get("totalAmount") || 0);
+        const platformFee = parseFloat(rental.get("platformFee") || 0);
+        const commission =
+          platformFee > 0
+            ? platformFee
+            : parseFloat((revenue * fallbackCommissionRate).toFixed(2));
+        const ownerPayout = parseFloat(
+          rental.get("ownerPayout") || Math.max(0, revenue - platformFee)
+        );
+
+        revenueByMonth[month].revenue += revenue;
+        revenueByMonth[month].commissions += commission;
+        revenueByMonth[month].payouts += ownerPayout;
+
+        const category = rental.car?.brand || "Unknown";
+        revenueByCategory[category] =
+          (revenueByCategory[category] || 0) +
+          parseFloat(rental.totalAmount || 0);
+      });
+    }
 
     res.json({
       totalRevenue: parseFloat(totalRevenue.toFixed(2)),
@@ -474,13 +692,18 @@ export const getRevenueReport = async (req, res) => {
  */
 export const getActivityLogs = async (req, res) => {
   try {
-    const { startDate, endDate, userType, searchQuery } = req.query;
+    const { startDate, endDate, userType, searchQuery, activityType } =
+      req.query;
 
-    // Build where clause
+    // Build where clause with inclusive endDate (end of day)
     const dateFilter = {};
     if (startDate && endDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
       dateFilter.createdAt = {
-        [Op.between]: [new Date(startDate), new Date(endDate)],
+        [Op.between]: [start, end],
       };
     }
 
@@ -531,6 +754,41 @@ export const getActivityLogs = async (req, res) => {
       limit: 50,
     });
 
+    // Get recent payments (payments, payouts, refunds) as activity
+    const recentPayments = await db.Payment.findAll({
+      where: dateFilter,
+      include: [
+        { model: db.User, as: "owner", attributes: ["id", "name", "role"] },
+        { model: db.User, as: "customer", attributes: ["id", "name", "role"] },
+        { model: db.Rental, as: "rental", attributes: ["id"] },
+      ],
+      order: [["createdAt", "DESC"]],
+      limit: 100,
+    });
+
+    recentPayments.forEach((payment) => {
+      const who = payment.customer || payment.owner || null;
+      const actorName = who?.name || "System";
+      const actorRole = who?.role || "system";
+      const action = payment.paymentStatus
+        ? `Payment ${payment.paymentStatus}`
+        : payment.payoutStatus
+        ? `Payout ${payment.payoutStatus}`
+        : "Payment";
+      logs.push({
+        id: `payment_${payment.id}`,
+        userId: who?.id || null,
+        userName: actorName,
+        userRole: actorRole,
+        action,
+        description: `Payment of ${payment.totalAmount} ${
+          payment.currency
+        } (rental ${payment.rentalId || "N/A"})`,
+        timestamp: payment.createdAt,
+        ipAddress: null,
+      });
+    });
+
     recentUsers.forEach((user) => {
       logs.push({
         id: `user_${user.id}`,
@@ -544,21 +802,43 @@ export const getActivityLogs = async (req, res) => {
       });
     });
 
-    // Sort by timestamp
+    // Sort by timestamp (descending)
     logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-    // Apply filters
+    // Apply filters: userType, activityType, searchQuery
     let filteredLogs = logs;
     if (userType && userType !== "all") {
-      filteredLogs = filteredLogs.filter((log) => log.userRole === userType);
+      filteredLogs = filteredLogs.filter(
+        (log) => String(log.userRole) === String(userType)
+      );
     }
+
+    if (activityType && activityType !== "all") {
+      const at = String(activityType).toLowerCase();
+      filteredLogs = filteredLogs.filter(
+        (log) =>
+          String(log.action || "")
+            .toLowerCase()
+            .includes(at) ||
+          String(log.description || "")
+            .toLowerCase()
+            .includes(at)
+      );
+    }
+
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filteredLogs = filteredLogs.filter(
         (log) =>
-          log.userName.toLowerCase().includes(query) ||
-          log.action.toLowerCase().includes(query) ||
-          log.description.toLowerCase().includes(query)
+          String(log.userName || "")
+            .toLowerCase()
+            .includes(query) ||
+          String(log.action || "")
+            .toLowerCase()
+            .includes(query) ||
+          String(log.description || "")
+            .toLowerCase()
+            .includes(query)
       );
     }
 
