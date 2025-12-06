@@ -9,13 +9,6 @@ const ADMIN_SETUP_SECRET = process.env.ADMIN_SETUP_SECRET || 'change-this-secret
  * Requires a secret key to prevent unauthorized access
  * 
  * POST /api/admin-setup/create-admin
- * Body: {
- *   secret: "your-secret-key",
- *   email: "admin@miride.com",
- *   password: "Admin@123456",
- *   name: "Admin User",
- *   phone: "+231778711864"
- * }
  */
 export const createAdminUser = async (req, res) => {
   try {
@@ -105,7 +98,7 @@ export const createAdminUser = async (req, res) => {
         password: hashedPassword,
         role: 'admin',
         isActive: true,
-        termsAccepted: true,
+        termsAccepted: false,
         termsAcceptedAt: new Date()
       }, {
         // Skip hooks to prevent double-hashing
