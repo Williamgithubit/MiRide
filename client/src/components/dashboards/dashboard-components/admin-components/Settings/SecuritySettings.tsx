@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../../../../store/store';
 import { updateSecuritySettings, revokeAllSessions, SecuritySettings } from '../../../../../store/Admin/adminSettingsSlice';
@@ -70,6 +70,13 @@ const SecuritySettingsComponent: React.FC<SecuritySettingsProps> = ({ settings }
   
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(settings?.twoFactorEnabled ?? false);
   const [showRevokeModal, setShowRevokeModal] = useState(false);
+
+  // Sync with server settings
+  useEffect(() => {
+    if (settings) {
+      setTwoFactorEnabled(settings.twoFactorEnabled ?? false);
+    }
+  }, [settings]);
 
   const handleToggle2FA = async () => {
     try {

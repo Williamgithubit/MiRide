@@ -48,7 +48,7 @@ export const authApi = createApi({
       // Only redirect if not already on login/signup pages
       if (typeof window !== 'undefined') {
         const currentPath = window.location.pathname;
-        const isAuthPage = currentPath === '/login' || currentPath === '/signup';
+        const isAuthPage = currentPath === '/login' || currentPath === '/signup' || currentPath === '/forgot-password' || currentPath.startsWith('/reset-password');
         
         if (!isAuthPage) {
           console.log('Redirecting to login from:', currentPath);
@@ -243,7 +243,67 @@ export const authApi = createApi({
         }
       },
     }),
+  
+  // Forgot Password - Request password reset email
+  forgotPassword: builder.mutation<{ message: string; success: boolean }, { email: string }>({
+    query: (data) => ({
+      url: '/auth/forgot-password',
+      method: 'POST',
+      body: data,
+    }),
+    transformErrorResponse: (response: { status: number; data?: any }) => {
+      console.error('Forgot password error:', response);
+      return {
+        status: response.status,
+        data: response.data || { message: 'Failed to send reset link' },
+      };
+    },
   }),
+  
+  // Reset Password - Set new password using token
+  resetPassword: builder.mutation<
+    { message: string; success: boolean },
+    { token: string; password: string; confirmPassword: string }
+  >({
+    query: ({ token, password, confirmPassword }) => ({
+      url: `/auth/reset-password/${token}`,
+      method: 'POST',
+      body: { password, confirmPassword },
+    }),
+    transformErrorResponse: (response: { status: number; data?: any }) => {
+      console.error('Reset password error:', response);
+      return {
+        status: response.status,
+        data: response.data || { message: 'Failed to reset password' },
+      };
+    },
+  }),
+  
+  // Verify Reset Token - Check if token is valid
+  verifyResetToken: builder.query<
+    { valid: boolean; message: string; email?: string },
+    string
+  >({
+    query: (token) => ({
+      url: `/auth/verify-reset-token/${token}`,
+      method: 'GET',
+    }),
+    transformErrorResponse: (response: { status: number; data?: any }) => {
+      console.error('Verify reset token error:', response);
+      return {
+        status: response.status,
+        data: response.data || { valid: false, message: 'Invalid token' },
+      };
+    },
+  }),
+}),
 });
 
-export const { useLoginMutation, useRegisterMutation, useGetCurrentUserQuery } = authApi;
+export const { 
+  useLoginMutation, 
+  useRegisterMutation, 
+  useGetCurrentUserQuery,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
+  useVerifyResetTokenQuery,
+} = authApi;

@@ -1,4 +1,5 @@
 import React from "react";
+import { useDarkMode } from "@/contexts/DarkModeContext";
 
 type TopItem = { name: string; revenue: number };
 type Rental = {
@@ -29,6 +30,7 @@ import {
 const RevenueCharts: React.FC<{ filters?: Record<string, any> }> = ({
   filters,
 }) => {
+  const { isDarkMode } = useDarkMode();
   const {
     data: stats,
     isLoading: statsLoading,
@@ -112,14 +114,14 @@ const RevenueCharts: React.FC<{ filters?: Record<string, any> }> = ({
   // Loading and error states
   if (statsLoading || revenueLoading || analyticsLoading) {
     return (
-      <div className="bg-slate-800 rounded-lg p-4 text-white">
-        <div className="text-center py-10">Loading revenue data...</div>
+      <div className="rounded-lg p-4 bg-white dark:bg-slate-800 text-gray-900 dark:text-white shadow-md border border-gray-200 dark:border-slate-700">
+        <div className="text-center py-10 text-gray-600 dark:text-slate-400">Loading revenue data...</div>
       </div>
     );
   }
   if (statsError || revenueError || analyticsError) {
     return (
-      <div className="bg-slate-800 rounded-lg p-4 text-white">
+      <div className="rounded-lg p-4 bg-white dark:bg-slate-800 text-gray-900 dark:text-white shadow-md border border-gray-200 dark:border-slate-700">
         <div className="text-center py-10 text-red-400">
           Error loading revenue data.
         </div>
@@ -128,24 +130,24 @@ const RevenueCharts: React.FC<{ filters?: Record<string, any> }> = ({
   }
 
   return (
-    <div className="bg-slate-800 rounded-lg p-3 sm:p-4 text-white w-full">
-      <h3 className="text-lg sm:text-xl font-semibold mb-4">Analytics & Insights</h3>
+    <div className="rounded-lg p-3 sm:p-4 w-full bg-white dark:bg-slate-800 text-gray-900 dark:text-white shadow-md border border-gray-200 dark:border-slate-700">
+      <h3 className="text-lg sm:text-xl font-semibold mb-4 text-gray-900 dark:text-white">Analytics & Insights</h3>
       
       {/* Key Metrics */}
-      <div className="mb-6 p-3 sm:p-4 bg-slate-700/50 rounded-lg">
-        <h4 className="text-sm font-semibold mb-3 text-slate-300">Key Metrics</h4>
+      <div className="mb-6 p-3 sm:p-4 rounded-lg bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-transparent">
+        <h4 className="text-sm font-semibold mb-3 text-gray-600 dark:text-slate-300">Key Metrics</h4>
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <div className="text-slate-400 text-xs">Pending</div>
-            <div className="text-yellow-400 font-semibold">{pendingPayments}</div>
+            <div className="text-xs text-gray-500 dark:text-slate-400">Pending</div>
+            <div className="font-semibold text-yellow-600 dark:text-yellow-400">{pendingPayments}</div>
           </div>
           <div>
-            <div className="text-slate-400 text-xs">Completed</div>
-            <div className="text-green-400 font-semibold">{completedPayments}</div>
+            <div className="text-xs text-gray-500 dark:text-slate-400">Completed</div>
+            <div className="font-semibold text-green-600 dark:text-green-400">{completedPayments}</div>
           </div>
           <div className="col-span-2">
-            <div className="text-slate-400 text-xs">Platform Commission</div>
-            <div className="text-indigo-400 font-semibold">${stats?.platformCommission ?? "-"}</div>
+            <div className="text-xs text-gray-500 dark:text-slate-400">Platform Commission</div>
+            <div className="font-semibold text-indigo-600 dark:text-indigo-400">${stats?.platformCommission ?? "-"}</div>
           </div>
         </div>
       </div>
@@ -153,10 +155,10 @@ const RevenueCharts: React.FC<{ filters?: Record<string, any> }> = ({
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Monthly Revenue Trend */}
-        <div className="bg-slate-700/30 rounded-lg p-3 sm:p-4">
-          <div className="font-semibold mb-3 text-sm sm:text-base">Monthly Revenue Trend</div>
+        <div className="rounded-lg p-3 sm:p-4 bg-gray-50 dark:bg-slate-700/30 border border-gray-200 dark:border-transparent">
+          <div className="font-semibold mb-3 text-sm sm:text-base text-gray-900 dark:text-white">Monthly Revenue Trend</div>
           {monthlyTrend.length === 0 ? (
-            <div className="text-center text-slate-400 py-10 text-sm">
+            <div className="text-center py-10 text-sm text-gray-500 dark:text-slate-400">
               No revenue data available.
             </div>
           ) : (
@@ -165,11 +167,11 @@ const RevenueCharts: React.FC<{ filters?: Record<string, any> }> = ({
                 data={monthlyTrend}
                 margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
               >
-                <XAxis dataKey="period" stroke="#cbd5e1" fontSize={11} />
-                <YAxis stroke="#cbd5e1" fontSize={11} />
+                <XAxis dataKey="period" stroke={isDarkMode ? "#cbd5e1" : "#6b7280"} fontSize={11} />
+                <YAxis stroke={isDarkMode ? "#cbd5e1" : "#6b7280"} fontSize={11} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }}
-                  labelStyle={{ color: '#cbd5e1' }}
+                  contentStyle={{ backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', border: isDarkMode ? 'none' : '1px solid #e5e7eb', borderRadius: '8px' }}
+                  labelStyle={{ color: isDarkMode ? '#cbd5e1' : '#374151' }}
                 />
                 <Line
                   type="monotone"
@@ -184,10 +186,10 @@ const RevenueCharts: React.FC<{ filters?: Record<string, any> }> = ({
         </div>
 
         {/* Payments Breakdown */}
-        <div className="bg-slate-700/30 rounded-lg p-3 sm:p-4">
-          <div className="font-semibold mb-3 text-sm sm:text-base">Payments Breakdown</div>
+        <div className="rounded-lg p-3 sm:p-4 bg-gray-50 dark:bg-slate-700/30 border border-gray-200 dark:border-transparent">
+          <div className="font-semibold mb-3 text-sm sm:text-base text-gray-900 dark:text-white">Payments Breakdown</div>
           {paymentStatusData.every((d) => d.value === 0) ? (
-            <div className="text-center text-slate-400 py-10 text-sm">
+            <div className="text-center py-10 text-sm text-gray-500 dark:text-slate-400">
               No payment data available.
             </div>
           ) : (
@@ -204,7 +206,7 @@ const RevenueCharts: React.FC<{ filters?: Record<string, any> }> = ({
                     <text
                       x={x}
                       y={y}
-                      fill="#fff"
+                      fill={isDarkMode ? "#fff" : "#374151"}
                       fontSize={12}
                       textAnchor="middle"
                       dominantBaseline="central"
@@ -221,7 +223,7 @@ const RevenueCharts: React.FC<{ filters?: Record<string, any> }> = ({
                   ))}
                 </Pie>
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }}
+                  contentStyle={{ backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', border: isDarkMode ? 'none' : '1px solid #e5e7eb', borderRadius: '8px' }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -229,10 +231,10 @@ const RevenueCharts: React.FC<{ filters?: Record<string, any> }> = ({
         </div>
 
         {/* Top-Earning Cars */}
-        <div className="bg-slate-700/30 rounded-lg p-3 sm:p-4">
-          <div className="font-semibold mb-3 text-sm sm:text-base">Top-Earning Cars</div>
+        <div className="rounded-lg p-3 sm:p-4 bg-gray-50 dark:bg-slate-700/30 border border-gray-200 dark:border-transparent">
+          <div className="font-semibold mb-3 text-sm sm:text-base text-gray-900 dark:text-white">Top-Earning Cars</div>
           {topCars.length === 0 ? (
-            <div className="text-center text-slate-400 py-10 text-sm">
+            <div className="text-center py-10 text-sm text-gray-500 dark:text-slate-400">
               No car revenue data available.
             </div>
           ) : (
@@ -241,11 +243,11 @@ const RevenueCharts: React.FC<{ filters?: Record<string, any> }> = ({
                 data={topCars}
                 margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
               >
-                <XAxis dataKey="name" stroke="#cbd5e1" fontSize={11} angle={-15} textAnchor="end" height={60} />
-                <YAxis stroke="#cbd5e1" fontSize={11} />
+                <XAxis dataKey="name" stroke={isDarkMode ? "#cbd5e1" : "#6b7280"} fontSize={11} angle={-15} textAnchor="end" height={60} />
+                <YAxis stroke={isDarkMode ? "#cbd5e1" : "#6b7280"} fontSize={11} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }}
-                  labelStyle={{ color: '#cbd5e1' }}
+                  contentStyle={{ backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', border: isDarkMode ? 'none' : '1px solid #e5e7eb', borderRadius: '8px' }}
+                  labelStyle={{ color: isDarkMode ? '#cbd5e1' : '#374151' }}
                 />
                 <Bar dataKey="revenue" fill="#10b981" radius={[8, 8, 0, 0]} />
               </BarChart>
@@ -254,10 +256,10 @@ const RevenueCharts: React.FC<{ filters?: Record<string, any> }> = ({
         </div>
 
         {/* Top-Earning Owners */}
-        <div className="bg-slate-700/30 rounded-lg p-3 sm:p-4">
-          <div className="font-semibold mb-3 text-sm sm:text-base">Top-Earning Owners</div>
+        <div className="rounded-lg p-3 sm:p-4 bg-gray-50 dark:bg-slate-700/30 border border-gray-200 dark:border-transparent">
+          <div className="font-semibold mb-3 text-sm sm:text-base text-gray-900 dark:text-white">Top-Earning Owners</div>
           {topOwners.length === 0 ? (
-            <div className="text-center text-slate-400 py-10 text-sm">
+            <div className="text-center py-10 text-sm text-gray-500 dark:text-slate-400">
               No owner revenue data available.
             </div>
           ) : (
@@ -266,11 +268,11 @@ const RevenueCharts: React.FC<{ filters?: Record<string, any> }> = ({
                 data={topOwners}
                 margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
               >
-                <XAxis dataKey="name" stroke="#cbd5e1" fontSize={11} angle={-15} textAnchor="end" height={60} />
-                <YAxis stroke="#cbd5e1" fontSize={11} />
+                <XAxis dataKey="name" stroke={isDarkMode ? "#cbd5e1" : "#6b7280"} fontSize={11} angle={-15} textAnchor="end" height={60} />
+                <YAxis stroke={isDarkMode ? "#cbd5e1" : "#6b7280"} fontSize={11} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }}
-                  labelStyle={{ color: '#cbd5e1' }}
+                  contentStyle={{ backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', border: isDarkMode ? 'none' : '1px solid #e5e7eb', borderRadius: '8px' }}
+                  labelStyle={{ color: isDarkMode ? '#cbd5e1' : '#374151' }}
                 />
                 <Bar dataKey="revenue" fill="#6366f1" radius={[8, 8, 0, 0]} />
               </BarChart>

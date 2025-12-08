@@ -303,8 +303,50 @@ export const useReduxAuth = () => {
       }
     } catch (error: any) {
       console.error('Login error:', error);
-      dispatch(loginFailure(error.message || 'Login failed'));
-      throw error;
+      
+      // Extract the error message from different error formats
+      let errorMessage = 'Login failed. Please try again.';
+      
+      // Handle RTK Query error format
+      if (error?.data?.message) {
+        errorMessage = error.data.message;
+      } 
+      // Handle error with status and data
+      else if (error?.status && error?.data) {
+        errorMessage = error.data.message || getErrorMessageByStatus(error.status);
+      }
+      // Handle standard error object
+      else if (error?.message) {
+        errorMessage = error.message;
+      }
+      // Handle network errors
+      else if (error?.status === 'FETCH_ERROR') {
+        errorMessage = 'Unable to connect to server. Please check your internet connection.';
+      }
+      
+      dispatch(loginFailure(errorMessage));
+      
+      // Create a new error with the extracted message
+      const loginError = new Error(errorMessage);
+      throw loginError;
+    }
+  };
+  
+  // Helper function to get user-friendly error messages based on HTTP status
+  const getErrorMessageByStatus = (status: number): string => {
+    switch (status) {
+      case 400:
+        return 'Invalid request. Please check your input.';
+      case 401:
+        return 'Incorrect password. Please try again.';
+      case 403:
+        return 'Access denied. Your account may be disabled.';
+      case 404:
+        return 'No account found with this email address.';
+      case 500:
+        return 'Server error. Please try again later.';
+      default:
+        return 'An unexpected error occurred. Please try again.';
     }
   };
 

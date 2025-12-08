@@ -1,9 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaEye, FaEyeSlash, FaUser, FaCar, FaEnvelope, FaLock, FaSpinner } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaUser, FaCar, FaEnvelope, FaLock, FaSpinner, FaCheck, FaTimes } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import useReduxAuth from '../store/hooks/useReduxAuth';
 import MiRideLogo from '../assets/MiRide Logo.png';
+
+// Password strength checker
+const getPasswordStrength = (password: string): { score: number; label: string; color: string; bgColor: string } => {
+  let score = 0;
+  
+  if (password.length >= 8) score++;
+  if (password.length >= 12) score++;
+  if (/[a-z]/.test(password)) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^a-zA-Z0-9]/.test(password)) score++;
+  
+  if (score <= 2) return { score, label: "Weak", color: "text-red-600", bgColor: "bg-red-500" };
+  if (score <= 4) return { score, label: "Medium", color: "text-yellow-600", bgColor: "bg-yellow-500" };
+  return { score, label: "Strong", color: "text-green-600", bgColor: "bg-green-500" };
+};
+
+// Password requirements
+const passwordRequirements = [
+  { id: "length", label: "At least 8 characters", test: (p: string) => p.length >= 8 },
+  { id: "lowercase", label: "One lowercase letter", test: (p: string) => /[a-z]/.test(p) },
+  { id: "uppercase", label: "One uppercase letter", test: (p: string) => /[A-Z]/.test(p) },
+  { id: "number", label: "One number", test: (p: string) => /[0-9]/.test(p) },
+];
 
 const Signup: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -23,6 +47,12 @@ const Signup: React.FC = () => {
   
   // Use Redux auth hook instead of context
   const { register, isLoading: loading, error: reduxError } = useReduxAuth();
+
+  // Calculate password strength
+  const passwordStrength = useMemo(() => getPasswordStrength(formData.password), [formData.password]);
+  
+  // Check if passwords match
+  const passwordsMatch = formData.password && formData.confirmPassword && formData.password === formData.confirmPassword;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -274,6 +304,42 @@ const Signup: React.FC = () => {
                   {showPassword ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
                 </button>
               </div>
+              
+              {/* Password Strength Indicator */}
+              {formData.password && (
+                <div className="mt-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-300 ${passwordStrength.bgColor}`}
+                        style={{ width: `${(passwordStrength.score / 6) * 100}%` }}
+                      />
+                    </div>
+                    <span className={`text-xs font-medium ${passwordStrength.color}`}>
+                      {passwordStrength.label}
+                    </span>
+                  </div>
+                  
+                  {/* Password Requirements */}
+                  <div className="grid grid-cols-2 gap-1">
+                    {passwordRequirements.map((req) => (
+                      <div 
+                        key={req.id}
+                        className={`flex items-center gap-1 text-xs ${
+                          req.test(formData.password) ? "text-green-600" : "text-gray-400"
+                        }`}
+                      >
+                        {req.test(formData.password) ? (
+                          <FaCheck className="w-3 h-3 flex-shrink-0" />
+                        ) : (
+                          <div className="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0" />
+                        )}
+                        <span>{req.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Confirm Password */}
@@ -306,6 +372,25 @@ const Signup: React.FC = () => {
                   {showConfirm ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
                 </button>
               </div>
+              
+              {/* Password Match Indicator */}
+              {formData.confirmPassword && (
+                <div className={`flex items-center gap-1 mt-1 text-xs ${
+                  passwordsMatch ? "text-green-600" : "text-red-600"
+                }`}>
+                  {passwordsMatch ? (
+                    <>
+                      <FaCheck className="w-3 h-3" />
+                      <span>Passwords match</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaTimes className="w-3 h-3" />
+                      <span>Passwords do not match</span>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Submit Button */}

@@ -1,8 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { AppDispatch, RootState } from '../../../../../store/store';
-import { updateAdminProfile, AdminProfile } from '../../../../../store/Admin/adminSettingsSlice';
-import { FaCamera, FaUser, FaEnvelope, FaPhone, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { updateAdminProfile, changeAdminPassword, uploadProfilePicture, AdminProfile } from '../../../../../store/Admin/adminSettingsSlice';
+import { logout } from '../../../../../store/Auth/authSlice';
+import { FaCamera, FaUser, FaEnvelope, FaPhone, FaLock, FaEye, FaEyeSlash, FaMapMarkerAlt, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
 
 interface AdminProfileSettingsProps {
   profile: AdminProfile | null;
@@ -10,14 +12,29 @@ interface AdminProfileSettingsProps {
 
 const AdminProfileSettings: React.FC<AdminProfileSettingsProps> = ({ profile }) => {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const { isSaving } = useSelector((state: RootState) => state.adminSettings);
   
   const [formData, setFormData] = useState({
     name: profile?.name || '',
     email: profile?.email || '',
     phone: profile?.phone || '',
+    address: profile?.address || '',
     profilePicture: profile?.profilePicture || '',
   });
+
+  // Update form data when profile changes
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        name: profile.name || '',
+        email: profile.email || '',
+        phone: profile.phone || '',
+        address: profile.address || '',
+        profilePicture: profile.profilePicture || '',
+      });
+    }
+  }, [profile]);
   
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -51,17 +68,19 @@ const AdminProfileSettings: React.FC<AdminProfileSettingsProps> = ({ profile }) 
     }));
   };
 
-  const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfilePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
+      try {
+        // Upload to Cloudinary via backend
+        const result = await dispatch(uploadProfilePicture(file)).unwrap();
         setFormData(prev => ({
           ...prev,
-          profilePicture: event.target?.result as string,
+          profilePicture: result.profilePicture,
         }));
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Failed to upload profile picture:', error);
+      }
     }
   };
 
@@ -80,13 +99,16 @@ const AdminProfileSettings: React.FC<AdminProfileSettingsProps> = ({ profile }) 
       return;
     }
 
+    if (passwordData.newPassword.length < 8) {
+      alert('New password must be at least 8 characters long');
+      return;
+    }
+
     try {
-      // Cast to any because AdminProfile does not include password fields.
-      // Prefer adding a dedicated updateAdminPassword thunk in the slice instead.
-      await dispatch(updateAdminProfile({
+      await dispatch(changeAdminPassword({
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
-      } as any)).unwrap();
+      })).unwrap();
       
       setPasswordData({
         currentPassword: '',
@@ -94,6 +116,12 @@ const AdminProfileSettings: React.FC<AdminProfileSettingsProps> = ({ profile }) 
         confirmPassword: '',
       });
       setIsChangingPassword(false);
+      
+      // Show success message and logout after a short delay
+      setTimeout(() => {
+        dispatch(logout());
+        navigate('/login');
+      }, 2000); // 2 second delay to show success toast
     } catch (error) {
       console.error('Failed to change password:', error);
     }
@@ -243,6 +271,7 @@ const AdminProfileSettings: React.FC<AdminProfileSettingsProps> = ({ profile }) 
                       name: profile?.name || '',
                       email: profile?.email || '',
                       phone: profile?.phone || '',
+                      address: profile?.address || '',
                       profilePicture: profile?.profilePicture || '',
                     });
                   }}

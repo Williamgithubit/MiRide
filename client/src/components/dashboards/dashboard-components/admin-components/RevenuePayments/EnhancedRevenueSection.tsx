@@ -431,7 +431,7 @@ const EnhancedRevenueSection: React.FC = () => {
 
       {/* Detailed Transactions */}
       <div className="mt-8">
-        <h3 className="text-xl font-semibold mb-4 text-white">
+        <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
           Detailed Transactions
         </h3>
         <RevenuePayments />

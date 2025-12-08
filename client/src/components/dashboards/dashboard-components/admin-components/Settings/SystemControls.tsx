@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../../../../store/store';
 import { updateSystemControls, triggerBackup, SystemControls } from '../../../../../store/Admin/adminSettingsSlice';
@@ -82,6 +82,13 @@ const SystemControlsComponent: React.FC<SystemControlsProps> = ({ controls }) =>
   const [maintenanceMode, setMaintenanceMode] = useState(controls?.maintenanceMode ?? false);
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
   const [showBackupModal, setShowBackupModal] = useState(false);
+
+  // Sync with server controls
+  useEffect(() => {
+    if (controls) {
+      setMaintenanceMode(controls.maintenanceMode ?? false);
+    }
+  }, [controls]);
 
   const handleToggleMaintenanceMode = async () => {
     try {

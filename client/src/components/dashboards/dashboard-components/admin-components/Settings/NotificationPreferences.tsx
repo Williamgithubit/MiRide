@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../../../../store/store';
 import { updateNotificationPreferences, NotificationPreferences } from '../../../../../store/Admin/adminSettingsSlice';
@@ -49,6 +49,22 @@ const NotificationPreferencesComponent: React.FC<NotificationPreferencesProps> =
   });
 
   const [hasChanges, setHasChanges] = useState(false);
+
+  // Sync form data with server preferences
+  useEffect(() => {
+    if (preferences) {
+      setFormData({
+        emailNotifications: preferences.emailNotifications ?? true,
+        pushNotifications: preferences.pushNotifications ?? true,
+        inAppNotifications: preferences.inAppNotifications ?? true,
+        newBookings: preferences.newBookings ?? true,
+        ownerRegistrations: preferences.ownerRegistrations ?? true,
+        paymentConfirmations: preferences.paymentConfirmations ?? true,
+        systemUpdates: preferences.systemUpdates ?? true,
+      });
+      setHasChanges(false);
+    }
+  }, [preferences]);
 
   const handleToggleChange = (key: keyof typeof formData, value: boolean) => {
     setFormData(prev => ({

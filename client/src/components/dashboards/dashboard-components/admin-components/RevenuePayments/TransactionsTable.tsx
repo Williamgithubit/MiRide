@@ -67,7 +67,7 @@ const TransactionsTable: React.FC<TableProps> = ({
   };
 
   return (
-    <div className="bg-slate-800 rounded-lg p-3 sm:p-4 text-white w-full">
+    <div className="rounded-lg p-3 sm:p-4 w-full bg-white dark:bg-slate-800 text-gray-900 dark:text-white shadow-md border border-gray-200 dark:border-slate-700">
       {/* Filter Section */}
       <div className="flex flex-col gap-3 mb-4">
         {/* Search and Filters Row */}
@@ -77,7 +77,7 @@ const TransactionsTable: React.FC<TableProps> = ({
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search transactions"
-              className="flex-1 px-3 py-2 rounded bg-slate-700 text-white text-sm"
+              className="flex-1 px-3 py-2 rounded text-sm bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-slate-400 border border-gray-300 dark:border-slate-600"
             />
             <button
               onClick={onSearch}
@@ -97,15 +97,15 @@ const TransactionsTable: React.FC<TableProps> = ({
               value={ownerInput}
               onChange={(e) => setOwnerInput(e.target.value)}
               placeholder="Owner name"
-              className="w-full px-3 py-2 rounded bg-slate-700 text-white text-sm"
+              className="w-full px-3 py-2 rounded text-sm bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-slate-400 border border-gray-300 dark:border-slate-600"
               autoComplete="off"
             />
             {ownerInput && filteredOwners.length > 0 && (
-              <div className="absolute z-10 bg-slate-800 border border-slate-700 rounded w-full mt-1 max-h-40 overflow-y-auto">
+              <div className="absolute z-10 rounded w-full mt-1 max-h-40 overflow-y-auto bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 shadow-lg">
                 {filteredOwners.map((o) => (
                   <div
                     key={o.id}
-                    className="px-3 py-2 cursor-pointer hover:bg-slate-700 text-sm"
+                    className="px-3 py-2 cursor-pointer text-sm hover:bg-gray-100 dark:hover:bg-slate-700"
                     onClick={() => {
                       onChangeFilters({ owner: o.name, page: 1 });
                       setOwnerInput(o.name);
@@ -125,15 +125,15 @@ const TransactionsTable: React.FC<TableProps> = ({
               value={customerInput}
               onChange={(e) => setCustomerInput(e.target.value)}
               placeholder="Customer name"
-              className="w-full px-3 py-2 rounded bg-slate-700 text-white text-sm"
+              className="w-full px-3 py-2 rounded text-sm bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-slate-400 border border-gray-300 dark:border-slate-600"
               autoComplete="off"
             />
             {customerInput && filteredCustomers.length > 0 && (
-              <div className="absolute z-10 bg-slate-800 border border-slate-700 rounded w-full mt-1 max-h-40 overflow-y-auto">
+              <div className="absolute z-10 rounded w-full mt-1 max-h-40 overflow-y-auto bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 shadow-lg">
                 {filteredCustomers.map((c) => (
                   <div
                     key={c.id}
-                    className="px-3 py-2 cursor-pointer hover:bg-slate-700 text-sm"
+                    className="px-3 py-2 cursor-pointer text-sm hover:bg-gray-100 dark:hover:bg-slate-700"
                     onClick={() => {
                       onChangeFilters({ customer: c.name, page: 1 });
                       setCustomerInput(c.name);
@@ -152,7 +152,7 @@ const TransactionsTable: React.FC<TableProps> = ({
             onChange={(e) =>
               onChangeFilters({ startDate: e.target.value, page: 1 })
             }
-            className="w-full px-3 py-2 rounded bg-slate-700 text-white text-sm"
+            className="w-full px-3 py-2 rounded text-sm bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-white border border-gray-300 dark:border-slate-600"
           />
           <input
             type="date"
@@ -160,7 +160,7 @@ const TransactionsTable: React.FC<TableProps> = ({
             onChange={(e) =>
               onChangeFilters({ endDate: e.target.value, page: 1 })
             }
-            className="w-full px-3 py-2 rounded bg-slate-700 text-white text-sm"
+            className="w-full px-3 py-2 rounded text-sm bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-white border border-gray-300 dark:border-slate-600"
           />
         </div>
 
@@ -171,7 +171,7 @@ const TransactionsTable: React.FC<TableProps> = ({
             onChange={(e) =>
               onChangeFilters({ status: e.target.value || undefined, page: 1 })
             }
-            className="px-3 py-2 rounded bg-slate-700 text-white text-sm"
+            className="px-3 py-2 rounded text-sm bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-white border border-gray-300 dark:border-slate-600"
           >
             <option value="">All Status</option>
             <option value="success">Success</option>
@@ -199,7 +199,7 @@ const TransactionsTable: React.FC<TableProps> = ({
       {/* Transactions Table */}
       <div className="overflow-x-auto -mx-3 sm:mx-0">
         <table className="min-w-full text-left text-sm">
-          <thead className="bg-slate-700">
+          <thead className="bg-gray-100 dark:bg-slate-700">
             <tr>
               <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm">
                 Booking ID
@@ -233,13 +233,13 @@ const TransactionsTable: React.FC<TableProps> = ({
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={11} className="text-center py-8 text-slate-400">
+                <td colSpan={11} className="text-center py-8 text-gray-500 dark:text-slate-400">
                   Loading transactions...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={11} className="text-center py-8 text-slate-400">
+                <td colSpan={11} className="text-center py-8 text-gray-500 dark:text-slate-400">
                   No transactions found.
                 </td>
               </tr>
@@ -267,7 +267,7 @@ const TransactionsTable: React.FC<TableProps> = ({
                 return (
                   <tr
                     key={t.id}
-                    className="border-b border-slate-700 hover:bg-slate-700/50 cursor-pointer transition"
+                    className="border-b cursor-pointer transition border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/50"
                     onClick={() => onSelectTransaction(t.id)}
                   >
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-mono">
@@ -282,10 +282,10 @@ const TransactionsTable: React.FC<TableProps> = ({
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
                       {carDetails}
                     </td>
-                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-semibold text-green-400">
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-semibold text-green-600 dark:text-green-400">
                       ${Number(t.amount || 0).toFixed(2)}
                     </td>
-                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-300">
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-gray-600 dark:text-slate-300">
                       ${platformFee.toFixed(2)}
                     </td>
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
@@ -295,29 +295,29 @@ const TransactionsTable: React.FC<TableProps> = ({
                       <span
                         className={`px-2 py-1 rounded text-xs ${
                           bookingStatus === "completed"
-                            ? "bg-green-600/20 text-green-400"
+                            ? "bg-green-100 dark:bg-green-600/20 text-green-700 dark:text-green-400"
                             : bookingStatus === "cancelled"
-                            ? "bg-red-600/20 text-red-400"
-                            : "bg-yellow-600/20 text-yellow-400"
+                            ? "bg-red-100 dark:bg-red-600/20 text-red-700 dark:text-red-400"
+                            : "bg-yellow-100 dark:bg-yellow-600/20 text-yellow-700 dark:text-yellow-400"
                         }`}
                       >
                         {bookingStatus}
                       </span>
                     </td>
-                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden lg:table-cell text-slate-400">
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden lg:table-cell text-gray-500 dark:text-slate-400">
                       {t.createdAt
                         ? new Date(t.createdAt).toLocaleString()
                         : t.date || "N/A"}
                     </td>
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
                       {refundStatus ? (
-                        <span className="text-red-300">{refundStatus}</span>
+                        <span className="text-red-600 dark:text-red-300">{refundStatus}</span>
                       ) : (
                         "-"
                       )}
                     </td>
                     <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
-                      <button className="text-indigo-400 hover:text-indigo-300 font-medium">
+                      <button className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300">
                         View
                       </button>
                     </td>

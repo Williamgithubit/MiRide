@@ -45,7 +45,7 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
                     : 'text-red-600 dark:text-red-400'
                 }`}
               >
-                {change.type === 'increase' ? '+' : '-'}{Math.abs(change.value)}%
+                {change.type === 'increase' ? '+' : '-'}{Math.abs(change.value).toFixed(0)}%
               </span>
               <span className="text-xs text-gray-500 dark:text-gray-400 ml-1 hidden sm:inline">
                 vs last month

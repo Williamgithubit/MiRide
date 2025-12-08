@@ -23,7 +23,7 @@ const RevenuePayments: React.FC = () => {
 
   return (
     <div className="p-4 sm:p-6 w-full max-w-full overflow-x-hidden">
-      <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-white">
+      <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-gray-900 dark:text-white">
         Revenue & Payments
       </h2>
 

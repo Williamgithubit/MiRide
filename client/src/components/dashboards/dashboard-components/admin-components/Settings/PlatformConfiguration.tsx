@@ -1,8 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../../../../store/store';
-import { updatePlatformConfig, PlatformConfig } from '../../../../../store/Admin/adminSettingsSlice';
-import { FaBuilding, FaImage, FaDollarSign, FaPercent, FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
+import { updatePlatformConfig, uploadCompanyLogo, PlatformConfig } from '../../../../../store/Admin/adminSettingsSlice';
+import { FaBuilding, FaImage, FaDollarSign, FaPercent, FaEnvelope, FaPhone, FaMapMarkerAlt, FaClock, FaCalendarAlt, FaHandHoldingUsd } from 'react-icons/fa';
 
 interface PlatformConfigurationProps {
   config: PlatformConfig | null;
@@ -21,7 +21,33 @@ const PlatformConfiguration: React.FC<PlatformConfigurationProps> = ({ config })
     supportEmail: config?.supportEmail || '',
     supportPhone: config?.supportPhone || '',
     companyAddress: config?.companyAddress || '',
+    commissionRate: config?.commissionRate || 15,
+    minBookingDuration: config?.minBookingDuration || 1,
+    maxBookingDuration: config?.maxBookingDuration || 30,
+    cancellationPolicyHours: config?.cancellationPolicyHours || 24,
+    lateFeePercentage: config?.lateFeePercentage || 10,
   });
+
+  // Update form data when config changes
+  useEffect(() => {
+    if (config) {
+      setFormData({
+        companyName: config.companyName || '',
+        companyLogo: config.companyLogo || '',
+        defaultCurrency: config.defaultCurrency || 'USD',
+        taxPercentage: config.taxPercentage || 0,
+        serviceFeePercentage: config.serviceFeePercentage || 0,
+        supportEmail: config.supportEmail || '',
+        supportPhone: config.supportPhone || '',
+        companyAddress: config.companyAddress || '',
+        commissionRate: config.commissionRate || 15,
+        minBookingDuration: config.minBookingDuration || 1,
+        maxBookingDuration: config.maxBookingDuration || 30,
+        cancellationPolicyHours: config.cancellationPolicyHours || 24,
+        lateFeePercentage: config.lateFeePercentage || 10,
+      });
+    }
+  }, [config]);
 
   const [isEditing, setIsEditing] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -39,21 +65,25 @@ const PlatformConfiguration: React.FC<PlatformConfigurationProps> = ({ config })
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name.includes('Percentage') ? parseFloat(value) || 0 : value,
+      [name]: name.includes('Percentage') || name.includes('Rate') || name.includes('Duration') || name.includes('Hours')
+        ? parseFloat(value) || 0 
+        : value,
     }));
   };
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
+      try {
+        // Upload to Cloudinary via backend
+        const result = await dispatch(uploadCompanyLogo(file)).unwrap();
         setFormData(prev => ({
           ...prev,
-          companyLogo: event.target?.result as string,
+          companyLogo: result.companyLogo,
         }));
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Failed to upload company logo:', error);
+      }
     }
   };
 
@@ -76,6 +106,11 @@ const PlatformConfiguration: React.FC<PlatformConfigurationProps> = ({ config })
       supportEmail: config?.supportEmail || '',
       supportPhone: config?.supportPhone || '',
       companyAddress: config?.companyAddress || '',
+      commissionRate: config?.commissionRate || 15,
+      minBookingDuration: config?.minBookingDuration || 1,
+      maxBookingDuration: config?.maxBookingDuration || 30,
+      cancellationPolicyHours: config?.cancellationPolicyHours || 24,
+      lateFeePercentage: config?.lateFeePercentage || 10,
     });
     setIsEditing(false);
   };
@@ -255,6 +290,124 @@ const PlatformConfiguration: React.FC<PlatformConfigurationProps> = ({ config })
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors"
               />
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Commission & Booking Policies */}
+      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-6 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-shadow">
+        <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <FaHandHoldingUsd className="text-yellow-600" />
+          Commission & Booking Policies
+        </h4>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Commission Rate (%)
+            </label>
+            <div className="relative">
+              <FaPercent className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="number"
+                name="commissionRate"
+                value={formData.commissionRate}
+                onChange={handleInputChange}
+                disabled={!isEditing}
+                min="0"
+                max="100"
+                step="0.1"
+                placeholder="15"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors"
+              />
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Platform commission on each booking</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Min Booking Duration (days)
+            </label>
+            <div className="relative">
+              <FaCalendarAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="number"
+                name="minBookingDuration"
+                value={formData.minBookingDuration}
+                onChange={handleInputChange}
+                disabled={!isEditing}
+                min="1"
+                max="30"
+                step="1"
+                placeholder="1"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Max Booking Duration (days)
+            </label>
+            <div className="relative">
+              <FaCalendarAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="number"
+                name="maxBookingDuration"
+                value={formData.maxBookingDuration}
+                onChange={handleInputChange}
+                disabled={!isEditing}
+                min="1"
+                max="365"
+                step="1"
+                placeholder="30"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Cancellation Policy (hours)
+            </label>
+            <div className="relative">
+              <FaClock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="number"
+                name="cancellationPolicyHours"
+                value={formData.cancellationPolicyHours}
+                onChange={handleInputChange}
+                disabled={!isEditing}
+                min="0"
+                max="168"
+                step="1"
+                placeholder="24"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors"
+              />
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Free cancellation before this time</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Late Fee (%)
+            </label>
+            <div className="relative">
+              <FaPercent className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="number"
+                name="lateFeePercentage"
+                value={formData.lateFeePercentage}
+                onChange={handleInputChange}
+                disabled={!isEditing}
+                min="0"
+                max="100"
+                step="0.1"
+                placeholder="10"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors"
+              />
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Fee for late returns per day</p>
           </div>
         </div>
       </div>

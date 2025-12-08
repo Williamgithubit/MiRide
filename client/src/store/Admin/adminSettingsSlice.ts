@@ -8,6 +8,7 @@ export interface AdminProfile {
   phone?: string;
   role: string;
   profilePicture?: string;
+  address?: string;
 }
 
 export interface PlatformConfig {
@@ -19,6 +20,11 @@ export interface PlatformConfig {
   supportEmail: string;
   supportPhone: string;
   companyAddress: string;
+  commissionRate: number;
+  minBookingDuration: number;
+  maxBookingDuration: number;
+  cancellationPolicyHours: number;
+  lateFeePercentage: number;
 }
 
 export interface NotificationPreferences {
@@ -86,7 +92,7 @@ export const fetchAdminSettings = createAsyncThunk(
   "adminSettings/fetchSettings",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch("/api/dashboard/settings", {
+      const response = await fetch("/api/admin/settings", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
           "Content-Type": "application/json",
@@ -94,7 +100,8 @@ export const fetchAdminSettings = createAsyncThunk(
       });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch settings");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to fetch settings");
       }
 
       return await response.json();
@@ -120,7 +127,93 @@ export const updateAdminProfile = createAsyncThunk(
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update profile");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to update profile");
+      }
+
+      return await response.json();
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Unknown error"
+      );
+    }
+  }
+);
+
+export const changeAdminPassword = createAsyncThunk(
+  "adminSettings/changePassword",
+  async (passwordData: { currentPassword: string; newPassword: string }, { rejectWithValue }) => {
+    try {
+      const response = await fetch("/api/admin/profile/password", {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(passwordData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to change password");
+      }
+
+      return await response.json();
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Unknown error"
+      );
+    }
+  }
+);
+
+export const uploadProfilePicture = createAsyncThunk(
+  "adminSettings/uploadProfilePicture",
+  async (file: File, { rejectWithValue }) => {
+    try {
+      const formData = new FormData();
+      formData.append("profilePicture", file);
+
+      const response = await fetch("/api/admin/profile/picture", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to upload profile picture");
+      }
+
+      return await response.json();
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Unknown error"
+      );
+    }
+  }
+);
+
+export const uploadCompanyLogo = createAsyncThunk(
+  "adminSettings/uploadCompanyLogo",
+  async (file: File, { rejectWithValue }) => {
+    try {
+      const formData = new FormData();
+      formData.append("companyLogo", file);
+
+      const response = await fetch("/api/admin/platform-config/logo", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to upload company logo");
       }
 
       return await response.json();
@@ -136,7 +229,7 @@ export const updatePlatformConfig = createAsyncThunk(
   "adminSettings/updatePlatformConfig",
   async (configData: Partial<PlatformConfig>, { rejectWithValue }) => {
     try {
-      const response = await fetch("/api/dashboard/settings", {
+      const response = await fetch("/api/admin/platform-config", {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -146,7 +239,8 @@ export const updatePlatformConfig = createAsyncThunk(
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update platform configuration");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to update platform configuration");
       }
 
       return await response.json();
@@ -335,6 +429,57 @@ const adminSettingsSlice = createSlice({
         state.successMessage = "Profile updated successfully";
       })
       .addCase(updateAdminProfile.rejected, (state, action) => {
+        state.isSaving = false;
+        state.error = action.payload as string;
+      });
+
+    // Change password
+    builder
+      .addCase(changeAdminPassword.pending, (state) => {
+        state.isSaving = true;
+        state.error = null;
+      })
+      .addCase(changeAdminPassword.fulfilled, (state) => {
+        state.isSaving = false;
+        state.successMessage = "Password changed successfully";
+      })
+      .addCase(changeAdminPassword.rejected, (state, action) => {
+        state.isSaving = false;
+        state.error = action.payload as string;
+      });
+
+    // Upload profile picture
+    builder
+      .addCase(uploadProfilePicture.pending, (state) => {
+        state.isSaving = true;
+        state.error = null;
+      })
+      .addCase(uploadProfilePicture.fulfilled, (state, action) => {
+        state.isSaving = false;
+        if (state.profile) {
+          state.profile.profilePicture = action.payload.profilePicture;
+        }
+        state.successMessage = "Profile picture updated successfully";
+      })
+      .addCase(uploadProfilePicture.rejected, (state, action) => {
+        state.isSaving = false;
+        state.error = action.payload as string;
+      });
+
+    // Upload company logo
+    builder
+      .addCase(uploadCompanyLogo.pending, (state) => {
+        state.isSaving = true;
+        state.error = null;
+      })
+      .addCase(uploadCompanyLogo.fulfilled, (state, action) => {
+        state.isSaving = false;
+        if (state.platformConfig) {
+          state.platformConfig.companyLogo = action.payload.companyLogo;
+        }
+        state.successMessage = "Company logo updated successfully";
+      })
+      .addCase(uploadCompanyLogo.rejected, (state, action) => {
         state.isSaving = false;
         state.error = action.payload as string;
       });

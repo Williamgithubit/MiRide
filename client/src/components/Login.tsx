@@ -1,9 +1,29 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FaEye, FaEyeSlash, FaSpinner } from "react-icons/fa";
+import { useDispatch } from "react-redux";
+import { FaEye, FaEyeSlash, FaSpinner, FaExclamationCircle, FaCheckCircle, FaTimesCircle, FaUserSlash, FaEnvelope, FaLock, FaWifi } from "react-icons/fa";
 import { toast } from "react-toastify";
 import useReduxAuth from "../store/hooks/useReduxAuth";
+import { clearError } from "../store/Auth/authSlice";
 import MiRideLogo from "../assets/MiRide Logo.png";
+
+// Error icon mapping based on error type
+const getErrorIcon = (errorMessage: string) => {
+  const lowerMessage = errorMessage.toLowerCase();
+  if (lowerMessage.includes('password')) {
+    return <FaLock className="w-5 h-5" />;
+  }
+  if (lowerMessage.includes('email') || lowerMessage.includes('account found')) {
+    return <FaEnvelope className="w-5 h-5" />;
+  }
+  if (lowerMessage.includes('disabled') || lowerMessage.includes('deactivated')) {
+    return <FaUserSlash className="w-5 h-5" />;
+  }
+  if (lowerMessage.includes('connect') || lowerMessage.includes('network') || lowerMessage.includes('server error')) {
+    return <FaWifi className="w-5 h-5" />;
+  }
+  return <FaExclamationCircle className="w-5 h-5" />;
+};
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -14,9 +34,16 @@ const Login: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
 
   // Use Redux auth hook instead of context
   const { login, isLoading: loading, error: reduxError } = useReduxAuth();
+
+  // Clear any persisted errors on component mount (page load/refresh)
+  useEffect(() => {
+    dispatch(clearError());
+    setError("");
+  }, [dispatch]);
 
   // Update error state when Redux error changes
   useEffect(() => {
@@ -42,7 +69,7 @@ const Login: React.FC = () => {
     }
   }, [location]);
 
-  // Update error state when Redux error changes
+  // Update error state when Redux error changes - only for new errors after mount
   useEffect(() => {
     if (reduxError) {
       setError(reduxError);
@@ -108,13 +135,35 @@ const Login: React.FC = () => {
         </h2>
 
         {error && (
-          <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4 text-sm">
-            {error}
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 flex items-start gap-3 animate-shake">
+            <div className="flex-shrink-0 mt-0.5 text-red-500">
+              {getErrorIcon(error)}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium">{error}</p>
+              {error.toLowerCase().includes('password') && (
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-xs text-red-600 hover:text-red-800 underline mt-1"
+                >
+                  Reset your password
+                </button>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setError("")}
+              className="flex-shrink-0 text-red-400 hover:text-red-600 transition-colors"
+            >
+              <FaTimesCircle className="w-4 h-4" />
+            </button>
           </div>
         )}
         {successMessage && (
-          <div className="bg-green-100 text-green-700 px-4 py-2 rounded mb-4 text-sm">
-            {successMessage}
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4 flex items-center gap-3">
+            <FaCheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+            <p className="text-sm font-medium flex-1">{successMessage}</p>
           </div>
         )}
 

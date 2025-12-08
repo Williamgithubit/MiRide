@@ -14,6 +14,8 @@ import Home from './pages/Home';
 // Lazy load other components
 const Login = lazy(() => import('./components/Login'));
 const Signup = lazy(() => import('./components/Signup'));
+const ForgotPassword = lazy(() => import('./components/ForgotPassword'));
+const ResetPassword = lazy(() => import('./components/ResetPassword'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
 // Old DashboardRouter import removed - using NewDashboardRouter instead
 const ProtectedRoute = lazy(() => import('./components/ProtectedRoute'));
@@ -50,6 +52,8 @@ const AppContent: React.FC = () => {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
         
         {/* New comprehensive dashboard with role-based routing */}
         <Route
@@ -114,7 +118,7 @@ const App: React.FC = () => {
   }
   
   const currentLocation = useLocation();
-  const isAuthPage = ['/login', '/register', '/forgot-password'].includes(currentLocation.pathname);
+  const isAuthPage = ['/login', '/signup', '/register', '/forgot-password'].includes(currentLocation.pathname) || currentLocation.pathname.startsWith('/reset-password');
   const isDashboardPage = currentLocation.pathname.startsWith('/dashboard');
   
   console.log('Rendering App component', { 
