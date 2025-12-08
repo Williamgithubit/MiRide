@@ -178,7 +178,7 @@ const OwnerProfile: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <FaSpinner className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <FaSpinner className="w-12 h-12 animate-spin text-[#104911] mx-auto mb-4" />
           <p className="text-gray-600 dark:text-gray-400">Loading profile...</p>
         </div>
       </div>
@@ -188,7 +188,7 @@ const OwnerProfile: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Profile Header Card */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-xl overflow-hidden">
+      <div className="bg-gradient-to-r from-[#104911] via-[#0c360c] to-[#082108] rounded-2xl shadow-xl overflow-hidden">
         <div className="p-8 relative">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
             {/* Avatar Section */}
@@ -204,13 +204,13 @@ const OwnerProfile: React.FC = () => {
                     }}
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-400 to-purple-500">
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#2a7a2a] to-[#104911]">
                     <FaUser className="w-16 h-16 text-white" />
                   </div>
                 )}
               </div>
-              <label className="absolute bottom-0 right-0 bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group-hover:scale-110 transform duration-200">
-                <FaCamera className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <label className="absolute bottom-0 right-0 bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg cursor-pointer hover:bg-green-50 dark:hover:bg-gray-700 transition-colors group-hover:scale-110 transform duration-200">
+                <FaCamera className="w-4 h-4 text-[#104911] dark:text-green-300" />
                 <input
                   type="file"
                   accept="image/*"
@@ -223,15 +223,15 @@ const OwnerProfile: React.FC = () => {
             {/* User Info */}
             <div className="flex-1 text-center md:text-left">
               <h2 className="text-3xl font-bold text-white mb-2">{owner?.name || 'Owner Name'}</h2>
-              <p className="text-blue-100 mb-4 flex items-center justify-center md:justify-start gap-2">
+              <p className="text-green-100 mb-4 flex items-center justify-center md:justify-start gap-2">
                 <FaEnvelope className="w-4 h-4" />
                 {owner?.email || 'owner@example.com'}
               </p>
               <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-                <span className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm font-medium">
+                <span className="px-4 py-2 bg-white/25 backdrop-blur-sm rounded-full text-white text-sm font-medium">
                   Car Owner
                 </span>
-                <span className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm font-medium">
+                <span className="px-4 py-2 bg-white/25 backdrop-blur-sm rounded-full text-white text-sm font-medium">
                   Member since {owner?.createdAt ? new Date(owner.createdAt).getFullYear() : '2025'}
                 </span>
               </div>
@@ -240,7 +240,7 @@ const OwnerProfile: React.FC = () => {
             {/* Edit Button */}
             <button
               onClick={() => setIsEditing(!isEditing)}
-              className="absolute top-4 right-4 md:relative md:top-0 md:right-0 px-6 py-3 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition-colors shadow-lg flex items-center gap-2 font-medium"
+              className="absolute top-4 right-4 md:relative md:top-0 md:right-0 px-6 py-3 bg-white text-[#104911] rounded-xl hover:bg-green-50 transition-colors shadow-lg flex items-center gap-2 font-medium"
             >
               <FaEdit className="w-4 h-4" />
               {isEditing ? 'Cancel' : 'Edit Profile'}
@@ -253,8 +253,8 @@ const OwnerProfile: React.FC = () => {
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-              <FaUser className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+              <FaUser className="w-5 h-5 text-green-700 dark:text-green-300" />
             </div>
             Personal Information
           </h3>
@@ -269,7 +269,7 @@ const OwnerProfile: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  <FaUser className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <FaUser className="w-4 h-4 text-green-700 dark:text-green-300" />
                   Full Name
                 </label>
                 <input
@@ -278,14 +278,14 @@ const OwnerProfile: React.FC = () => {
                   value={formData.name}
                   onChange={handleInputChange}
                   disabled={!isEditing}
-                  className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed transition-all text-gray-900 dark:text-white"
+                  className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-600 focus:border-green-600 bg-white dark:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed transition-all text-gray-900 dark:text-white"
                   placeholder="Enter your full name"
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  <FaEnvelope className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <FaEnvelope className="w-4 h-4 text-green-700 dark:text-green-300" />
                   Email Address
                 </label>
                 <input
@@ -302,7 +302,7 @@ const OwnerProfile: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  <FaPhone className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <FaPhone className="w-4 h-4 text-green-700 dark:text-green-300" />
                   Phone Number
                 </label>
                 <input
@@ -311,14 +311,14 @@ const OwnerProfile: React.FC = () => {
                   value={formData.phone}
                   onChange={handleInputChange}
                   disabled={!isEditing}
-                  className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed transition-all text-gray-900 dark:text-white"
+                  className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-600 focus:border-green-600 bg-white dark:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed transition-all text-gray-900 dark:text-white"
                   placeholder="+1 (555) 000-0000"
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  <FaCalendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <FaCalendar className="w-4 h-4 text-green-700 dark:text-green-300" />
                   Date of Birth
                 </label>
                 <input
@@ -327,7 +327,7 @@ const OwnerProfile: React.FC = () => {
                   value={formData.dateOfBirth}
                   onChange={handleInputChange}
                   disabled={!isEditing}
-                  className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed transition-all text-gray-900 dark:text-white"
+                  className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-600 focus:border-green-600 bg-white dark:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed transition-all text-gray-900 dark:text-white"
                 />
               </div>
             </div>
@@ -335,7 +335,7 @@ const OwnerProfile: React.FC = () => {
             {/* Address */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                <FaMapMarkerAlt className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <FaMapMarkerAlt className="w-4 h-4 text-green-700 dark:text-green-300" />
                 Address
               </label>
               <textarea
@@ -344,7 +344,7 @@ const OwnerProfile: React.FC = () => {
                 value={formData.address}
                 onChange={handleInputChange}
                 disabled={!isEditing}
-                className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed transition-all resize-none text-gray-900 dark:text-white"
+                className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-600 focus:border-green-600 bg-white dark:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed transition-all resize-none text-gray-900 dark:text-white"
                 placeholder="Enter your complete address"
               />
             </div>
@@ -353,7 +353,7 @@ const OwnerProfile: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-200 dark:border-gray-700">
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  <FaCar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <FaCar className="w-4 h-4 text-green-700 dark:text-green-300" />
                   Registered Cars
                 </label>
                 <input
@@ -366,7 +366,7 @@ const OwnerProfile: React.FC = () => {
 
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  <FaClock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <FaClock className="w-4 h-4 text-green-700 dark:text-green-300" />
                   Active Bookings
                 </label>
                 <input
@@ -392,7 +392,7 @@ const OwnerProfile: React.FC = () => {
               <button
                 type="submit"
                 disabled={updating}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-[#104911] via-[#0c360c] to-[#082108] text-white rounded-xl hover:from-[#125012] hover:via-[#0e3f0e] hover:to-[#0a2a0a] transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {updating ? (
                   <>

@@ -13,10 +13,17 @@ interface Props {
   onSelectTransaction: (id: number | string) => void;
 }
 
-const TransactionsTable: React.FC<Props> = ({
+interface TableProps extends Props {
+  items?: any[];
+  loading?: boolean;
+}
+
+const TransactionsTable: React.FC<TableProps> = ({
   filters,
   onChangeFilters,
   onSelectTransaction,
+  items: externalItems,
+  loading: externalLoading,
 }) => {
   const { data, isLoading } = useGetTransactionsQuery(filters);
   const [triggerExport] = useLazyExportTransactionsQuery();
@@ -47,7 +54,13 @@ const TransactionsTable: React.FC<Props> = ({
     [customers, customerInput]
   );
 
-  const items = data?.items || [];
+  // Be flexible with backend response shapes: support { items: [] }, { transactions: [] }, or an array
+  const fetchedItems =
+    data?.items ??
+    (data as any)?.transactions ??
+    (Array.isArray(data) ? data : undefined);
+  const items = externalItems ?? fetchedItems ?? [];
+  const loading = externalLoading ?? isLoading;
 
   const onSearch = () => {
     onChangeFilters({ search: q, page: 1 });
@@ -188,78 +201,129 @@ const TransactionsTable: React.FC<Props> = ({
         <table className="min-w-full text-left text-sm">
           <thead className="bg-slate-700">
             <tr>
-              <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm">ID</th>
+              <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm">
+                Booking ID
+              </th>
+              <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm">Customer</th>
               <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm hidden md:table-cell">
                 Owner
               </th>
-              <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm">Customer</th>
-              <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm">Amount</th>
-              <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm">Status</th>
+              <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm">Car</th>
+              <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm">
+                Amount Paid
+              </th>
+              <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm">
+                Platform Commission
+              </th>
+              <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm">
+                Payment Method
+              </th>
+              <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm">
+                Booking Status
+              </th>
               <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm hidden lg:table-cell">
-                Date
+                Date &amp; Time
+              </th>
+              <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm">
+                Refund Status
               </th>
               <th className="px-2 sm:px-4 py-2 text-xs sm:text-sm">Action</th>
             </tr>
           </thead>
           <tbody>
-            {isLoading ? (
+            {loading ? (
               <tr>
-                <td colSpan={7} className="text-center py-8 text-slate-400">
+                <td colSpan={11} className="text-center py-8 text-slate-400">
                   Loading transactions...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-8 text-slate-400">
+                <td colSpan={11} className="text-center py-8 text-slate-400">
                   No transactions found.
                 </td>
               </tr>
             ) : (
-              items.map((t) => (
-                <tr
-                  key={t.id}
-                  className="border-b border-slate-700 hover:bg-slate-700/50 cursor-pointer transition"
-                  onClick={() => onSelectTransaction(t.id)}
-                >
-                  <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-mono">
-                    #{t.id}
-                  </td>
-                  <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden md:table-cell">
-                    {(t as any).owner?.name || (t as any).ownerName || "N/A"}
-                  </td>
-                  <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
-                    {(t as any).customer?.name ||
-                      (t as any).customerName ||
-                      "N/A"}
-                  </td>
-                  <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-semibold text-green-400">
-                    ${t.amount}
-                  </td>
-                  <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
-                    <span
-                      className={`px-2 py-1 rounded text-xs ${
-                        t.status === "success"
-                          ? "bg-green-600/20 text-green-400"
-                          : t.status === "pending"
-                          ? "bg-yellow-600/20 text-yellow-400"
-                          : "bg-red-600/20 text-red-400"
-                      }`}
-                    >
-                      {t.status}
-                    </span>
-                  </td>
-                  <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden lg:table-cell text-slate-400">
-                    {(t as any).createdAt
-                      ? new Date((t as any).createdAt).toLocaleDateString()
-                      : (t as any).date || "N/A"}
-                  </td>
-                  <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
-                    <button className="text-indigo-400 hover:text-indigo-300 font-medium">
-                      View
-                    </button>
-                  </td>
-                </tr>
-              ))
+              items.map((t: any) => {
+                const platformFee = Number(
+                  t.platformFee ?? t.platform_fee ?? 0
+                );
+                const ownerAmount = Number(
+                  t.ownerAmount ?? t.owner_amount ?? 0
+                );
+                const bookingStatus =
+                  t.bookingStatus || t.rentalStatus || t.status || "N/A";
+                const refundStatus =
+                  t.refundStatus || (t.status === "refunded" ? "refunded" : "");
+                const paymentMethod =
+                  t.paymentMethod ||
+                  t.method ||
+                  (t.meta && t.meta.method) ||
+                  "Unknown";
+                const carDetails =
+                  t.car?.title ||
+                  t.carTitle ||
+                  `${t.car?.make || ""} ${t.car?.model || ""}`;
+                return (
+                  <tr
+                    key={t.id}
+                    className="border-b border-slate-700 hover:bg-slate-700/50 cursor-pointer transition"
+                    onClick={() => onSelectTransaction(t.id)}
+                  >
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-mono">
+                      #{t.id}
+                    </td>
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
+                      {t.customer?.name || t.customerName || "N/A"}
+                    </td>
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden md:table-cell">
+                      {t.owner?.name || t.ownerName || "N/A"}
+                    </td>
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
+                      {carDetails}
+                    </td>
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm font-semibold text-green-400">
+                      ${Number(t.amount || 0).toFixed(2)}
+                    </td>
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-300">
+                      ${platformFee.toFixed(2)}
+                    </td>
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
+                      {paymentMethod}
+                    </td>
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
+                      <span
+                        className={`px-2 py-1 rounded text-xs ${
+                          bookingStatus === "completed"
+                            ? "bg-green-600/20 text-green-400"
+                            : bookingStatus === "cancelled"
+                            ? "bg-red-600/20 text-red-400"
+                            : "bg-yellow-600/20 text-yellow-400"
+                        }`}
+                      >
+                        {bookingStatus}
+                      </span>
+                    </td>
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden lg:table-cell text-slate-400">
+                      {t.createdAt
+                        ? new Date(t.createdAt).toLocaleString()
+                        : t.date || "N/A"}
+                    </td>
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
+                      {refundStatus ? (
+                        <span className="text-red-300">{refundStatus}</span>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                    <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm">
+                      <button className="text-indigo-400 hover:text-indigo-300 font-medium">
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
