@@ -117,7 +117,7 @@ app.use((err, req, res, next) => {
 // Sync database and start server
 const startServer = async() => {
   try {
-    await db.sequelize.sync(); //
+    await db.sequelize.sync({alter: true}); //Create the tables in the database according to the models if they don’t exist.
     console.log('Database connection has been established successfully.');
     
     // In development, you may want to sync the models with the database

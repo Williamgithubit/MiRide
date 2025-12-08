@@ -3,6 +3,8 @@ const router = express.Router();
 import db from "../models/index.js";
 const { User, Notification } = db;
 import { authenticate, authorize } from "../controllers/authController.js";
+import { avatarUpload } from "../utils/cloudinaryAvatarConfig.js";
+import { logoUpload } from "../utils/cloudinaryLogoConfig.js";
 import {
   getAllBookings,
   getBookingById,
@@ -45,8 +47,18 @@ import {
   getNotificationStats,
 } from "../controllers/adminNotificationsController.js";
 import {
+  getAdminSettings,
+  updateAdminProfile,
+  changeAdminPassword,
+  uploadProfilePicture,
+  updatePlatformConfig,
+  updateNotificationPreferences,
   updateSecuritySettings,
   revokeAllSessions,
+  updateSystemControls,
+  triggerBackup,
+  clearCache,
+  resetMetrics,
 } from "../controllers/adminSettingsController.js";
 import {
   getUserReport,
@@ -138,14 +150,44 @@ router.delete(
   clearAllNotifications
 );
 
-// Admin security settings and session management
-router.put(
-  "/security-settings",
-  authenticate,
-  ensureAdmin,
-  updateSecuritySettings
-);
+// Admin Settings Routes
+router.get("/settings", authenticate, ensureAdmin, getAdminSettings);
+router.put("/profile", authenticate, ensureAdmin, updateAdminProfile);
+router.put("/profile/password", authenticate, ensureAdmin, changeAdminPassword);
+router.post("/profile/picture", authenticate, ensureAdmin, avatarUpload.single('profilePicture'), uploadProfilePicture);
+router.put("/platform-config", authenticate, ensureAdmin, updatePlatformConfig);
+router.post("/platform-config/logo", authenticate, ensureAdmin, logoUpload.single('companyLogo'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No logo file provided" });
+    }
+    
+    // Get the Cloudinary URL from the uploaded file
+    const logoUrl = req.file.path;
+    
+    // Update platform config with new logo
+    let setting = await db.Settings.findOne({ where: { key: "platform_config" } });
+    if (setting) {
+      const updatedValue = { ...setting.value, companyLogo: logoUrl };
+      await setting.update({ value: updatedValue });
+    }
+    
+    return res.status(200).json({ 
+      message: "Company logo uploaded successfully",
+      companyLogo: logoUrl 
+    });
+  } catch (error) {
+    console.error("Error uploading company logo:", error);
+    return res.status(500).json({ message: "Failed to upload company logo" });
+  }
+});
+router.put("/notification-preferences", authenticate, ensureAdmin, updateNotificationPreferences);
+router.put("/security-settings", authenticate, ensureAdmin, updateSecuritySettings);
 router.post("/revoke-sessions", authenticate, ensureAdmin, revokeAllSessions);
+router.put("/system-controls", authenticate, ensureAdmin, updateSystemControls);
+router.post("/backup", authenticate, ensureAdmin, triggerBackup);
+router.post("/clear-cache", authenticate, ensureAdmin, clearCache);
+router.post("/reset-metrics", authenticate, ensureAdmin, resetMetrics);
 
 // Get admin dashboard stats
 router.get("/dashboard/stats", authenticate, ensureAdmin, async (req, res) => {

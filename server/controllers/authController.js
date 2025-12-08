@@ -1,6 +1,8 @@
 import db from '../models/index.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { sendPasswordResetEmail } from '../utils/sendEmail.js';
 
 // Secret key for JWT token generation - should be in environment variables in production
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
@@ -8,6 +10,14 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
 // Helper function to handle legacy user login from Customer model
 const handleLegacyLogin = async (legacyUser, password, res) => {
   try {
+    // Check if user is active
+    if (legacyUser.isActive === false) {
+      return res.status(403).json({ 
+        message: 'Your account has been disabled. Please contact support for assistance.',
+        errorCode: 'ACCOUNT_DISABLED'
+      });
+    }
+    
     // Check password
     let isPasswordValid = false;
     
@@ -18,7 +28,10 @@ const handleLegacyLogin = async (legacyUser, password, res) => {
     }
     
     if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(401).json({ 
+        message: 'Incorrect password. Please try again or use "Forgot Password" to reset it.',
+        errorCode: 'INVALID_PASSWORD'
+      });
     }
     
     // Update last login time
@@ -179,10 +192,25 @@ export const login = async (req, res) => {
   
   console.log('Login attempt for email:', email);
   
+  // Validate input
+  if (!email || !email.trim()) {
+    return res.status(400).json({ 
+      message: 'Email address is required',
+      errorCode: 'EMAIL_REQUIRED'
+    });
+  }
+  
+  if (!password) {
+    return res.status(400).json({ 
+      message: 'Password is required',
+      errorCode: 'PASSWORD_REQUIRED'
+    });
+  }
+  
   try {
     // Find user in the User model
     const user = await db.User.findOne({ 
-      where: { email },
+      where: { email: email.trim().toLowerCase() },
       include: [
         { model: db.CustomerProfile, as: 'customerProfile' },
         { model: db.OwnerProfile, as: 'ownerProfile' }
@@ -197,18 +225,32 @@ export const login = async (req, res) => {
     // If user not found
     if (!user) {
       // For backward compatibility, check the Customer model
-      const legacyUser = await db.Customer.findOne({ where: { email } });
+      const legacyUser = await db.Customer.findOne({ where: { email: email.trim().toLowerCase() } });
       if (legacyUser) {
         console.log('User found in legacy Customer model');
         // Handle legacy user login
         return handleLegacyLogin(legacyUser, password, res);
       }
-      return res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(404).json({ 
+        message: 'No account found with this email address',
+        errorCode: 'USER_NOT_FOUND'
+      });
     }
     
     // Check if user is active
     if (user.isActive === false) {
-      return res.status(401).json({ message: 'Account is deactivated. Please contact support.' });
+      return res.status(403).json({ 
+        message: 'Your account has been disabled. Please contact support for assistance.',
+        errorCode: 'ACCOUNT_DISABLED'
+      });
+    }
+    
+    // Check if email is verified (if verification is required)
+    if (user.emailVerified === false && process.env.REQUIRE_EMAIL_VERIFICATION === 'true') {
+      return res.status(403).json({ 
+        message: 'Please verify your email address before logging in. Check your inbox for the verification link.',
+        errorCode: 'EMAIL_NOT_VERIFIED'
+      });
     }
     
     // Check password
@@ -222,7 +264,10 @@ export const login = async (req, res) => {
     }
     
     if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(401).json({ 
+        message: 'Incorrect password. Please try again or use "Forgot Password" to reset it.',
+        errorCode: 'INVALID_PASSWORD'
+      });
     }
     
     // Update last login time if the field exists
@@ -463,27 +508,235 @@ export const checkDashboardAccess = async (req, res) => {
   }
 };
 
-// Reset password request
-export const requestPasswordReset = async (req, res) => {
+// Forgot Password - Request password reset
+export const forgotPassword = async (req, res) => {
   const { email } = req.body;
   
+  // Validate email format
+  if (!email || !email.trim()) {
+    return res.status(400).json({ 
+      message: 'Email address is required',
+      errorCode: 'EMAIL_REQUIRED'
+    });
+  }
+  
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email.trim())) {
+    return res.status(400).json({ 
+      message: 'Please enter a valid email address',
+      errorCode: 'INVALID_EMAIL'
+    });
+  }
+  
   try {
-    const user = await db.Customer.findOne({ where: { email } });
+    // Find user in the User model
+    const user = await db.User.findOne({ 
+      where: { email: email.trim().toLowerCase() } 
+    });
+    
+    // For security, always return success message even if user doesn't exist
+    // This prevents email enumeration attacks
     if (!user) {
-      // For security, don't reveal that the email doesn't exist
-      return res.status(200).json({ message: 'If your email exists in our system, you will receive a password reset link' });
+      console.log('Password reset requested for non-existent email:', email);
+      return res.status(200).json({ 
+        message: 'If your email exists in our system, you will receive a password reset link',
+        success: true
+      });
     }
     
-    // In a real application, you would:
-    // 1. Generate a secure token
-    // 2. Store it in the database with an expiration
-    // 3. Send an email with a reset link
+    // Check if user account is active
+    if (user.isActive === false) {
+      console.log('Password reset requested for disabled account:', email);
+      return res.status(200).json({ 
+        message: 'If your email exists in our system, you will receive a password reset link',
+        success: true
+      });
+    }
     
-    // For this example, we'll just acknowledge the request
-    return res.status(200).json({ message: 'If your email exists in our system, you will receive a password reset link' });
+    // Generate secure random reset token (32 bytes = 64 hex characters)
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    
+    // Hash the token before storing in database for security
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+    
+    // Set token expiry to 1 hour from now
+    const resetExpires = new Date(Date.now() + 60 * 60 * 1000);
+    
+    // Save hashed token and expiry to user record
+    await user.update({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: resetExpires
+    });
+    
+    console.log('Password reset token generated for user:', user.id);
+    
+    // Send password reset email with the unhashed token
+    try {
+      await sendPasswordResetEmail(user.email, resetToken, user.name);
+      console.log('Password reset email sent to:', user.email);
+    } catch (emailError) {
+      console.error('Failed to send password reset email:', emailError);
+      // Clear the reset token if email fails
+      await user.update({
+        passwordResetToken: null,
+        passwordResetExpires: null
+      });
+      return res.status(500).json({ 
+        message: 'Failed to send password reset email. Please try again later.',
+        errorCode: 'EMAIL_SEND_FAILED'
+      });
+    }
+    
+    return res.status(200).json({ 
+      message: 'If your email exists in our system, you will receive a password reset link',
+      success: true
+    });
   } catch (error) {
-    console.error('Password reset request error:', error);
-    return res.status(500).json({ message: 'Internal server error', error: error.message });
+    console.error('Forgot password error:', error);
+    return res.status(500).json({ 
+      message: 'Internal server error. Please try again later.',
+      error: error.message 
+    });
+  }
+};
+
+// Reset Password - Set new password using token
+export const resetPassword = async (req, res) => {
+  const { token } = req.params;
+  const { password, confirmPassword } = req.body;
+  
+  // Validate token
+  if (!token) {
+    return res.status(400).json({ 
+      message: 'Reset token is required',
+      errorCode: 'TOKEN_REQUIRED'
+    });
+  }
+  
+  // Validate password
+  if (!password) {
+    return res.status(400).json({ 
+      message: 'New password is required',
+      errorCode: 'PASSWORD_REQUIRED'
+    });
+  }
+  
+  // Validate password length (minimum 8 characters)
+  if (password.length < 8) {
+    return res.status(400).json({ 
+      message: 'Password must be at least 8 characters long',
+      errorCode: 'PASSWORD_TOO_SHORT'
+    });
+  }
+  
+  // Validate password confirmation
+  if (password !== confirmPassword) {
+    return res.status(400).json({ 
+      message: 'Passwords do not match',
+      errorCode: 'PASSWORD_MISMATCH'
+    });
+  }
+  
+  try {
+    // Hash the provided token to compare with stored hash
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+    
+    // Find user with matching token that hasn't expired
+    const user = await db.User.findOne({
+      where: {
+        passwordResetToken: hashedToken,
+        passwordResetExpires: {
+          [db.Sequelize.Op.gt]: new Date() // Token must not be expired
+        }
+      }
+    });
+    
+    if (!user) {
+      console.log('Invalid or expired reset token attempted');
+      return res.status(400).json({ 
+        message: 'Invalid or expired reset token. Please request a new password reset.',
+        errorCode: 'INVALID_TOKEN'
+      });
+    }
+    
+    console.log('Valid reset token found for user:', user.id);
+    
+    // Update password (will be hashed by beforeUpdate hook)
+    // Clear reset token and expiry
+    await user.update({
+      password: password,
+      passwordResetToken: null,
+      passwordResetExpires: null
+    });
+    
+    console.log('Password reset successful for user:', user.id);
+    
+    return res.status(200).json({ 
+      message: 'Password reset successfully. You can now login with your new password.',
+      success: true
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return res.status(500).json({ 
+      message: 'Internal server error. Please try again later.',
+      error: error.message 
+    });
+  }
+};
+
+// Verify Reset Token - Check if token is valid (for frontend validation)
+export const verifyResetToken = async (req, res) => {
+  const { token } = req.params;
+  
+  if (!token) {
+    return res.status(400).json({ 
+      valid: false,
+      message: 'Reset token is required'
+    });
+  }
+  
+  try {
+    // Hash the provided token to compare with stored hash
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+    
+    // Find user with matching token that hasn't expired
+    const user = await db.User.findOne({
+      where: {
+        passwordResetToken: hashedToken,
+        passwordResetExpires: {
+          [db.Sequelize.Op.gt]: new Date()
+        }
+      },
+      attributes: ['id', 'email', 'name']
+    });
+    
+    if (!user) {
+      return res.status(400).json({ 
+        valid: false,
+        message: 'Invalid or expired reset token'
+      });
+    }
+    
+    return res.status(200).json({ 
+      valid: true,
+      message: 'Token is valid',
+      email: user.email // Optionally show masked email
+    });
+  } catch (error) {
+    console.error('Verify reset token error:', error);
+    return res.status(500).json({ 
+      valid: false,
+      message: 'Internal server error'
+    });
   }
 };
 

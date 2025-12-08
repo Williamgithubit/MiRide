@@ -57,6 +57,28 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.DATE,
       allowNull: true,
     },
+    twoFactorEnabled: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    twoFactorSecret: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    lastLoginIp: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    passwordResetToken: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: 'password_reset_token',
+    },
+    passwordResetExpires: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'password_reset_expires',
+    },
   }, {
     tableName: 'users',
     timestamps: true,
