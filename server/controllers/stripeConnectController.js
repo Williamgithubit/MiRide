@@ -1,15 +1,17 @@
-import Stripe from 'stripe';
-import dotenv from 'dotenv';
-import db from '../models/index.js';
-import { Op } from 'sequelize';
+import Stripe from "stripe";
+import dotenv from "dotenv";
+import db from "../models/index.js";
+import { Op } from "sequelize";
 
 dotenv.config();
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2022-11-15' });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2022-11-15",
+});
 
 // Commission configuration
 const COMMISSION_CONFIG = {
-  percentageFee: 0.10, // 10%
+  percentageFee: 0.1, // 10%
   fixedFee: 0, // $0 fixed fee (can be changed)
 };
 
@@ -35,15 +37,17 @@ export const createExpressAccount = async (req, res) => {
   try {
     const userId = req.user.id;
     const user = await db.User.findByPk(userId, {
-      include: [{ model: db.OwnerProfile, as: 'ownerProfile' }]
+      include: [{ model: db.OwnerProfile, as: "ownerProfile" }],
     });
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: "User not found" });
     }
 
-    if (user.role !== 'owner') {
-      return res.status(403).json({ error: 'Only car owners can create Stripe accounts' });
+    if (user.role !== "owner") {
+      return res
+        .status(403)
+        .json({ error: "Only car owners can create Stripe accounts" });
     }
 
     // Check if owner profile exists, create if not
@@ -58,20 +62,20 @@ export const createExpressAccount = async (req, res) => {
     if (ownerProfile.stripeAccountId) {
       return res.json({
         accountId: ownerProfile.stripeAccountId,
-        message: 'Stripe account already exists',
+        message: "Stripe account already exists",
       });
     }
 
     // Create Stripe Express account
     const account = await stripe.accounts.create({
-      type: 'express',
-      country: 'US',
+      type: "express",
+      country: "US",
       email: user.email,
       capabilities: {
         card_payments: { requested: true },
         transfers: { requested: true },
       },
-      business_type: 'individual',
+      business_type: "individual",
       metadata: {
         userId: user.id,
         userName: user.name,
@@ -83,14 +87,14 @@ export const createExpressAccount = async (req, res) => {
       stripeAccountId: account.id,
     });
 
-    console.log('Stripe Express account created:', account.id);
+    console.log("Stripe Express account created:", account.id);
 
     res.json({
       accountId: account.id,
-      message: 'Stripe account created successfully',
+      message: "Stripe account created successfully",
     });
   } catch (error) {
-    console.error('Error creating Stripe Express account:', error);
+    console.error("Error creating Stripe Express account:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -102,11 +106,15 @@ export const createAccountLink = async (req, res) => {
   try {
     const userId = req.user.id;
     const user = await db.User.findByPk(userId, {
-      include: [{ model: db.OwnerProfile, as: 'ownerProfile' }]
+      include: [{ model: db.OwnerProfile, as: "ownerProfile" }],
     });
 
     if (!user || !user.ownerProfile || !user.ownerProfile.stripeAccountId) {
-      return res.status(404).json({ error: 'Stripe account not found. Please create an account first.' });
+      return res
+        .status(404)
+        .json({
+          error: "Stripe account not found. Please create an account first.",
+        });
     }
 
     const accountId = user.ownerProfile.stripeAccountId;
@@ -116,15 +124,70 @@ export const createAccountLink = async (req, res) => {
       account: accountId,
       refresh_url: `${process.env.CLIENT_URL}/dashboard/earnings?refresh=true`,
       return_url: `${process.env.CLIENT_URL}/dashboard/earnings?success=true`,
-      type: 'account_onboarding',
+      type: "account_onboarding",
     });
 
     res.json({
       url: accountLink.url,
     });
   } catch (error) {
-    console.error('Error creating account link:', error);
+    console.error("Error creating account link:", error);
     res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * Create or get an onboarding link in a single call.
+ * If owner has no Stripe account, create one then produce an account link.
+ */
+export const createOnboardingLink = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await db.User.findByPk(userId, {
+      include: [{ model: db.OwnerProfile, as: "ownerProfile" }],
+    });
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (user.role !== "owner")
+      return res.status(403).json({ error: "Only owners can onboard" });
+
+    let ownerProfile = user.ownerProfile;
+    if (!ownerProfile) {
+      ownerProfile = await db.OwnerProfile.create({ userId: user.id });
+    }
+
+    // Create Stripe account if it doesn't exist
+    if (!ownerProfile.stripeAccountId) {
+      const account = await stripe.accounts.create({
+        type: "express",
+        country: "US",
+        email: user.email,
+        capabilities: {
+          card_payments: { requested: true },
+          transfers: { requested: true },
+        },
+        business_type: "individual",
+        metadata: { userId: user.id, userName: user.name },
+      });
+
+      await ownerProfile.update({ stripeAccountId: account.id });
+    }
+
+    // Create account link for onboarding
+    const accountLink = await stripe.accountLinks.create({
+      account: ownerProfile.stripeAccountId,
+      refresh_url: `${process.env.CLIENT_URL}/dashboard/earnings?refresh=true`,
+      return_url: `${process.env.CLIENT_URL}/dashboard/earnings?success=true`,
+      type: "account_onboarding",
+    });
+
+    return res.json({
+      url: accountLink.url,
+      accountId: ownerProfile.stripeAccountId,
+    });
+  } catch (error) {
+    console.error("Error creating onboarding link:", error);
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -134,13 +197,13 @@ export const createAccountLink = async (req, res) => {
 export const getAccountStatus = async (req, res) => {
   try {
     const userId = req.params.ownerId || req.user.id;
-    
+
     const user = await db.User.findByPk(userId, {
-      include: [{ model: db.OwnerProfile, as: 'ownerProfile' }]
+      include: [{ model: db.OwnerProfile, as: "ownerProfile" }],
     });
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: "User not found" });
     }
 
     // If no owner profile exists, return default values
@@ -167,14 +230,17 @@ export const getAccountStatus = async (req, res) => {
     }
 
     // Fetch account details from Stripe
-    const account = await stripe.accounts.retrieve(ownerProfile.stripeAccountId);
+    const account = await stripe.accounts.retrieve(
+      ownerProfile.stripeAccountId
+    );
 
     // Update owner profile with latest status
     await ownerProfile.update({
       stripeChargesEnabled: account.charges_enabled,
       stripePayoutsEnabled: account.payouts_enabled,
       stripeDetailsSubmitted: account.details_submitted,
-      stripeOnboardingComplete: account.details_submitted && account.charges_enabled,
+      stripeOnboardingComplete:
+        account.details_submitted && account.charges_enabled,
     });
 
     res.json({
@@ -187,7 +253,7 @@ export const getAccountStatus = async (req, res) => {
       requirements: account.requirements,
     });
   } catch (error) {
-    console.error('Error fetching account status:', error);
+    console.error("Error fetching account status:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -200,11 +266,11 @@ export const getOwnerBalance = async (req, res) => {
     const userId = req.params.ownerId || req.user.id;
 
     const user = await db.User.findByPk(userId, {
-      include: [{ model: db.OwnerProfile, as: 'ownerProfile' }]
+      include: [{ model: db.OwnerProfile, as: "ownerProfile" }],
     });
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: "User not found" });
     }
 
     // If no owner profile exists, return default empty balance
@@ -214,7 +280,7 @@ export const getOwnerBalance = async (req, res) => {
         availableBalance: 0,
         pendingBalance: 0,
         totalWithdrawn: 0,
-        currency: 'USD',
+        currency: "USD",
         recentPayments: [],
         recentWithdrawals: [],
       });
@@ -228,47 +294,49 @@ export const getOwnerBalance = async (req, res) => {
       include: [
         {
           model: db.Rental,
-          as: 'rental',
-          attributes: ['id', 'startDate', 'endDate', 'status'],
+          as: "rental",
+          attributes: ["id", "startDate", "endDate", "status"],
         },
       ],
     });
 
-    console.log('💰 Owner Balance Debug:');
+    console.log("💰 Owner Balance Debug:");
     console.log(`Owner ID: ${userId}`);
     console.log(`Total payments found: ${payments.length}`);
     if (payments.length > 0) {
-      console.log('Sample payment:', {
+      console.log("Sample payment:", {
         id: payments[0].id,
         totalAmount: payments[0].totalAmount,
         platformFee: payments[0].platformFee,
         ownerAmount: payments[0].ownerAmount,
-        status: payments[0].paymentStatus
+        status: payments[0].paymentStatus,
       });
     }
 
     // Calculate earnings
     const totalEarnings = payments
-      .filter(p => p.paymentStatus === 'succeeded')
+      .filter((p) => p.paymentStatus === "succeeded")
       .reduce((sum, p) => sum + parseFloat(p.ownerAmount || 0), 0);
-    
+
     console.log(`Total Earnings: $${totalEarnings.toFixed(2)}`);
 
     const pendingEarnings = payments
-      .filter(p => p.paymentStatus === 'processing' || p.paymentStatus === 'pending')
+      .filter(
+        (p) => p.paymentStatus === "processing" || p.paymentStatus === "pending"
+      )
       .reduce((sum, p) => sum + parseFloat(p.ownerAmount), 0);
 
     // Get withdrawals
     const withdrawals = await db.Withdrawal.findAll({
-      where: { 
+      where: {
         userId,
-        type: 'owner',
+        type: "owner",
       },
-      order: [['createdAt', 'DESC']],
+      order: [["createdAt", "DESC"]],
     });
 
     const totalWithdrawn = withdrawals
-      .filter(w => w.status === 'completed')
+      .filter((w) => w.status === "completed")
       .reduce((sum, w) => sum + parseFloat(w.amount), 0);
 
     const availableBalance = totalEarnings - totalWithdrawn;
@@ -286,15 +354,15 @@ export const getOwnerBalance = async (req, res) => {
       availableBalance: parseFloat(availableBalance.toFixed(2)),
       pendingBalance: parseFloat(pendingEarnings.toFixed(2)),
       totalWithdrawn: parseFloat(totalWithdrawn.toFixed(2)),
-      currency: 'USD',
-      recentPayments: payments.slice(0, 10).map(p => ({
+      currency: "USD",
+      recentPayments: payments.slice(0, 10).map((p) => ({
         id: p.id,
         amount: parseFloat(p.ownerAmount),
         status: p.paymentStatus,
         date: p.createdAt,
         rentalId: p.rentalId,
       })),
-      recentWithdrawals: withdrawals.slice(0, 10).map(w => ({
+      recentWithdrawals: withdrawals.slice(0, 10).map((w) => ({
         id: w.id,
         amount: parseFloat(w.amount),
         status: w.status,
@@ -303,7 +371,7 @@ export const getOwnerBalance = async (req, res) => {
       })),
     });
   } catch (error) {
-    console.error('Error fetching owner balance:', error);
+    console.error("Error fetching owner balance:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -314,41 +382,50 @@ export const getOwnerBalance = async (req, res) => {
 export const getPlatformBalance = async (req, res) => {
   try {
     // Check if user is admin
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Admin access required' });
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
     }
 
     // Get all payments
     const payments = await db.Payment.findAll({
-      where: { paymentStatus: 'succeeded' },
+      where: { paymentStatus: "succeeded" },
     });
 
-    console.log('📊 Platform Balance Debug:');
+    console.log("📊 Platform Balance Debug:");
     console.log(`Total payments found: ${payments.length}`);
     if (payments.length > 0) {
-      console.log('Sample payment:', {
+      console.log("Sample payment:", {
         id: payments[0].id,
         totalAmount: payments[0].totalAmount,
         platformFee: payments[0].platformFee,
         ownerAmount: payments[0].ownerAmount,
-        status: payments[0].paymentStatus
+        status: payments[0].paymentStatus,
       });
     }
 
-    const totalRevenue = payments.reduce((sum, p) => sum + parseFloat(p.platformFee || 0), 0); // Platform revenue is commission only
-    const totalCommission = payments.reduce((sum, p) => sum + parseFloat(p.platformFee || 0), 0);
-    
+    const totalRevenue = payments.reduce(
+      (sum, p) => sum + parseFloat(p.platformFee || 0),
+      0
+    ); // Platform revenue is commission only
+    const totalCommission = payments.reduce(
+      (sum, p) => sum + parseFloat(p.platformFee || 0),
+      0
+    );
+
     console.log(`Total Revenue (Commission): $${totalRevenue.toFixed(2)}`);
 
     // Get platform withdrawals
     const withdrawals = await db.Withdrawal.findAll({
-      where: { 
-        type: 'platform',
-        status: 'completed',
+      where: {
+        type: "platform",
+        status: "completed",
       },
     });
 
-    const totalWithdrawn = withdrawals.reduce((sum, w) => sum + parseFloat(w.amount), 0);
+    const totalWithdrawn = withdrawals.reduce(
+      (sum, w) => sum + parseFloat(w.amount),
+      0
+    );
     const availableBalance = totalCommission - totalWithdrawn;
 
     // Get monthly stats
@@ -358,13 +435,19 @@ export const getPlatformBalance = async (req, res) => {
 
     const monthlyPayments = await db.Payment.findAll({
       where: {
-        paymentStatus: 'succeeded',
+        paymentStatus: "succeeded",
         createdAt: { [Op.gte]: startOfMonth },
       },
     });
 
-    const monthlyRevenue = monthlyPayments.reduce((sum, p) => sum + parseFloat(p.platformFee), 0); // Platform revenue is commission only
-    const monthlyCommission = monthlyPayments.reduce((sum, p) => sum + parseFloat(p.platformFee), 0);
+    const monthlyRevenue = monthlyPayments.reduce(
+      (sum, p) => sum + parseFloat(p.platformFee),
+      0
+    ); // Platform revenue is commission only
+    const monthlyCommission = monthlyPayments.reduce(
+      (sum, p) => sum + parseFloat(p.platformFee),
+      0
+    );
 
     res.json({
       totalRevenue: parseFloat(totalRevenue.toFixed(2)),
@@ -373,11 +456,11 @@ export const getPlatformBalance = async (req, res) => {
       totalWithdrawn: parseFloat(totalWithdrawn.toFixed(2)),
       monthlyRevenue: parseFloat(monthlyRevenue.toFixed(2)),
       monthlyCommission: parseFloat(monthlyCommission.toFixed(2)),
-      currency: 'USD',
+      currency: "USD",
       commissionRate: `${COMMISSION_CONFIG.percentageFee * 100}%`,
     });
   } catch (error) {
-    console.error('Error fetching platform balance:', error);
+    console.error("Error fetching platform balance:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -391,32 +474,36 @@ export const withdrawOwnerEarnings = async (req, res) => {
     const { amount } = req.body;
 
     if (!amount || amount <= 0) {
-      return res.status(400).json({ error: 'Invalid withdrawal amount' });
+      return res.status(400).json({ error: "Invalid withdrawal amount" });
     }
 
     const user = await db.User.findByPk(userId, {
-      include: [{ model: db.OwnerProfile, as: 'ownerProfile' }]
+      include: [{ model: db.OwnerProfile, as: "ownerProfile" }],
     });
 
     if (!user || !user.ownerProfile) {
-      return res.status(404).json({ error: 'Owner profile not found' });
+      return res.status(404).json({ error: "Owner profile not found" });
     }
 
     const ownerProfile = user.ownerProfile;
 
     if (!ownerProfile.stripeAccountId) {
-      return res.status(400).json({ error: 'Please complete Stripe onboarding first' });
+      return res
+        .status(400)
+        .json({ error: "Please complete Stripe onboarding first" });
     }
 
     if (!ownerProfile.stripePayoutsEnabled) {
-      return res.status(400).json({ error: 'Payouts not enabled. Please complete verification.' });
+      return res
+        .status(400)
+        .json({ error: "Payouts not enabled. Please complete verification." });
     }
 
     // Check available balance
     const availableBalance = parseFloat(ownerProfile.availableBalance);
     if (amount > availableBalance) {
-      return res.status(400).json({ 
-        error: 'Insufficient balance',
+      return res.status(400).json({
+        error: "Insufficient balance",
         availableBalance,
       });
     }
@@ -424,12 +511,12 @@ export const withdrawOwnerEarnings = async (req, res) => {
     // Create transfer to connected account
     const transfer = await stripe.transfers.create({
       amount: Math.round(amount * 100), // Convert to cents
-      currency: 'usd',
+      currency: "usd",
       destination: ownerProfile.stripeAccountId,
       description: `Earnings withdrawal for ${user.name}`,
       metadata: {
         userId: user.id,
-        type: 'owner_withdrawal',
+        type: "owner_withdrawal",
       },
     });
 
@@ -437,12 +524,12 @@ export const withdrawOwnerEarnings = async (req, res) => {
     const withdrawal = await db.Withdrawal.create({
       userId,
       amount,
-      currency: 'usd',
-      type: 'owner',
-      status: 'completed',
+      currency: "usd",
+      type: "owner",
+      status: "completed",
       stripeTransferId: transfer.id,
       stripeAccountId: ownerProfile.stripeAccountId,
-      description: 'Owner earnings withdrawal',
+      description: "Owner earnings withdrawal",
       processedAt: new Date(),
     });
 
@@ -464,7 +551,7 @@ export const withdrawOwnerEarnings = async (req, res) => {
       newBalance: parseFloat((availableBalance - amount).toFixed(2)),
     });
   } catch (error) {
-    console.error('Error processing owner withdrawal:', error);
+    console.error("Error processing owner withdrawal:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -475,36 +562,42 @@ export const withdrawOwnerEarnings = async (req, res) => {
 export const withdrawPlatformRevenue = async (req, res) => {
   try {
     // Check if user is admin
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Admin access required' });
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
     }
 
     const { amount, description } = req.body;
 
     if (!amount || amount <= 0) {
-      return res.status(400).json({ error: 'Invalid withdrawal amount' });
+      return res.status(400).json({ error: "Invalid withdrawal amount" });
     }
 
     // Get platform balance
     const payments = await db.Payment.findAll({
-      where: { paymentStatus: 'succeeded' },
+      where: { paymentStatus: "succeeded" },
     });
 
-    const totalCommission = payments.reduce((sum, p) => sum + parseFloat(p.platformFee), 0);
+    const totalCommission = payments.reduce(
+      (sum, p) => sum + parseFloat(p.platformFee),
+      0
+    );
 
     const withdrawals = await db.Withdrawal.findAll({
-      where: { 
-        type: 'platform',
-        status: 'completed',
+      where: {
+        type: "platform",
+        status: "completed",
       },
     });
 
-    const totalWithdrawn = withdrawals.reduce((sum, w) => sum + parseFloat(w.amount), 0);
+    const totalWithdrawn = withdrawals.reduce(
+      (sum, w) => sum + parseFloat(w.amount),
+      0
+    );
     const availableBalance = totalCommission - totalWithdrawn;
 
     if (amount > availableBalance) {
-      return res.status(400).json({ 
-        error: 'Insufficient balance',
+      return res.status(400).json({
+        error: "Insufficient balance",
         availableBalance,
       });
     }
@@ -512,11 +605,11 @@ export const withdrawPlatformRevenue = async (req, res) => {
     // Create payout to platform bank account
     const payout = await stripe.payouts.create({
       amount: Math.round(amount * 100), // Convert to cents
-      currency: 'usd',
-      description: description || 'Platform revenue withdrawal',
+      currency: "usd",
+      description: description || "Platform revenue withdrawal",
       metadata: {
         userId: req.user.id,
-        type: 'platform_withdrawal',
+        type: "platform_withdrawal",
       },
     });
 
@@ -524,11 +617,11 @@ export const withdrawPlatformRevenue = async (req, res) => {
     const withdrawal = await db.Withdrawal.create({
       userId: req.user.id,
       amount,
-      currency: 'usd',
-      type: 'platform',
-      status: 'processing',
+      currency: "usd",
+      type: "platform",
+      status: "processing",
       stripePayoutId: payout.id,
-      description: description || 'Platform revenue withdrawal',
+      description: description || "Platform revenue withdrawal",
       metadata: {
         adminId: req.user.id,
         adminName: req.user.name,
@@ -547,7 +640,7 @@ export const withdrawPlatformRevenue = async (req, res) => {
       newBalance: parseFloat((availableBalance - amount).toFixed(2)),
     });
   } catch (error) {
-    console.error('Error processing platform withdrawal:', error);
+    console.error("Error processing platform withdrawal:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -563,14 +656,14 @@ export const getWithdrawalHistory = async (req, res) => {
     const whereClause = {};
 
     // If admin, can view all or filter by type
-    if (req.user.role === 'admin') {
+    if (req.user.role === "admin") {
       if (type) {
         whereClause.type = type;
       }
     } else {
       // Regular users only see their own withdrawals
       whereClause.userId = userId;
-      whereClause.type = 'owner';
+      whereClause.type = "owner";
     }
 
     const offset = (parseInt(page) - 1) * parseInt(limit);
@@ -580,17 +673,17 @@ export const getWithdrawalHistory = async (req, res) => {
       include: [
         {
           model: db.User,
-          as: 'user',
-          attributes: ['id', 'name', 'email'],
+          as: "user",
+          attributes: ["id", "name", "email"],
         },
       ],
       limit: parseInt(limit),
       offset,
-      order: [['createdAt', 'DESC']],
+      order: [["createdAt", "DESC"]],
     });
 
     res.json({
-      withdrawals: withdrawals.map(w => ({
+      withdrawals: withdrawals.map((w) => ({
         id: w.id,
         amount: parseFloat(w.amount),
         currency: w.currency,
@@ -601,17 +694,19 @@ export const getWithdrawalHistory = async (req, res) => {
         payoutId: w.stripePayoutId,
         createdAt: w.createdAt,
         processedAt: w.processedAt,
-        user: w.user ? {
-          id: w.user.id,
-          name: w.user.name,
-        } : null,
+        user: w.user
+          ? {
+              id: w.user.id,
+              name: w.user.name,
+            }
+          : null,
       })),
       total: count,
       page: parseInt(page),
       totalPages: Math.ceil(count / parseInt(limit)),
     });
   } catch (error) {
-    console.error('Error fetching withdrawal history:', error);
+    console.error("Error fetching withdrawal history:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -622,22 +717,22 @@ export const getWithdrawalHistory = async (req, res) => {
 export const fixPaymentPlatformFees = async (req, res) => {
   try {
     // Check if user is admin
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Admin access required' });
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
     }
 
-    console.log('🔧 Starting payment platform fees fix...');
+    console.log("🔧 Starting payment platform fees fix...");
 
     // Find all payments with 0 platform fee
     const paymentsToFix = await db.Payment.findAll({
       where: {
-        platformFee: 0.00,
+        platformFee: 0.0,
       },
       include: [
         {
           model: db.Rental,
-          as: 'rental',
-          attributes: ['id', 'totalAmount', 'platformFee', 'ownerPayout'],
+          as: "rental",
+          attributes: ["id", "totalAmount", "platformFee", "ownerPayout"],
         },
       ],
     });
@@ -647,7 +742,7 @@ export const fixPaymentPlatformFees = async (req, res) => {
     if (paymentsToFix.length === 0) {
       return res.json({
         success: true,
-        message: 'No payments need fixing',
+        message: "No payments need fixing",
         fixed: 0,
         errors: 0,
       });
@@ -660,11 +755,13 @@ export const fixPaymentPlatformFees = async (req, res) => {
     for (const payment of paymentsToFix) {
       try {
         const totalAmount = parseFloat(payment.totalAmount);
-        
+
         // Calculate correct commission
         const { platformFee, ownerPayout } = calculateCommission(totalAmount);
 
-        console.log(`Fixing payment ${payment.id}: $${totalAmount} -> Fee: $${platformFee}, Owner: $${ownerPayout}`);
+        console.log(
+          `Fixing payment ${payment.id}: $${totalAmount} -> Fee: $${platformFee}, Owner: $${ownerPayout}`
+        );
 
         // Update payment record
         await payment.update({
@@ -692,8 +789,12 @@ export const fixPaymentPlatformFees = async (req, res) => {
 
         if (ownerProfile) {
           // Add the owner payout to their balance
-          const newTotalEarnings = parseFloat(ownerProfile.totalEarnings || 0) + parseFloat(ownerPayout);
-          const newAvailableBalance = parseFloat(ownerProfile.availableBalance || 0) + parseFloat(ownerPayout);
+          const newTotalEarnings =
+            parseFloat(ownerProfile.totalEarnings || 0) +
+            parseFloat(ownerPayout);
+          const newAvailableBalance =
+            parseFloat(ownerProfile.availableBalance || 0) +
+            parseFloat(ownerPayout);
 
           await ownerProfile.update({
             totalEarnings: newTotalEarnings,
@@ -726,7 +827,7 @@ export const fixPaymentPlatformFees = async (req, res) => {
       payments: fixedPayments,
     });
   } catch (error) {
-    console.error('Error fixing payment platform fees:', error);
+    console.error("Error fixing payment platform fees:", error);
     res.status(500).json({ error: error.message });
   }
 };

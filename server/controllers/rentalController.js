@@ -1,6 +1,9 @@
 import db from "../models/index.js";
 import NotificationService from "../services/notificationService.js";
-import { Op } from 'sequelize';
+import { Op } from "sequelize";
+import Stripe from "stripe";
+import dotenv from "dotenv";
+dotenv.config();
 
 // Using db.Rental directly for better clarity
 
@@ -10,44 +13,54 @@ export const getStats = async (req, res) => {
     const totalRentals = await db.Rental.count();
     const activeRentals = await db.Rental.count({
       where: {
-        endDate: { [Op.gte]: new Date() }
-      }
+        endDate: { [Op.gte]: new Date() },
+      },
     });
 
-    const totalRevenue = await db.Rental.sum('totalCost');
+    const totalRevenue = await db.Rental.sum("totalCost");
 
     const popularCars = await db.Rental.findAll({
-      attributes: [
-        'carId',
-        [db.sequelize.fn('COUNT', 'carId'), 'rentCount']
+      attributes: ["carId", [db.sequelize.fn("COUNT", "carId"), "rentCount"]],
+      include: [
+        {
+          model: db.Car,
+          as: "car",
+          attributes: ["id", "name", "model", "rentalPricePerDay"],
+          include: [
+            {
+              model: db.CarImage,
+              as: "images",
+              attributes: ["id", "imageUrl", "isPrimary", "order"],
+              limit: 1,
+              order: [
+                ["isPrimary", "DESC"],
+                ["order", "ASC"],
+              ],
+            },
+          ],
+        },
       ],
-      include: [{
-        model: db.Car,
-        as: 'car',
-        attributes: ['id', 'name', 'model', 'rentalPricePerDay'],
-        include: [{
-          model: db.CarImage,
-          as: 'images',
-          attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
-          limit: 1,
-          order: [['isPrimary', 'DESC'], ['order', 'ASC']]
-        }]
-      }],
-      group: ['carId', 'car.id', 'car.name', 'car.model', 'car.rentalPricePerDay'],
-      order: [[db.sequelize.fn('COUNT', 'carId'), 'DESC']],
-      limit: 5
+      group: [
+        "carId",
+        "car.id",
+        "car.name",
+        "car.model",
+        "car.rentalPricePerDay",
+      ],
+      order: [[db.sequelize.fn("COUNT", "carId"), "DESC"]],
+      limit: 5,
     });
 
     res.json({
       totalRentals,
       activeRentals,
       totalRevenue: totalRevenue || 0,
-      popularCars: popularCars.map(rental => ({
+      popularCars: popularCars.map((rental) => ({
         carId: rental.carId,
         name: rental.car.name,
         model: rental.car.model,
-        rentCount: parseInt(rental.get('rentCount'))
-      }))
+        rentCount: parseInt(rental.get("rentCount")),
+      })),
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -57,46 +70,58 @@ export const getStats = async (req, res) => {
 export const getActive = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
-      console.error('getActive - No user found in request');
-      return res.status(401).json({ message: 'Authentication required' });
+      console.error("getActive - No user found in request");
+      return res.status(401).json({ message: "Authentication required" });
     }
 
     const userId = req.user.id;
-    console.log('getActive - Fetching active rentals for user:', userId);
+    console.log("getActive - Fetching active rentals for user:", userId);
 
     const rentals = await db.Rental.findAll({
       where: {
         customerId: userId,
-        status: 'active',
-        endDate: { [Op.gte]: new Date() }
+        status: "active",
+        endDate: { [Op.gte]: new Date() },
       },
       include: [
-        { 
+        {
           model: db.Car,
-          as: 'car',
-          attributes: ['id', 'name', 'model', 'rentalPricePerDay', 'brand', 'year'],
-          include: [{
-            model: db.CarImage,
-            as: 'images',
-            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
-            limit: 1,
-            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
-          }]
+          as: "car",
+          attributes: [
+            "id",
+            "name",
+            "model",
+            "rentalPricePerDay",
+            "brand",
+            "year",
+          ],
+          include: [
+            {
+              model: db.CarImage,
+              as: "images",
+              attributes: ["id", "imageUrl", "isPrimary", "order"],
+              limit: 1,
+              order: [
+                ["isPrimary", "DESC"],
+                ["order", "ASC"],
+              ],
+            },
+          ],
         },
         {
           model: db.User,
-          as: 'customer',
-          attributes: ['id', 'name', 'email']
-        }
+          as: "customer",
+          attributes: ["id", "name", "email"],
+        },
       ],
-      order: [['endDate', 'ASC']]
+      order: [["endDate", "ASC"]],
     });
 
     console.log(`getActive - Found ${rentals.length} active rentals`);
     // Return array of active bookings (for consistency with client expectations)
     res.json(rentals);
   } catch (error) {
-    console.error('getActive - Error:', error);
+    console.error("getActive - Error:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -105,47 +130,61 @@ export const getActive = async (req, res) => {
 export const getCurrentBookings = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
-      console.error('getCurrentBookings - No user found in request');
-      return res.status(401).json({ message: 'Authentication required' });
+      console.error("getCurrentBookings - No user found in request");
+      return res.status(401).json({ message: "Authentication required" });
     }
 
     const userId = req.user.id;
-    console.log('getCurrentBookings - Fetching bookings for user:', userId);
+    console.log("getCurrentBookings - Fetching bookings for user:", userId);
 
     const rentals = await db.Rental.findAll({
       where: {
         customerId: userId,
         status: {
-          [Op.in]: ['pending_approval', 'approved', 'active']
+          [Op.in]: ["pending_approval", "approved", "active"],
         },
-        endDate: { [Op.gte]: new Date() }
+        endDate: { [Op.gte]: new Date() },
       },
       include: [
-        { 
+        {
           model: db.Car,
-          as: 'car',
-          attributes: ['id', 'name', 'model', 'rentalPricePerDay', 'brand', 'year'],
-          include: [{
-            model: db.CarImage,
-            as: 'images',
-            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
-            limit: 1,
-            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
-          }]
+          as: "car",
+          attributes: [
+            "id",
+            "name",
+            "model",
+            "rentalPricePerDay",
+            "brand",
+            "year",
+          ],
+          include: [
+            {
+              model: db.CarImage,
+              as: "images",
+              attributes: ["id", "imageUrl", "isPrimary", "order"],
+              limit: 1,
+              order: [
+                ["isPrimary", "DESC"],
+                ["order", "ASC"],
+              ],
+            },
+          ],
         },
         {
           model: db.User,
-          as: 'customer',
-          attributes: ['id', 'name', 'email']
-        }
+          as: "customer",
+          attributes: ["id", "name", "email"],
+        },
       ],
-      order: [['startDate', 'ASC']]
+      order: [["startDate", "ASC"]],
     });
 
-    console.log(`getCurrentBookings - Found ${rentals.length} current bookings`);
+    console.log(
+      `getCurrentBookings - Found ${rentals.length} current bookings`
+    );
     res.json(rentals);
   } catch (error) {
-    console.error('getCurrentBookings - Error:', error);
+    console.error("getCurrentBookings - Error:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -154,50 +193,64 @@ export const getCurrentBookings = async (req, res) => {
 export const getBookingHistory = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
-      console.error('getBookingHistory - No user found in request');
-      return res.status(401).json({ message: 'Authentication required' });
+      console.error("getBookingHistory - No user found in request");
+      return res.status(401).json({ message: "Authentication required" });
     }
 
     const userId = req.user.id;
-    console.log('getBookingHistory - Fetching history for user:', userId);
+    console.log("getBookingHistory - Fetching history for user:", userId);
 
     const rentals = await db.Rental.findAll({
       where: {
         customerId: userId,
         [Op.or]: [
-          { status: { [Op.in]: ['completed', 'cancelled', 'rejected'] } },
-          { 
-            status: { [Op.in]: ['approved', 'active'] },
-            endDate: { [Op.lt]: new Date() }
-          }
-        ]
+          { status: { [Op.in]: ["completed", "cancelled", "rejected"] } },
+          {
+            status: { [Op.in]: ["approved", "active"] },
+            endDate: { [Op.lt]: new Date() },
+          },
+        ],
       },
       include: [
-        { 
+        {
           model: db.Car,
-          as: 'car',
-          attributes: ['id', 'name', 'model', 'rentalPricePerDay', 'brand', 'year'],
-          include: [{
-            model: db.CarImage,
-            as: 'images',
-            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
-            limit: 1,
-            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
-          }]
+          as: "car",
+          attributes: [
+            "id",
+            "name",
+            "model",
+            "rentalPricePerDay",
+            "brand",
+            "year",
+          ],
+          include: [
+            {
+              model: db.CarImage,
+              as: "images",
+              attributes: ["id", "imageUrl", "isPrimary", "order"],
+              limit: 1,
+              order: [
+                ["isPrimary", "DESC"],
+                ["order", "ASC"],
+              ],
+            },
+          ],
         },
         {
           model: db.User,
-          as: 'customer',
-          attributes: ['id', 'name', 'email']
-        }
+          as: "customer",
+          attributes: ["id", "name", "email"],
+        },
       ],
-      order: [['endDate', 'DESC']]
+      order: [["endDate", "DESC"]],
     });
 
-    console.log(`getBookingHistory - Found ${rentals.length} historical bookings`);
+    console.log(
+      `getBookingHistory - Found ${rentals.length} historical bookings`
+    );
     res.json(rentals);
   } catch (error) {
-    console.error('getBookingHistory - Error:', error);
+    console.error("getBookingHistory - Error:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -206,7 +259,7 @@ export const getBookingHistory = async (req, res) => {
 export const getCustomerBookingStats = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ message: "Authentication required" });
     }
 
     const userId = req.user.id;
@@ -214,21 +267,31 @@ export const getCustomerBookingStats = async (req, res) => {
     // Get all customer bookings
     const allBookings = await db.Rental.findAll({
       where: { customerId: userId },
-      attributes: ['id', 'status', 'totalCost', 'totalAmount', 'startDate', 'endDate']
+      attributes: [
+        "id",
+        "status",
+        "totalCost",
+        "totalAmount",
+        "startDate",
+        "endDate",
+      ],
     });
 
     // Calculate statistics
     const totalBookings = allBookings.length;
-    const activeBookings = allBookings.filter(booking => 
-      booking.status === 'active' && new Date(booking.endDate) >= new Date()
+    const activeBookings = allBookings.filter(
+      (booking) =>
+        booking.status === "active" && new Date(booking.endDate) >= new Date()
     ).length;
-    const completedBookings = allBookings.filter(booking => 
-      booking.status === 'completed' || 
-      (booking.status === 'active' && new Date(booking.endDate) < new Date())
+    const completedBookings = allBookings.filter(
+      (booking) =>
+        booking.status === "completed" ||
+        (booking.status === "active" && new Date(booking.endDate) < new Date())
     ).length;
-    const upcomingBookings = allBookings.filter(booking => 
-      ['pending_approval', 'approved'].includes(booking.status) && 
-      new Date(booking.startDate) > new Date()
+    const upcomingBookings = allBookings.filter(
+      (booking) =>
+        ["pending_approval", "approved"].includes(booking.status) &&
+        new Date(booking.startDate) > new Date()
     ).length;
 
     // Calculate total spent (use totalAmount if available, fallback to totalCost)
@@ -237,7 +300,8 @@ export const getCustomerBookingStats = async (req, res) => {
       return sum + amount;
     }, 0);
 
-    const averageBookingValue = totalBookings > 0 ? totalSpent / totalBookings : 0;
+    const averageBookingValue =
+      totalBookings > 0 ? totalSpent / totalBookings : 0;
 
     res.json({
       totalBookings,
@@ -245,7 +309,7 @@ export const getCustomerBookingStats = async (req, res) => {
       completedBookings,
       upcomingBookings,
       totalSpent,
-      averageBookingValue
+      averageBookingValue,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -256,55 +320,62 @@ export const getCustomerBookingStats = async (req, res) => {
 export const getCustomerRentals = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
-      console.error('getCustomerRentals - No user found in request');
-      return res.status(401).json({ message: 'Authentication required' });
+      console.error("getCustomerRentals - No user found in request");
+      return res.status(401).json({ message: "Authentication required" });
     }
 
     const userId = req.user.id;
-    console.log('getCustomerRentals - Fetching rentals for user:', userId);
+    console.log("getCustomerRentals - Fetching rentals for user:", userId);
 
     const rentals = await db.Rental.findAll({
       where: {
-        customerId: userId
+        customerId: userId,
       },
       include: [
-        { 
+        {
           model: db.Car,
-          as: 'car',
-          attributes: ['id', 'name', 'model', 'rentalPricePerDay', 'brand', 'year'],
-          required: false
+          as: "car",
+          attributes: [
+            "id",
+            "name",
+            "model",
+            "rentalPricePerDay",
+            "brand",
+            "year",
+          ],
+          required: false,
         },
         {
           model: db.User,
-          as: 'customer',
-          attributes: ['id', 'name', 'email'],
-          required: false
-        }
+          as: "customer",
+          attributes: ["id", "name", "email"],
+          required: false,
+        },
       ],
-      order: [['startDate', 'DESC']]
+      order: [["startDate", "DESC"]],
     });
 
     console.log(`getCustomerRentals - Found ${rentals.length} rentals`);
     if (rentals.length > 0) {
-      console.log('getCustomerRentals - Sample rental with payment info:', {
+      console.log("getCustomerRentals - Sample rental with payment info:", {
         id: rentals[0].id,
         paymentStatus: rentals[0].paymentStatus,
         totalAmount: rentals[0].totalAmount,
         totalCost: rentals[0].totalCost,
         status: rentals[0].status,
-        createdAt: rentals[0].createdAt
+        createdAt: rentals[0].createdAt,
       });
     }
     res.json(rentals);
   } catch (error) {
-    console.error('getCustomerRentals - Error Details:', {
+    console.error("getCustomerRentals - Error Details:", {
       message: error.message,
       stack: error.stack,
-      name: error.name
+      name: error.name,
     });
-    res.status(500).json({ 
+    res.status(500).json({
       error: error.message,
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      details: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
 };
@@ -312,7 +383,7 @@ export const getCustomerRentals = async (req, res) => {
 export const getRentals = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
-    
+
     // If date range is provided, filter by dates
     if (startDate && endDate) {
       const rentals = await db.Rental.findAll({
@@ -320,29 +391,29 @@ export const getRentals = async (req, res) => {
           [Op.or]: [
             {
               startDate: {
-                [Op.between]: [startDate, endDate]
-              }
+                [Op.between]: [startDate, endDate],
+              },
             },
             {
               endDate: {
-                [Op.between]: [startDate, endDate]
-              }
-            }
-          ]
+                [Op.between]: [startDate, endDate],
+              },
+            },
+          ],
         },
         include: [
-          { 
+          {
             model: db.Car,
-            as: 'car',
-            attributes: ['id', 'name', 'model', 'rentalPricePerDay']
+            as: "car",
+            attributes: ["id", "name", "model", "rentalPricePerDay"],
           },
           {
             model: db.User,
-            as: 'customer',
-            attributes: ['id', 'name', 'email']
-          }
+            as: "customer",
+            attributes: ["id", "name", "email"],
+          },
         ],
-        order: [['startDate', 'DESC']]
+        order: [["startDate", "DESC"]],
       });
       return res.json(rentals);
     }
@@ -350,22 +421,22 @@ export const getRentals = async (req, res) => {
     // Otherwise, return all rentals
     const rentals = await db.Rental.findAll({
       include: [
-        { 
+        {
           model: db.Car,
-          as: 'car',
-          attributes: ['id', 'name', 'model', 'rentalPricePerDay']
+          as: "car",
+          attributes: ["id", "name", "model", "rentalPricePerDay"],
         },
         {
           model: db.User,
-          as: 'customer',
-          attributes: ['id', 'name', 'email']
-        }
+          as: "customer",
+          attributes: ["id", "name", "email"],
+        },
       ],
-      order: [['startDate', 'DESC']]
+      order: [["startDate", "DESC"]],
     });
     res.json(rentals);
   } catch (error) {
-    console.error('Error getting rentals:', error);
+    console.error("Error getting rentals:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -375,51 +446,60 @@ export const getOwnerRentals = async (req, res) => {
     // Get ownerId from params (if provided) or use authenticated user's ID
     const { ownerId } = req.params;
     const ownerIdToUse = ownerId || req.user?.id || req.userId;
-    
+
     if (!ownerIdToUse) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ message: "Authentication required" });
     }
-    
-    console.log('Getting rentals for owner:', ownerIdToUse);
-    
+
+    console.log("Getting rentals for owner:", ownerIdToUse);
+
     const rentals = await db.Rental.findAll({
       where: {
-        ownerId: ownerIdToUse
+        ownerId: ownerIdToUse,
       },
       include: [
-        { 
+        {
           model: db.Car,
-          as: 'car',
-          attributes: ['id', 'name', 'model', 'brand', 'year', 'rentalPricePerDay'],
+          as: "car",
+          attributes: [
+            "id",
+            "name",
+            "model",
+            "brand",
+            "year",
+            "rentalPricePerDay",
+          ],
           required: false, // LEFT JOIN instead of INNER JOIN
-          include: [{
-            model: db.CarImage,
-            as: 'images',
-            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
-            required: false,
-            separate: false
-          }]
+          include: [
+            {
+              model: db.CarImage,
+              as: "images",
+              attributes: ["id", "imageUrl", "isPrimary", "order"],
+              required: false,
+              separate: false,
+            },
+          ],
         },
         {
           model: db.User,
-          as: 'customer',
-          attributes: ['id', 'name', 'email'],
-          required: false // LEFT JOIN instead of INNER JOIN
-        }
+          as: "customer",
+          attributes: ["id", "name", "email"],
+          required: false, // LEFT JOIN instead of INNER JOIN
+        },
       ],
-      order: [['createdAt', 'DESC']]
+      order: [["createdAt", "DESC"]],
     });
-    
+
     console.log(`Found ${rentals.length} rentals for owner ${ownerIdToUse}`);
-    
+
     // Always return an array, even if empty
     res.json(rentals || []);
   } catch (error) {
-    console.error('Error getting owner rentals:', error);
-    console.error('Error stack:', error.stack);
-    res.status(500).json({ 
+    console.error("Error getting owner rentals:", error);
+    console.error("Error stack:", error.stack);
+    res.status(500).json({
       error: error.message,
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      details: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
 };
@@ -428,44 +508,49 @@ export const updateRentalStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    
+
     // Validate status
-    const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
+    const validStatuses = ["pending", "confirmed", "cancelled", "completed"];
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ error: 'Invalid status' });
+      return res.status(400).json({ error: "Invalid status" });
     }
-    
+
     const rental = await db.Rental.findByPk(id, {
       include: [
-        { 
+        {
           model: db.Car,
-          as: 'car',
-          attributes: ['id', 'name', 'model', 'rentalPricePerDay'],
-          include: [{
-            model: db.CarImage,
-            as: 'images',
-            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
-            limit: 1,
-            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
-          }]
+          as: "car",
+          attributes: ["id", "name", "model", "rentalPricePerDay"],
+          include: [
+            {
+              model: db.CarImage,
+              as: "images",
+              attributes: ["id", "imageUrl", "isPrimary", "order"],
+              limit: 1,
+              order: [
+                ["isPrimary", "DESC"],
+                ["order", "ASC"],
+              ],
+            },
+          ],
         },
         {
           model: db.User,
-          as: 'customer',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
+          as: "customer",
+          attributes: ["id", "name", "email"],
+        },
+      ],
     });
-    
+
     if (!rental) {
-      return res.status(404).json({ error: 'Rental not found' });
+      return res.status(404).json({ error: "Rental not found" });
     }
-    
+
     await rental.update({ status });
-    
+
     res.json(rental);
   } catch (error) {
-    console.error('Error updating rental status:', error);
+    console.error("Error updating rental status:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -473,81 +558,90 @@ export const updateRentalStatus = async (req, res) => {
 export const getRevenue = async (req, res) => {
   try {
     const { period } = req.query;
-    
+
     // Validate period
-    const validPeriods = ['daily', 'weekly', 'monthly', 'yearly'];
+    const validPeriods = ["daily", "weekly", "monthly", "yearly"];
     if (!validPeriods.includes(period)) {
-      return res.status(400).json({ error: 'Invalid period. Must be one of: daily, weekly, monthly, yearly' });
+      return res.status(400).json({
+        error: "Invalid period. Must be one of: daily, weekly, monthly, yearly",
+      });
     }
-    
+
     // Generate mock revenue data for now since we don't have real historical data
     const generateRevenueData = (period) => {
       const data = [];
       const now = new Date();
-      
+
       switch (period) {
-        case 'monthly':
+        case "monthly":
           for (let i = 5; i >= 0; i--) {
             const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
             data.push({
-              period: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+              period: date.toLocaleDateString("en-US", {
+                month: "short",
+                year: "numeric",
+              }),
               revenue: Math.floor(Math.random() * 5000) + 1000,
-              bookings: Math.floor(Math.random() * 20) + 5
+              bookings: Math.floor(Math.random() * 20) + 5,
             });
           }
           break;
-        case 'daily':
+        case "daily":
           for (let i = 6; i >= 0; i--) {
             const date = new Date(now);
             date.setDate(date.getDate() - i);
             data.push({
-              period: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+              period: date.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              }),
               revenue: Math.floor(Math.random() * 500) + 100,
-              bookings: Math.floor(Math.random() * 5) + 1
+              bookings: Math.floor(Math.random() * 5) + 1,
             });
           }
           break;
-        case 'weekly':
+        case "weekly":
           for (let i = 7; i >= 0; i--) {
             const date = new Date(now);
-            date.setDate(date.getDate() - (i * 7));
+            date.setDate(date.getDate() - i * 7);
             data.push({
               period: `Week ${date.getWeek()}`,
               revenue: Math.floor(Math.random() * 2000) + 500,
-              bookings: Math.floor(Math.random() * 10) + 3
+              bookings: Math.floor(Math.random() * 10) + 3,
             });
           }
           break;
-        case 'yearly':
+        case "yearly":
           for (let i = 2; i >= 0; i--) {
             const year = now.getFullYear() - i;
             data.push({
               period: year.toString(),
               revenue: Math.floor(Math.random() * 50000) + 20000,
-              bookings: Math.floor(Math.random() * 200) + 100
+              bookings: Math.floor(Math.random() * 200) + 100,
             });
           }
           break;
       }
-      
+
       return data;
     };
-    
+
     const revenueData = generateRevenueData(period);
     res.json(revenueData);
   } catch (error) {
-    console.error('Error getting revenue data:', error);
+    console.error("Error getting revenue data:", error);
     res.status(500).json({ error: error.message });
   }
 };
 
-
 export const createRental = async (req, res) => {
-  console.log(req.body)  
+  console.log(req.body);
   try {
     // This function is now handled by the Stripe webhook
     // But we can keep it for manual rental creation if needed
-    res.status(501).json({ message: 'Rental creation is handled via payment webhook' });
+    res
+      .status(501)
+      .json({ message: "Rental creation is handled via payment webhook" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -557,51 +651,66 @@ export const createRental = async (req, res) => {
 export const getPendingBookings = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ message: "Authentication required" });
     }
 
     const ownerId = req.user.id;
 
     // Get pending bookings for the owner
-    console.log('Getting pending bookings for owner:', ownerId);
+    console.log("Getting pending bookings for owner:", ownerId);
     const pendingRentals = await db.Rental.findAll({
       where: {
         ownerId: ownerId,
-        status: 'pending_approval'
+        status: "pending_approval",
       },
       include: [
-        { 
+        {
           model: db.Car,
-          as: 'car',
-          attributes: ['id', 'name', 'model', 'brand', 'year', 'rentalPricePerDay'],
-          include: [{
-            model: db.CarImage,
-            as: 'images',
-            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
-            limit: 1,
-            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
-          }]
+          as: "car",
+          attributes: [
+            "id",
+            "name",
+            "model",
+            "brand",
+            "year",
+            "rentalPricePerDay",
+          ],
+          include: [
+            {
+              model: db.CarImage,
+              as: "images",
+              attributes: ["id", "imageUrl", "isPrimary", "order"],
+              limit: 1,
+              order: [
+                ["isPrimary", "DESC"],
+                ["order", "ASC"],
+              ],
+            },
+          ],
         },
         {
           model: db.User,
-          as: 'customer',
-          attributes: ['id', 'name', 'email', 'phone']
-        }
+          as: "customer",
+          attributes: ["id", "name", "email", "phone"],
+        },
       ],
-      order: [['createdAt', 'DESC']]
+      order: [["createdAt", "DESC"]],
     });
 
-    console.log(`Found ${pendingRentals.length} rentals:`, pendingRentals.map(r => ({
-      id: r.id,
-      status: r.status,
-      customerId: r.customerId,
-      carId: r.carId,
-      createdAt: r.createdAt
-    })));
+    console.log(
+      `Found ${pendingRentals.length} rentals:`,
+      pendingRentals.map((r) => ({
+        id: r.id,
+        status: r.status,
+        customerId: r.customerId,
+        carId: r.carId,
+        createdAt: r.createdAt,
+      }))
+    );
 
     res.json(pendingRentals);
   } catch (error) {
-    console.error('Error getting pending bookings:', error);
+    console.error("Error getting pending bookings:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -610,38 +719,40 @@ export const getPendingBookings = async (req, res) => {
 export const approveBooking = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     if (!req.user || !req.user.id) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ message: "Authentication required" });
     }
 
     const rental = await db.Rental.findOne({
       where: {
         id: id,
-        status: 'pending_approval'
+        status: "pending_approval",
       },
       include: [
-        { 
+        {
           model: db.Car,
-          as: 'car',
-          attributes: ['id', 'name', 'model', 'brand', 'year']
+          as: "car",
+          attributes: ["id", "name", "model", "brand", "year"],
         },
         {
           model: db.User,
-          as: 'customer',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
+          as: "customer",
+          attributes: ["id", "name", "email"],
+        },
+      ],
     });
 
     if (!rental) {
-      return res.status(404).json({ message: 'Booking not found or already processed' });
+      return res
+        .status(404)
+        .json({ message: "Booking not found or already processed" });
     }
 
     // Update rental status and set approval timestamp
     await rental.update({
-      status: 'approved',
-      approvedAt: new Date()
+      status: "approved",
+      approvedAt: new Date(),
     });
 
     // Update car availability for the rental period
@@ -654,26 +765,26 @@ export const approveBooking = async (req, res) => {
 
     // Create Payment record if it doesn't exist (for bookings that were paid but payment record wasn't created)
     const existingPayment = await db.Payment.findOne({
-      where: { rentalId: rental.id }
+      where: { rentalId: rental.id },
     });
 
-    if (!existingPayment && rental.paymentStatus === 'paid') {
+    if (!existingPayment && rental.paymentStatus === "paid") {
       console.log(`Creating missing payment record for rental ${rental.id}`);
-      
+
       // Ensure commission fields are calculated
       if (!rental.platformFee || !rental.ownerPayout) {
-        const platformFee = parseFloat((rental.totalAmount * 0.10).toFixed(2));
-        const ownerPayout = parseFloat((rental.totalAmount * 0.90).toFixed(2));
-        
+        const platformFee = parseFloat((rental.totalAmount * 0.1).toFixed(2));
+        const ownerPayout = parseFloat((rental.totalAmount * 0.9).toFixed(2));
+
         await rental.update({
           platformFee,
-          ownerPayout
+          ownerPayout,
         });
       }
 
       // Get owner profile for stripe account ID
       const ownerProfile = await db.OwnerProfile.findOne({
-        where: { userId: rental.ownerId }
+        where: { userId: rental.ownerId },
       });
 
       // Create payment record
@@ -686,21 +797,25 @@ export const approveBooking = async (req, res) => {
         totalAmount: rental.totalAmount,
         platformFee: rental.platformFee,
         ownerAmount: rental.ownerPayout,
-        currency: 'usd',
-        paymentStatus: 'succeeded',
-        payoutStatus: 'paid',
+        currency: "usd",
+        paymentStatus: "succeeded",
+        payoutStatus: "paid",
         metadata: {
           rentalId: rental.id,
           carId: rental.carId,
-          createdVia: 'booking_approval'
-        }
+          createdVia: "booking_approval",
+        },
       });
 
       // Update owner balance
       if (ownerProfile) {
         await ownerProfile.update({
-          totalEarnings: parseFloat(ownerProfile.totalEarnings || 0) + parseFloat(rental.ownerPayout),
-          availableBalance: parseFloat(ownerProfile.availableBalance || 0) + parseFloat(rental.ownerPayout)
+          totalEarnings:
+            parseFloat(ownerProfile.totalEarnings || 0) +
+            parseFloat(rental.ownerPayout),
+          availableBalance:
+            parseFloat(ownerProfile.availableBalance || 0) +
+            parseFloat(rental.ownerPayout),
         });
       }
 
@@ -708,21 +823,26 @@ export const approveBooking = async (req, res) => {
     }
 
     console.log(`Booking ${rental.id} approved by owner ${req.user.id}`);
-    
+
     // Send notification to customer about approval
-    const notificationResult = await NotificationService.notifyCustomerBookingStatus(rental, 'approved');
+    const notificationResult =
+      await NotificationService.notifyCustomerBookingStatus(rental, "approved");
     if (notificationResult.success) {
-      console.log(`✅ Customer notification sent successfully for rental ${rental.id}`);
+      console.log(
+        `✅ Customer notification sent successfully for rental ${rental.id}`
+      );
     } else {
-      console.error(`❌ Failed to send customer notification: ${notificationResult.error}`);
+      console.error(
+        `❌ Failed to send customer notification: ${notificationResult.error}`
+      );
     }
 
     res.json({
-      message: 'Booking approved successfully',
-      rental: rental
+      message: "Booking approved successfully",
+      rental: rental,
     });
   } catch (error) {
-    console.error('Error approving booking:', error);
+    console.error("Error approving booking:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -733,99 +853,258 @@ export const rejectBooking = async (req, res) => {
     const { id } = req.params;
     const { reason } = req.body;
     const rejectionReason = reason;
-    
+
     if (!req.user || !req.user.id) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ message: "Authentication required" });
     }
 
     const rental = await db.Rental.findOne({
       where: {
         id: id,
-        status: 'pending_approval'
+        status: "pending_approval",
       },
       include: [
-        { 
+        {
           model: db.Car,
-          as: 'car',
-          attributes: ['id', 'name', 'model', 'brand', 'year']
+          as: "car",
+          attributes: ["id", "name", "model", "brand", "year"],
         },
         {
           model: db.User,
-          as: 'customer',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
+          as: "customer",
+          attributes: ["id", "name", "email"],
+        },
+      ],
     });
 
     if (!rental) {
-      return res.status(404).json({ message: 'Booking not found or already processed' });
+      return res
+        .status(404)
+        .json({ message: "Booking not found or already processed" });
     }
 
     // Update rental status and set rejection details
     await rental.update({
-      status: 'rejected',
+      status: "rejected",
       rejectedAt: new Date(),
-      rejectionReason: rejectionReason || 'No reason provided'
+      rejectionReason: rejectionReason || "No reason provided",
     });
 
     console.log(`Booking ${rental.id} rejected by owner ${req.user.id}`);
-    
+
     // Make car available again since booking is rejected
-    await db.Car.update(
-      { isAvailable: true },
-      { where: { id: rental.carId } }
-    );
-    
+    await db.Car.update({ isAvailable: true }, { where: { id: rental.carId } });
+
     // Send notification to customer about rejection
-    const notificationResult = await NotificationService.notifyCustomerBookingStatus(rental, 'rejected', rejectionReason);
+    const notificationResult =
+      await NotificationService.notifyCustomerBookingStatus(
+        rental,
+        "rejected",
+        rejectionReason
+      );
     if (notificationResult.success) {
-      console.log(`✅ Customer notification sent successfully for rental ${rental.id}`);
+      console.log(
+        `✅ Customer notification sent successfully for rental ${rental.id}`
+      );
     } else {
-      console.error(`❌ Failed to send customer notification: ${notificationResult.error}`);
+      console.error(
+        `❌ Failed to send customer notification: ${notificationResult.error}`
+      );
     }
-    
+
     // TODO: Process refund via Stripe
-    console.log(`Refund should be processed for customer ${rental.customerId} for booking ${rental.id}`);
+    // Attempt Stripe refund and persist Refund audit
+    try {
+      const payment = await db.Payment.findOne({
+        where: { rentalId: rental.id },
+      });
+      if (payment && payment.paymentStatus !== "refunded") {
+        let stripeRefundId = null;
+        let transferReversalId = null;
+        try {
+          if (payment.stripePaymentIntentId) {
+            const refundParams = {
+              payment_intent: payment.stripePaymentIntentId,
+            };
+            if (payment.totalAmount)
+              refundParams.amount = Math.round(
+                parseFloat(payment.totalAmount) * 100
+              );
+            const refund = await stripe.refunds.create(refundParams);
+            stripeRefundId = refund.id;
+            console.log(
+              "Stripe refund created for rejected booking:",
+              stripeRefundId
+            );
+          }
+        } catch (err) {
+          console.error(
+            "Stripe refund failed for rejected booking:",
+            err && err.message ? err.message : err
+          );
+        }
+
+        if (payment.stripeTransferId) {
+          try {
+            if (
+              stripe.transfers &&
+              typeof stripe.transfers.createReversal === "function"
+            ) {
+              const rev = await stripe.transfers.createReversal(
+                payment.stripeTransferId,
+                {
+                  amount: Math.round(
+                    parseFloat(payment.ownerAmount || 0) * 100
+                  ),
+                }
+              );
+              transferReversalId = rev.id;
+            } else if (
+              stripe.transfers &&
+              stripe.transfers.reversals &&
+              typeof stripe.transfers.reversals.create === "function"
+            ) {
+              const rev = await stripe.transfers.reversals.create(
+                payment.stripeTransferId,
+                {
+                  amount: Math.round(
+                    parseFloat(payment.ownerAmount || 0) * 100
+                  ),
+                }
+              );
+              transferReversalId = rev.id;
+            }
+          } catch (revErr) {
+            console.error(
+              "Transfer reversal failed for rejected booking:",
+              revErr && revErr.message ? revErr.message : revErr
+            );
+          }
+        }
+
+        // DB transaction to update payment/rental and owner balances
+        const t = await db.sequelize.transaction();
+        try {
+          if (payment.payoutStatus === "paid") {
+            const ownerProfile = await db.OwnerProfile.findOne({
+              where: { userId: rental.ownerId },
+              transaction: t,
+            });
+            if (ownerProfile) {
+              const ownerAmount = parseFloat(payment.ownerAmount || 0);
+              const newTotalEarnings = Math.max(
+                0,
+                parseFloat(ownerProfile.totalEarnings || 0) - ownerAmount
+              );
+              const newAvailableBalance = Math.max(
+                0,
+                parseFloat(ownerProfile.availableBalance || 0) - ownerAmount
+              );
+              await ownerProfile.update(
+                {
+                  totalEarnings: newTotalEarnings,
+                  availableBalance: newAvailableBalance,
+                },
+                { transaction: t }
+              );
+            }
+          }
+
+          const updatedMetadata = Object.assign({}, payment.metadata || {}, {
+            refundedAt: new Date(),
+            refundReason: rejectionReason || "Rejected by owner",
+            stripeRefundId,
+            transferReversalId,
+          });
+          await payment.update(
+            {
+              paymentStatus: "refunded",
+              payoutStatus:
+                payment.payoutStatus === "paid"
+                  ? "failed"
+                  : payment.payoutStatus,
+              metadata: updatedMetadata,
+            },
+            { transaction: t }
+          );
+          await rental.update(
+            { paymentStatus: "refunded" },
+            { transaction: t }
+          );
+
+          await db.Refund.create(
+            {
+              paymentId: payment.id,
+              rentalId: rental.id,
+              ownerId: rental.ownerId,
+              customerId: rental.customerId,
+              stripeRefundId,
+              amount: parseFloat(payment.totalAmount || 0),
+              currency: payment.currency || "usd",
+              reason: rejectionReason || "Rejected by owner",
+              metadata: { stripeRefundId, transferReversalId },
+            },
+            { transaction: t }
+          );
+
+          await t.commit();
+        } catch (dbErr) {
+          await t.rollback();
+          console.error(
+            "DB error while recording refund for rejected booking:",
+            dbErr && dbErr.message ? dbErr.message : dbErr
+          );
+        }
+      } else {
+        console.log(
+          "No payment record or already refunded for rejected booking",
+          rental.id
+        );
+      }
+    } catch (outerErr) {
+      console.error(
+        "Error processing refund for rejected booking:",
+        outerErr && outerErr.message ? outerErr.message : outerErr
+      );
+    }
 
     res.json({
-      message: 'Booking rejected successfully',
-      rental: rental
+      message: "Booking rejected successfully",
+      rental: rental,
     });
   } catch (error) {
-    console.error('Error rejecting booking:', error);
+    console.error("Error rejecting booking:", error);
     res.status(500).json({ error: error.message });
   }
 };
 
-
-
 // View a specific rental
 export const getRental = async (req, res) => {
-    const { id } = req.params;
+  const { id } = req.params;
 
-    try {
-        const rental = await db.Rental.findByPk(id, {
-            include: [
-                { 
-                    model: db.Car,
-                    as: 'car',
-                    attributes: ['id', 'name', 'model', 'rentalPricePerDay']
-                },
-                {
-                    model: db.User,
-                    as: 'customer',
-                    attributes: ['id', 'name', 'email']
-                }
-            ]
-        });
-        if (!rental) {
-            return res.status(404).json({ message: "Rental not found" });
-        }
-        return res.status(200).json(rental);
-    } catch (error) {
-        console.error("Error fetching rental:", error);
-        return res.status(500).json({ message: "Internal server error" });
+  try {
+    const rental = await db.Rental.findByPk(id, {
+      include: [
+        {
+          model: db.Car,
+          as: "car",
+          attributes: ["id", "name", "model", "rentalPricePerDay"],
+        },
+        {
+          model: db.User,
+          as: "customer",
+          attributes: ["id", "name", "email"],
+        },
+      ],
+    });
+    if (!rental) {
+      return res.status(404).json({ message: "Rental not found" });
     }
+    return res.status(200).json(rental);
+  } catch (error) {
+    console.error("Error fetching rental:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 };
 
 // Cancel a rental (customer-initiated cancellation)
@@ -835,75 +1114,270 @@ export const cancelBooking = async (req, res) => {
     const { reason } = req.body;
 
     if (!req.user || !req.user.id) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ message: "Authentication required" });
     }
 
     const rental = await db.Rental.findOne({
       where: {
         id: id,
-        customerId: req.user.id
+        customerId: req.user.id,
       },
       include: [
-        { 
+        {
           model: db.Car,
-          as: 'car',
-          attributes: ['id', 'name', 'model', 'brand', 'year']
+          as: "car",
+          attributes: ["id", "name", "model", "brand", "year"],
         },
         {
           model: db.User,
-          as: 'customer',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
+          as: "customer",
+          attributes: ["id", "name", "email"],
+        },
+      ],
     });
 
     if (!rental) {
-      return res.status(404).json({ message: "Rental not found or you don't have permission to cancel it" });
+      return res.status(404).json({
+        message: "Rental not found or you don't have permission to cancel it",
+      });
     }
 
     // Check if rental can be cancelled
-    if (rental.status === 'completed' || rental.status === 'cancelled') {
-      return res.status(400).json({ 
-        message: "Cannot cancel a completed or already cancelled rental" 
+    if (rental.status === "completed" || rental.status === "cancelled") {
+      return res.status(400).json({
+        message: "Cannot cancel a completed or already cancelled rental",
       });
     }
 
     // Check if rental is already started (active)
-    if (rental.status === 'active') {
-      return res.status(400).json({ 
-        message: "Cannot cancel an active rental. Please contact support." 
+    if (rental.status === "active") {
+      return res.status(400).json({
+        message: "Cannot cancel an active rental. Please contact support.",
       });
     }
 
     // Update rental status to cancelled
-    await rental.update({ 
-      status: 'cancelled',
-      rejectionReason: reason || 'Cancelled by customer'
-    });
+    // Use a transaction to atomically update rental, payment and owner balances
+    const transaction = await db.sequelize.transaction();
+    try {
+      await rental.update(
+        {
+          status: "cancelled",
+          rejectionReason: reason || "Cancelled by customer",
+        },
+        { transaction }
+      );
 
-    // Make the car available again
-    const car = await db.Car.findByPk(rental.carId);
-    if (car) {
-      await car.update({ isAvailable: true });
+      // Make the car available again
+      const car = await db.Car.findByPk(rental.carId, { transaction });
+      if (car) {
+        await car.update({ isAvailable: true }, { transaction });
+      }
+
+      // If there is a Payment record for this rental, attempt Stripe refund and
+      // reverse owner balances if the payout had already been made.
+      const payment = await db.Payment.findOne({
+        where: { rentalId: rental.id },
+        transaction,
+      });
+      if (payment && payment.paymentStatus !== "refunded") {
+        let stripeRefundId = null;
+        let transferReversalId = null;
+
+        // Attempt Stripe refund if payment intent exists
+        try {
+          if (payment.stripePaymentIntentId) {
+            console.log(
+              "Attempting Stripe refund for payment_intent:",
+              payment.stripePaymentIntentId
+            );
+            const refundParams = {
+              payment_intent: payment.stripePaymentIntentId,
+            };
+            if (payment.totalAmount)
+              refundParams.amount = Math.round(
+                parseFloat(payment.totalAmount) * 100
+              );
+            const refund = await stripe.refunds.create(refundParams);
+            stripeRefundId = refund.id;
+            console.log("Stripe refund created:", stripeRefundId);
+          }
+        } catch (stripeErr) {
+          console.error(
+            "Stripe refund failed:",
+            stripeErr && stripeErr.message ? stripeErr.message : stripeErr
+          );
+        }
+
+        // Attempt to reverse transfer to owner if transferId exists
+        if (payment.stripeTransferId) {
+          try {
+            console.log(
+              "Attempting transfer reversal for transfer:",
+              payment.stripeTransferId
+            );
+            // Try common method names for transfer reversal depending on stripe-node version
+            try {
+              if (
+                stripe.transfers &&
+                typeof stripe.transfers.createReversal === "function"
+              ) {
+                const rev = await stripe.transfers.createReversal(
+                  payment.stripeTransferId,
+                  {
+                    amount: Math.round(
+                      parseFloat(payment.ownerAmount || 0) * 100
+                    ),
+                  }
+                );
+                transferReversalId = rev.id;
+              } else if (
+                stripe.transfers &&
+                stripe.transfers.reversals &&
+                typeof stripe.transfers.reversals.create === "function"
+              ) {
+                const rev = await stripe.transfers.reversals.create(
+                  payment.stripeTransferId,
+                  {
+                    amount: Math.round(
+                      parseFloat(payment.ownerAmount || 0) * 100
+                    ),
+                  }
+                );
+                transferReversalId = rev.id;
+              } else {
+                console.warn(
+                  "Stripe transfer reversal API not available on this stripe client version."
+                );
+              }
+            } catch (reversalErr) {
+              console.error(
+                "Transfer reversal attempt failed:",
+                reversalErr && reversalErr.message
+                  ? reversalErr.message
+                  : reversalErr
+              );
+            }
+          } catch (tErr) {
+            console.error(
+              "Transfer reversal error:",
+              tErr && tErr.message ? tErr.message : tErr
+            );
+          }
+        }
+
+        // DB updates: reverse owner balances if paid, mark payment refunded, create Refund audit
+        try {
+          if (payment.payoutStatus === "paid") {
+            const ownerProfile = await db.OwnerProfile.findOne({
+              where: { userId: rental.ownerId },
+              transaction,
+            });
+            if (ownerProfile) {
+              const ownerAmount = parseFloat(payment.ownerAmount || 0);
+              const newTotalEarnings = Math.max(
+                0,
+                parseFloat(ownerProfile.totalEarnings || 0) - ownerAmount
+              );
+              const newAvailableBalance = Math.max(
+                0,
+                parseFloat(ownerProfile.availableBalance || 0) - ownerAmount
+              );
+              await ownerProfile.update(
+                {
+                  totalEarnings: newTotalEarnings,
+                  availableBalance: newAvailableBalance,
+                },
+                { transaction }
+              );
+              console.log(
+                `Reversed owner earnings for owner ${rental.ownerId}: -${ownerAmount}`
+              );
+            }
+          }
+
+          const updatedMetadata = Object.assign({}, payment.metadata || {}, {
+            refundedAt: new Date(),
+            refundReason: reason || "Cancelled by customer",
+            stripeRefundId,
+            transferReversalId,
+          });
+
+          await payment.update(
+            {
+              paymentStatus: "refunded",
+              payoutStatus:
+                payment.payoutStatus === "paid"
+                  ? "failed"
+                  : payment.payoutStatus,
+              metadata: updatedMetadata,
+            },
+            { transaction }
+          );
+
+          await rental.update({ paymentStatus: "refunded" }, { transaction });
+
+          // Create Refund audit record
+          try {
+            await db.Refund.create(
+              {
+                paymentId: payment.id,
+                rentalId: rental.id,
+                ownerId: rental.ownerId,
+                customerId: rental.customerId,
+                stripeRefundId: stripeRefundId,
+                amount: parseFloat(payment.totalAmount || 0),
+                currency: payment.currency || "usd",
+                reason: reason || "Cancelled by customer",
+                metadata: { stripeRefundId, transferReversalId },
+              },
+              { transaction }
+            );
+          } catch (refundRecErr) {
+            console.error(
+              "Failed to create Refund audit record:",
+              refundRecErr && refundRecErr.message
+                ? refundRecErr.message
+                : refundRecErr
+            );
+          }
+        } catch (dbErr) {
+          console.error(
+            "DB update during cancellation refund failed:",
+            dbErr && dbErr.message ? dbErr.message : dbErr
+          );
+          throw dbErr;
+        }
+      }
+
+      await transaction.commit();
+    } catch (txErr) {
+      await transaction.rollback();
+      console.error("Error processing cancellation refund updates:", txErr);
+      // Continue - we still want to return a cancelled response even if reversal failed
     }
 
     // Send notification to owner about cancellation
-    const notificationResult = await NotificationService.notifyOwnerBookingCancelled(rental, reason);
+    const notificationResult =
+      await NotificationService.notifyOwnerBookingCancelled(rental, reason);
     if (notificationResult.success) {
-      console.log(`✅ Owner notification sent successfully for cancelled rental ${rental.id}`);
+      console.log(
+        `✅ Owner notification sent successfully for cancelled rental ${rental.id}`
+      );
     } else {
-      console.error(`❌ Failed to send owner notification: ${notificationResult.error}`);
+      console.error(
+        `❌ Failed to send owner notification: ${notificationResult.error}`
+      );
     }
 
-    // TODO: Process refund via Stripe if payment was made
-    console.log(`Refund should be processed for customer ${rental.customerId} for cancelled booking ${rental.id}`);
+    // Refund processing attempted and recorded (if payment existed).
 
     res.json({
-      message: 'Booking cancelled successfully',
-      rental: rental
+      message: "Booking cancelled successfully",
+      rental: rental,
     });
   } catch (error) {
-    console.error('Error cancelling booking:', error);
+    console.error("Error cancelling booking:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -911,11 +1385,21 @@ export const cancelBooking = async (req, res) => {
 // Temporary function to create test data
 export const createTestBooking = async (req, res) => {
   try {
+    // Prevent admins from creating bookings — only customers/owners may create bookings
+    if (req.user && req.user.role === "admin") {
+      console.warn(
+        "createTestBooking - Admin attempted to create a booking",
+        req.user.id
+      );
+      return res
+        .status(403)
+        .json({ message: "Admins are not allowed to create bookings" });
+    }
     // First, assign current user as owner of all cars that don't have an owner
     const carsWithoutOwner = await db.Car.findAll({
       where: {
-        ownerId: null
-      }
+        ownerId: null,
+      },
     });
 
     if (carsWithoutOwner.length > 0) {
@@ -923,25 +1407,27 @@ export const createTestBooking = async (req, res) => {
         { ownerId: req.user.id },
         { where: { ownerId: null } }
       );
-      console.log(`Assigned ${carsWithoutOwner.length} cars to owner ${req.user.id}`);
+      console.log(
+        `Assigned ${carsWithoutOwner.length} cars to owner ${req.user.id}`
+      );
     }
 
     // Create a test customer if none exists
-    let testCustomer = await db.User.findOne({ where: { role: 'customer' } });
+    let testCustomer = await db.User.findOne({ where: { role: "customer" } });
     if (!testCustomer) {
       testCustomer = await db.User.create({
-        name: 'Test Customer',
-        email: 'test@customer.com',
-        password: 'hashedpassword',
-        role: 'customer',
-        isActive: true
+        name: "Test Customer",
+        email: "test@customer.com",
+        password: "hashedpassword",
+        role: "customer",
+        isActive: true,
       });
     }
 
     // Get the first available car
     const car = await db.Car.findOne({ where: { ownerId: req.user.id } });
     if (!car) {
-      return res.status(404).json({ message: 'No cars found for this owner' });
+      return res.status(404).json({ message: "No cars found for this owner" });
     }
 
     // Create a test rental booking
@@ -954,23 +1440,23 @@ export const createTestBooking = async (req, res) => {
       totalDays: 2,
       totalCost: 200,
       totalAmount: 200,
-      status: 'pending_approval',
-      paymentStatus: 'paid',
-      pickupLocation: 'Test Location',
-      dropoffLocation: 'Test Location',
+      status: "pending_approval",
+      paymentStatus: "paid",
+      pickupLocation: "Test Location",
+      dropoffLocation: "Test Location",
       hasInsurance: true,
       hasGPS: false,
       hasChildSeat: false,
-      hasAdditionalDriver: false
+      hasAdditionalDriver: false,
     });
 
     res.json({
-      message: 'Test booking created successfully',
+      message: "Test booking created successfully",
       rental: testRental,
-      carsAssigned: carsWithoutOwner.length
+      carsAssigned: carsWithoutOwner.length,
     });
   } catch (error) {
-    console.error('Error creating test booking:', error);
+    console.error("Error creating test booking:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -979,88 +1465,107 @@ export const createTestBooking = async (req, res) => {
 export const getOwnerActiveRentals = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ message: "Authentication required" });
     }
 
     const ownerId = req.user.id;
-    console.log('getOwnerActiveRentals - Fetching active rentals for owner:', ownerId);
+    console.log(
+      "getOwnerActiveRentals - Fetching active rentals for owner:",
+      ownerId
+    );
 
     const activeRentals = await db.Rental.findAll({
       where: {
         ownerId: ownerId,
         status: {
-          [Op.in]: ['active', 'approved']
+          [Op.in]: ["active", "approved"],
         },
         endDate: {
-          [Op.gte]: new Date()
-        }
+          [Op.gte]: new Date(),
+        },
       },
       include: [
         {
           model: db.Car,
-          as: 'car',
-          attributes: ['id', 'name', 'model', 'brand', 'year', 'rentalPricePerDay'],
-          include: [{
-            model: db.CarImage,
-            as: 'images',
-            attributes: ['id', 'imageUrl', 'isPrimary', 'order'],
-            limit: 1,
-            order: [['isPrimary', 'DESC'], ['order', 'ASC']]
-          }]
+          as: "car",
+          attributes: [
+            "id",
+            "name",
+            "model",
+            "brand",
+            "year",
+            "rentalPricePerDay",
+          ],
+          include: [
+            {
+              model: db.CarImage,
+              as: "images",
+              attributes: ["id", "imageUrl", "isPrimary", "order"],
+              limit: 1,
+              order: [
+                ["isPrimary", "DESC"],
+                ["order", "ASC"],
+              ],
+            },
+          ],
         },
         {
           model: db.User,
-          as: 'customer',
-          attributes: ['id', 'name', 'email']
-        }
+          as: "customer",
+          attributes: ["id", "name", "email"],
+        },
       ],
-      order: [['endDate', 'ASC']]
+      order: [["endDate", "ASC"]],
     });
 
-    console.log(`getOwnerActiveRentals - Found ${activeRentals.length} active rentals`);
+    console.log(
+      `getOwnerActiveRentals - Found ${activeRentals.length} active rentals`
+    );
     res.json(activeRentals);
   } catch (error) {
-    console.error('getOwnerActiveRentals - Error:', error);
+    console.error("getOwnerActiveRentals - Error:", error);
     res.status(500).json({ error: error.message });
   }
 };
 
 export const deleteRental = async (req, res) => {
-    const { id } = req.params;
+  const { id } = req.params;
 
-    if (!req.user || !req.user.id) {
-      return res.status(401).json({ message: 'Authentication required' });
+  if (!req.user || !req.user.id) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
+
+  try {
+    const rental = await db.Rental.findOne({
+      where: {
+        id: id,
+        customerId: req.user.id,
+      },
+    });
+
+    if (!rental) {
+      return res.status(404).json({
+        message: "Rental not found or you don't have permission to cancel it",
+      });
     }
 
-    try {
-        const rental = await db.Rental.findOne({
-            where: {
-                id: id,
-                customerId: req.user.id
-            }
-        });
-
-        if (!rental) {
-            return res.status(404).json({ message: "Rental not found or you don't have permission to cancel it" });
-        }
-
-        // Check if rental is already completed
-        if (new Date(rental.endDate) < new Date()) {
-            return res.status(400).json({ 
-                message: "Cannot cancel a completed rental" 
-            });
-        }
-
-        // Get the car and update its availability
-        const car = await db.Car.findByPk(rental.carId);
-        if (car) {
-            await car.update({ isAvailable: true });
-        }
-
-        await rental.destroy();
-        return res.status(200).json({ message: "Rental cancelled successfully" });
-    } catch (error) {
-        console.error("Error canceling rental:", error);
-        return res.status(500).json({ message: "Internal server error" });
+    // Check if rental is already completed
+    if (new Date(rental.endDate) < new Date()) {
+      return res.status(400).json({
+        message: "Cannot cancel a completed rental",
+      });
     }
+
+    // Get the car and update its availability
+    const car = await db.Car.findByPk(rental.carId);
+    if (car) {
+      await car.update({ isAvailable: true });
+    }
+
+    await rental.destroy();
+    return res.status(200).json({ message: "Rental cancelled successfully" });
+  } catch (error) {
+    console.error("Error canceling rental:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 };
