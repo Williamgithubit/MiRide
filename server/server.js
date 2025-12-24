@@ -4,6 +4,9 @@ import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import hpp from 'hpp';
 import db from './models/index.js';
 // import { createApiUser, generateAccessToken, generateApiKey } from './utils/momo.js';
 
@@ -38,13 +41,97 @@ if (!process.env.CLIENT_URL) {
 const app = express();
 const PORT = process.env.PORT || 3000; // Set default port to 3000 to match client requests
 
-// Middleware ++
+// ============================================
+// SECURITY MIDDLEWARE
+// ============================================
+
+// Helmet - Set security HTTP headers
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow cross-origin for images
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
+      scriptSrc: ["'self'"],
+      connectSrc: ["'self'", process.env.CLIENT_URL || 'http://localhost:5173', 'https://api.stripe.com'],
+    },
+  },
+}));
+
+// HPP - Prevent HTTP Parameter Pollution
+app.use(hpp());
+
+// CORS configuration
 app.use(cors({
   origin: process.env.CLIENT_URL,
   credentials: true
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// Body parsers
+app.use(express.json({ limit: '10mb' })); // Limit payload size
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// ============================================
+// RATE LIMITING
+// ============================================
+
+// General API rate limiter
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: {
+    status: 429,
+    message: 'Too many requests, please try again later.',
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  skip: (req) => {
+    // Skip rate limiting for health checks
+    return req.path === '/' || req.path === '/health';
+  },
+});
+
+// Strict rate limiter for authentication routes (brute force protection)
+const authLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // 5 attempts per hour
+  message: {
+    status: 429,
+    message: 'Too many login attempts. Please try again after an hour.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true, // Don't count successful logins
+});
+
+// Rate limiter for password reset (prevent email bombing)
+const passwordResetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // 3 password reset requests per hour
+  message: {
+    status: 429,
+    message: 'Too many password reset attempts. Please try again after an hour.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiter for account creation
+const registrationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // 5 registration attempts per hour per IP
+  message: {
+    status: 429,
+    message: 'Too many accounts created from this IP. Please try again after an hour.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply general rate limiter to all API routes
+app.use('/api/', generalLimiter);
 
 // Serve static files from public directory
 // Try multiple paths to handle different deployment structures
@@ -109,10 +196,9 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({
     message: 'Internal Server Error',
-    error: process.env.NODE_ENV === 'development' ? {} : err.message
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
-
 
 // Sync database and start server
 const startServer = async() => {

@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
 
 /**
  * Send an email using nodemailer
@@ -10,33 +10,82 @@ import nodemailer from 'nodemailer';
  * @returns {Promise<Object>} - Nodemailer send result
  */
 const sendEmail = async ({ to, subject, text, html }) => {
+  console.log("[SENDMAIL] Initiating email send:", {
+    to,
+    subject: subject.substring(0, 50),
+    timestamp: new Date().toISOString(),
+  });
+
+  // Validate email configuration
+  const emailHost = process.env.EMAIL_HOST || "smtp.gmail.com";
+  const emailPort = parseInt(process.env.EMAIL_PORT) || 587;
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS;
+  const emailSecure = process.env.EMAIL_SECURE === "true";
+
+  console.log("[SENDMAIL] Email config check:", {
+    host: emailHost,
+    port: emailPort,
+    secure: emailSecure,
+    userConfigured: !!emailUser,
+    passwordConfigured: !!emailPass,
+  });
+
+  if (!emailUser || !emailPass) {
+    console.error("[SENDMAIL] Missing email credentials:", {
+      EMAIL_USER: emailUser ? "SET" : "MISSING",
+      EMAIL_PASS: emailPass ? "SET" : "MISSING",
+    });
+    throw new Error(
+      "Email configuration incomplete. Missing EMAIL_USER or EMAIL_PASS."
+    );
+  }
+
   // Create transporter using environment variables
   const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.EMAIL_PORT) || 587,
-    secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
+    host: emailHost,
+    port: emailPort,
+    secure: emailSecure,
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+      user: emailUser,
+      pass: emailPass,
     },
   });
 
   // Email options
   const mailOptions = {
-    from: process.env.EMAIL_FROM || `"MiRide" <${process.env.EMAIL_USER}>`,
+    from: process.env.EMAIL_FROM || `"MiRide" <${emailUser}>`,
     to,
     subject,
     text,
     html: html || text,
   };
 
+  console.log("[SENDMAIL] Mail options prepared:", {
+    from: mailOptions.from,
+    to: mailOptions.to,
+    subject: mailOptions.subject.substring(0, 50),
+  });
+
   try {
+    console.log("[SENDMAIL] Attempting to send email...");
     const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', info.messageId);
+    console.log("[SENDMAIL] Email sent successfully:", {
+      messageId: info.messageId,
+      response: info.response,
+      timestamp: new Date().toISOString(),
+    });
     return info;
   } catch (error) {
-    console.error('Error sending email:', error);
-    throw new Error('Failed to send email. Please try again later.');
+    console.error("[SENDMAIL] Error sending email:", {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      command: error.command,
+      timestamp: new Date().toISOString(),
+      stack: error.stack,
+    });
+    throw new Error(`Failed to send email: ${error.message}`);
   }
 };
 
@@ -47,12 +96,28 @@ const sendEmail = async ({ to, subject, text, html }) => {
  * @param {string} userName - User's name for personalization
  * @returns {Promise<Object>} - Nodemailer send result
  */
-export const sendPasswordResetEmail = async (email, resetToken, userName = 'User') => {
-  const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+export const sendPasswordResetEmail = async (
+  email,
+  resetToken,
+  userName = "User"
+) => {
+  console.log("[PASSWORD_RESET_EMAIL] Starting password reset email process:", {
+    email,
+    userName,
+    tokenLength: resetToken.length,
+    timestamp: new Date().toISOString(),
+  });
+
+  const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
   const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 
-  const subject = 'Password Reset Request - MiRide';
-  
+  console.log("[PASSWORD_RESET_EMAIL] Reset URL generated:", {
+    clientUrl,
+    resetUrlLength: resetUrl.length,
+  });
+
+  const subject = "Password Reset Request - MiRide";
+
   const text = `
 Hello ${userName},
 
@@ -149,7 +214,24 @@ The MiRide Team
 </html>
   `.trim();
 
-  return sendEmail({ to: email, subject, text, html });
+  console.log("[PASSWORD_RESET_EMAIL] About to call sendEmail function");
+  try {
+    const result = await sendEmail({ to: email, subject, text, html });
+    console.log(
+      "[PASSWORD_RESET_EMAIL] Password reset email sent successfully"
+    );
+    return result;
+  } catch (error) {
+    console.error(
+      "[PASSWORD_RESET_EMAIL] Failed to send password reset email:",
+      {
+        email,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      }
+    );
+    throw error;
+  }
 };
 
 export default sendEmail;

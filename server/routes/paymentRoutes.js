@@ -1,6 +1,7 @@
 import express from "express";
 import Stripe from "stripe";
 import dotenv from "dotenv";
+import rateLimit from "express-rate-limit";
 import db from "../models/index.js";
 import NotificationService from "../services/notificationService.js";
 import auth from "../middleware/auth.js";
@@ -9,6 +10,7 @@ import {
   confirmPayment,
   handleStripeWebhook,
 } from "../controllers/stripePaymentController.js";
+import { createPaymentIntentValidation } from "../middleware/validators.js";
 dotenv.config();
 
 const paymentRouter = express.Router();
@@ -16,10 +18,24 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2022-11-15",
 });
 
+// Rate limiter for payment endpoints (prevent abuse)
+const paymentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 payment attempts per 15 minutes
+  message: {
+    status: 429,
+    message: 'Too many payment attempts. Please try again later.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // New Stripe Connect payment endpoints (only customers can initiate bookings)
 paymentRouter.post(
   "/create-payment-intent",
+  paymentLimiter,
   auth(["customer"]),
+  createPaymentIntentValidation,
   createPaymentIntent
 );
 paymentRouter.post("/confirm-payment", auth(["customer"]), confirmPayment);

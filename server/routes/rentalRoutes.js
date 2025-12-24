@@ -19,6 +19,7 @@ import {
   createTestBooking,
   cancelBooking,
   getOwnerActiveRentals,
+  getCancellationPreview,
 } from "../controllers/rentalController.js";
 import auth from "../middleware/auth.js";
 import db from "../models/index.js";
@@ -84,6 +85,7 @@ rentalRouter.get("/active", auth(["customer"]), getActive); // Keep for backward
 rentalRouter.post("/", auth(["customer"]), createRental);
 rentalRouter.post("/checkout", auth(["customer"]), createRental);
 rentalRouter.get("/:id", auth(["customer"]), verifyRentalOwnership, getRental);
+rentalRouter.get("/:id/cancellation-preview", auth(["customer"]), getCancellationPreview);
 rentalRouter.put("/:id/cancel", auth(["customer"]), cancelBooking);
 rentalRouter.delete(
   "/:id",

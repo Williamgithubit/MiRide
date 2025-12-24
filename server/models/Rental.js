@@ -78,7 +78,7 @@ const RentalModel = (sequelize, DataTypes) => {
       allowNull: false,
     },
     paymentStatus: {
-      type: DataTypes.ENUM('pending', 'paid', 'refunded', 'failed'),
+      type: DataTypes.ENUM('pending', 'paid', 'refunded', 'partial_refund', 'cancelled_no_refund', 'failed'),
       defaultValue: 'pending',
       allowNull: false,
     },

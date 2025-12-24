@@ -1,7 +1,16 @@
 import jwt from "jsonwebtoken";
 import db from "../models/index.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
+// SECURITY: JWT_SECRET must be set in environment variables
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('❌ CRITICAL: JWT_SECRET environment variable is not set!');
+  console.error('   Please set JWT_SECRET in your .env file for security.');
+  // In production, we should fail. In development, use a warning.
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET environment variable is required in production');
+  }
+}
 
 const auth = (roles = []) => {
   return async (req, res, next) => {

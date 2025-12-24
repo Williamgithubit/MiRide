@@ -315,20 +315,16 @@ export const bulkUserAction = async (req, res) => {
     }
 
     if (!["activate", "deactivate", "delete"].includes(action)) {
-      return res
-        .status(400)
-        .json({
-          message: "Invalid action. Must be activate, deactivate, or delete",
-        });
+      return res.status(400).json({
+        message: "Invalid action. Must be activate, deactivate, or delete",
+      });
     }
 
     // Prevent admin from performing bulk actions on themselves
     if (userIds.includes(req.userId)) {
-      return res
-        .status(400)
-        .json({
-          message: "You cannot perform bulk actions on your own account",
-        });
+      return res.status(400).json({
+        message: "You cannot perform bulk actions on your own account",
+      });
     }
 
     let affectedCount = 0;
@@ -465,6 +461,139 @@ export const createUser = async (req, res) => {
     res.status(201).json(userWithoutPassword);
   } catch (error) {
     console.error("Error creating user:", error);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
+};
+
+// Reset user password (admin only - no current password required)
+export const resetUserPassword = async (req, res) => {
+  try {
+    // Verify user is admin
+    if (req.userRole !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "Access denied. Admin privileges required." });
+    }
+
+    const { userId } = req.params;
+    const { newPassword } = req.body;
+
+    // Validate new password
+    if (!newPassword) {
+      return res.status(400).json({ message: "New password is required" });
+    }
+
+    if (newPassword.length < 8) {
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 8 characters long" });
+    }
+
+    // Prevent admin from resetting their own password via this endpoint
+    if (userId === req.userId) {
+      return res.status(400).json({
+        message:
+          "Cannot reset your own password via admin panel. Use account settings instead.",
+      });
+    }
+
+    // Find user
+    const user = await db.User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Update password (will be hashed by the model's beforeUpdate hook)
+    await user.update({ password: newPassword });
+
+    // Log the action for audit purposes
+    console.log(
+      `[ADMIN ACTION] Admin ${req.userId} reset password for user ${userId}`
+    );
+
+    // Return updated user without password
+    const { password, ...userWithoutPassword } = user.toJSON();
+    res.status(200).json({
+      message: "Password reset successfully",
+      user: userWithoutPassword,
+    });
+  } catch (error) {
+    console.error("Error resetting user password:", error);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
+};
+
+// Update user email (admin only)
+export const updateUserEmail = async (req, res) => {
+  try {
+    // Verify user is admin
+    if (req.userRole !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "Access denied. Admin privileges required." });
+    }
+
+    const { userId } = req.params;
+    const { newEmail } = req.body;
+
+    // Validate new email
+    if (!newEmail) {
+      return res.status(400).json({ message: "New email is required" });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+
+    // Find user
+    const user = await db.User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if new email is already in use by another user
+    const emailExists = await db.User.findOne({
+      where: {
+        email: newEmail.toLowerCase(),
+        id: { [db.Sequelize.Op.ne]: userId }, // Exclude current user
+      },
+    });
+
+    if (emailExists) {
+      return res.status(400).json({
+        message: "This email is already in use by another user",
+      });
+    }
+
+    // Store old email for audit log
+    const oldEmail = user.email;
+
+    // Update email
+    await user.update({
+      email: newEmail.toLowerCase(),
+      emailVerified: false, // Mark as unverified since email changed
+    });
+
+    // Log the action for audit purposes
+    console.log(
+      `[ADMIN ACTION] Admin ${req.userId} updated email for user ${userId} from ${oldEmail} to ${newEmail}`
+    );
+
+    // Return updated user without password
+    const { password, ...userWithoutPassword } = user.toJSON();
+    res.status(200).json({
+      message: "Email updated successfully",
+      user: userWithoutPassword,
+      oldEmail,
+      newEmail,
+    });
+  } catch (error) {
+    console.error("Error updating user email:", error);
     res
       .status(500)
       .json({ message: "Internal server error", error: error.message });

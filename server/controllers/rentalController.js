@@ -344,6 +344,14 @@ export const getCustomerRentals = async (req, res) => {
             "year",
           ],
           required: false,
+          include: [
+            {
+              model: db.CarImage,
+              as: "images",
+              attributes: ["id", "imageUrl", "isPrimary", "order"],
+              required: false,
+            },
+          ],
         },
         {
           model: db.User,
@@ -1107,7 +1115,78 @@ export const getRental = async (req, res) => {
   }
 };
 
-// Cancel a rental (customer-initiated cancellation)
+// ============================================
+// CANCELLATION POLICY CONFIGURATION
+// ============================================
+const CANCELLATION_POLICY = {
+  // More than 48 hours before start: Full refund (0% fee)
+  FULL_REFUND_HOURS: 48,
+  // 24-48 hours before start: 25% cancellation fee
+  LOW_FEE_HOURS: 24,
+  LOW_FEE_PERCENTAGE: 0.25,
+  // 12-24 hours before start: 50% cancellation fee
+  MEDIUM_FEE_HOURS: 12,
+  MEDIUM_FEE_PERCENTAGE: 0.50,
+  // Less than 12 hours before start: 75% cancellation fee
+  HIGH_FEE_PERCENTAGE: 0.75,
+  // Minimum refund amount (to cover processing fees)
+  MIN_REFUND_AMOUNT: 1.00,
+};
+
+/**
+ * Calculate cancellation fee based on time until rental start
+ * @param {Object} rental - The rental object with startDate and totalAmount
+ * @returns {Object} - { feePercentage, feeAmount, refundAmount, hoursUntilStart, policyTier }
+ */
+const calculateCancellationFee = (rental) => {
+  const now = new Date();
+  const startDate = new Date(rental.startDate);
+  startDate.setHours(0, 0, 0, 0); // Start of rental day
+  
+  const hoursUntilStart = (startDate - now) / (1000 * 60 * 60);
+  const totalAmount = parseFloat(rental.totalAmount || rental.totalCost || 0);
+  
+  let feePercentage = 0;
+  let policyTier = 'FULL_REFUND';
+  
+  if (hoursUntilStart >= CANCELLATION_POLICY.FULL_REFUND_HOURS) {
+    // More than 48 hours: Full refund
+    feePercentage = 0;
+    policyTier = 'FULL_REFUND';
+  } else if (hoursUntilStart >= CANCELLATION_POLICY.LOW_FEE_HOURS) {
+    // 24-48 hours: 25% fee
+    feePercentage = CANCELLATION_POLICY.LOW_FEE_PERCENTAGE;
+    policyTier = 'LOW_FEE';
+  } else if (hoursUntilStart >= CANCELLATION_POLICY.MEDIUM_FEE_HOURS) {
+    // 12-24 hours: 50% fee
+    feePercentage = CANCELLATION_POLICY.MEDIUM_FEE_PERCENTAGE;
+    policyTier = 'MEDIUM_FEE';
+  } else {
+    // Less than 12 hours: 75% fee
+    feePercentage = CANCELLATION_POLICY.HIGH_FEE_PERCENTAGE;
+    policyTier = 'HIGH_FEE';
+  }
+  
+  const feeAmount = parseFloat((totalAmount * feePercentage).toFixed(2));
+  let refundAmount = parseFloat((totalAmount - feeAmount).toFixed(2));
+  
+  // Ensure minimum refund amount
+  if (refundAmount < CANCELLATION_POLICY.MIN_REFUND_AMOUNT && refundAmount > 0) {
+    refundAmount = 0;
+    // feeAmount = totalAmount; // Keep full amount as fee if refund would be too small
+  }
+  
+  return {
+    feePercentage,
+    feeAmount,
+    refundAmount,
+    hoursUntilStart: Math.max(0, hoursUntilStart),
+    policyTier,
+    totalAmount
+  };
+};
+
+// Cancel a rental (customer-initiated cancellation with cancellation policy)
 export const cancelBooking = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1133,6 +1212,11 @@ export const cancelBooking = async (req, res) => {
           as: "customer",
           attributes: ["id", "name", "email"],
         },
+        {
+          model: db.User,
+          as: "owner",
+          attributes: ["id", "name", "email"],
+        },
       ],
     });
 
@@ -1156,6 +1240,15 @@ export const cancelBooking = async (req, res) => {
       });
     }
 
+    // ============================================
+    // CALCULATE CANCELLATION FEE
+    // ============================================
+    const cancellationDetails = calculateCancellationFee(rental);
+    console.log("📋 Cancellation policy calculation:", {
+      rentalId: rental.id,
+      ...cancellationDetails
+    });
+
     // Update rental status to cancelled
     // Use a transaction to atomically update rental, payment and owner balances
     const transaction = await db.sequelize.transaction();
@@ -1174,33 +1267,42 @@ export const cancelBooking = async (req, res) => {
         await car.update({ isAvailable: true }, { transaction });
       }
 
-      // If there is a Payment record for this rental, attempt Stripe refund and
-      // reverse owner balances if the payout had already been made.
+      // If there is a Payment record for this rental, process partial/full refund
       const payment = await db.Payment.findOne({
         where: { rentalId: rental.id },
         transaction,
       });
+      
       if (payment && payment.paymentStatus !== "refunded") {
         let stripeRefundId = null;
         let transferReversalId = null;
+        const refundAmountCents = Math.round(cancellationDetails.refundAmount * 100);
+        const feeAmountCents = Math.round(cancellationDetails.feeAmount * 100);
 
         // Attempt Stripe refund if payment intent exists
         try {
-          if (payment.stripePaymentIntentId) {
+          if (payment.stripePaymentIntentId && refundAmountCents > 0) {
             console.log(
-              "Attempting Stripe refund for payment_intent:",
-              payment.stripePaymentIntentId
+              "Attempting Stripe partial refund for payment_intent:",
+              payment.stripePaymentIntentId,
+              "Amount:", cancellationDetails.refundAmount
             );
             const refundParams = {
               payment_intent: payment.stripePaymentIntentId,
+              amount: refundAmountCents, // Partial refund based on cancellation policy
+              reason: 'requested_by_customer',
+              metadata: {
+                cancellation_fee: cancellationDetails.feeAmount.toString(),
+                fee_percentage: (cancellationDetails.feePercentage * 100).toString() + '%',
+                policy_tier: cancellationDetails.policyTier,
+                hours_until_start: cancellationDetails.hoursUntilStart.toFixed(1),
+              }
             };
-            if (payment.totalAmount)
-              refundParams.amount = Math.round(
-                parseFloat(payment.totalAmount) * 100
-              );
             const refund = await stripe.refunds.create(refundParams);
             stripeRefundId = refund.id;
-            console.log("Stripe refund created:", stripeRefundId);
+            console.log("✅ Stripe partial refund created:", stripeRefundId, "Amount:", cancellationDetails.refundAmount);
+          } else if (refundAmountCents === 0) {
+            console.log("⚠️ No refund issued - cancellation fee equals total amount");
           }
         } catch (stripeErr) {
           console.error(
@@ -1266,7 +1368,7 @@ export const cancelBooking = async (req, res) => {
           }
         }
 
-        // DB updates: reverse owner balances if paid, mark payment refunded, create Refund audit
+        // DB updates: adjust owner balances based on cancellation fee, mark payment status, create Refund audit
         try {
           if (payment.payoutStatus === "paid") {
             const ownerProfile = await db.OwnerProfile.findOne({
@@ -1274,15 +1376,25 @@ export const cancelBooking = async (req, res) => {
               transaction,
             });
             if (ownerProfile) {
+              // Calculate how much to reverse from owner (proportional to refund)
               const ownerAmount = parseFloat(payment.ownerAmount || 0);
+              const totalAmount = parseFloat(payment.totalAmount || 0);
+              
+              // Owner keeps their share of the cancellation fee
+              // Refund percentage = refundAmount / totalAmount
+              const refundPercentage = totalAmount > 0 ? cancellationDetails.refundAmount / totalAmount : 1;
+              const ownerRefundAmount = parseFloat((ownerAmount * refundPercentage).toFixed(2));
+              const ownerKeepsAmount = parseFloat((ownerAmount - ownerRefundAmount).toFixed(2));
+              
               const newTotalEarnings = Math.max(
                 0,
-                parseFloat(ownerProfile.totalEarnings || 0) - ownerAmount
+                parseFloat(ownerProfile.totalEarnings || 0) - ownerRefundAmount
               );
               const newAvailableBalance = Math.max(
                 0,
-                parseFloat(ownerProfile.availableBalance || 0) - ownerAmount
+                parseFloat(ownerProfile.availableBalance || 0) - ownerRefundAmount
               );
+              
               await ownerProfile.update(
                 {
                   totalEarnings: newTotalEarnings,
@@ -1290,8 +1402,17 @@ export const cancelBooking = async (req, res) => {
                 },
                 { transaction }
               );
+              
               console.log(
-                `Reversed owner earnings for owner ${rental.ownerId}: -${ownerAmount}`
+                `📊 Owner balance adjusted for cancellation:`,
+                {
+                  ownerId: rental.ownerId,
+                  originalOwnerAmount: ownerAmount,
+                  ownerRefundAmount,
+                  ownerKeepsAmount,
+                  newTotalEarnings,
+                  newAvailableBalance
+                }
               );
             }
           }
@@ -1301,11 +1422,21 @@ export const cancelBooking = async (req, res) => {
             refundReason: reason || "Cancelled by customer",
             stripeRefundId,
             transferReversalId,
+            cancellationFee: cancellationDetails.feeAmount,
+            cancellationFeePercentage: cancellationDetails.feePercentage * 100,
+            refundAmount: cancellationDetails.refundAmount,
+            policyTier: cancellationDetails.policyTier,
+            hoursUntilStart: cancellationDetails.hoursUntilStart,
           });
+
+          // Update payment status based on whether full or partial refund
+          const newPaymentStatus = cancellationDetails.refundAmount > 0 
+            ? (cancellationDetails.feeAmount > 0 ? "partial_refund" : "refunded")
+            : "cancelled_no_refund";
 
           await payment.update(
             {
-              paymentStatus: "refunded",
+              paymentStatus: newPaymentStatus,
               payoutStatus:
                 payment.payoutStatus === "paid"
                   ? "failed"
@@ -1315,7 +1446,9 @@ export const cancelBooking = async (req, res) => {
             { transaction }
           );
 
-          await rental.update({ paymentStatus: "refunded" }, { transaction });
+          await rental.update({ 
+            paymentStatus: newPaymentStatus,
+          }, { transaction });
 
           // Create Refund audit record
           try {
@@ -1326,10 +1459,18 @@ export const cancelBooking = async (req, res) => {
                 ownerId: rental.ownerId,
                 customerId: rental.customerId,
                 stripeRefundId: stripeRefundId,
-                amount: parseFloat(payment.totalAmount || 0),
+                amount: cancellationDetails.refundAmount, // Actual refund amount (after fee)
                 currency: payment.currency || "usd",
                 reason: reason || "Cancelled by customer",
-                metadata: { stripeRefundId, transferReversalId },
+                metadata: { 
+                  stripeRefundId, 
+                  transferReversalId,
+                  originalAmount: cancellationDetails.totalAmount,
+                  cancellationFee: cancellationDetails.feeAmount,
+                  feePercentage: cancellationDetails.feePercentage * 100,
+                  policyTier: cancellationDetails.policyTier,
+                  hoursUntilStart: cancellationDetails.hoursUntilStart,
+                },
               },
               { transaction }
             );
@@ -1358,27 +1499,57 @@ export const cancelBooking = async (req, res) => {
     }
 
     // Send notification to owner about cancellation
-    const notificationResult =
-      await NotificationService.notifyOwnerBookingCancelled(rental, reason);
-    if (notificationResult.success) {
-      console.log(
-        `✅ Owner notification sent successfully for cancelled rental ${rental.id}`
-      );
-    } else {
-      console.error(
-        `❌ Failed to send owner notification: ${notificationResult.error}`
-      );
+    try {
+      const notificationResult =
+        await NotificationService.notifyOwnerBookingCancelled(rental, reason);
+      if (notificationResult.success) {
+        console.log(
+          `✅ Owner notification sent successfully for cancelled rental ${rental.id}`
+        );
+      } else {
+        console.error(
+          `❌ Failed to send owner notification: ${notificationResult.error}`
+        );
+      }
+    } catch (notifErr) {
+      console.error("Error sending cancellation notification:", notifErr);
     }
 
-    // Refund processing attempted and recorded (if payment existed).
-
+    // Return response with cancellation details
     res.json({
       message: "Booking cancelled successfully",
       rental: rental,
+      cancellation: {
+        policyTier: cancellationDetails.policyTier,
+        hoursUntilStart: Math.round(cancellationDetails.hoursUntilStart),
+        originalAmount: cancellationDetails.totalAmount,
+        cancellationFee: cancellationDetails.feeAmount,
+        feePercentage: Math.round(cancellationDetails.feePercentage * 100),
+        refundAmount: cancellationDetails.refundAmount,
+        refundMessage: getCancellationMessage(cancellationDetails),
+      },
     });
   } catch (error) {
     console.error("Error cancelling booking:", error);
     res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * Get human-readable cancellation message based on policy tier
+ */
+const getCancellationMessage = (details) => {
+  switch (details.policyTier) {
+    case 'FULL_REFUND':
+      return `Full refund of $${details.refundAmount.toFixed(2)} will be processed.`;
+    case 'LOW_FEE':
+      return `A 25% cancellation fee ($${details.feeAmount.toFixed(2)}) applies. You will receive a refund of $${details.refundAmount.toFixed(2)}.`;
+    case 'MEDIUM_FEE':
+      return `A 50% cancellation fee ($${details.feeAmount.toFixed(2)}) applies. You will receive a refund of $${details.refundAmount.toFixed(2)}.`;
+    case 'HIGH_FEE':
+      return `A 75% cancellation fee ($${details.feeAmount.toFixed(2)}) applies due to late cancellation. You will receive a refund of $${details.refundAmount.toFixed(2)}.`;
+    default:
+      return `Refund of $${details.refundAmount.toFixed(2)} will be processed.`;
   }
 };
 
@@ -1524,6 +1695,87 @@ export const getOwnerActiveRentals = async (req, res) => {
     res.json(activeRentals);
   } catch (error) {
     console.error("getOwnerActiveRentals - Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Preview cancellation fee before actually cancelling
+export const getCancellationPreview = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const rental = await db.Rental.findOne({
+      where: {
+        id: id,
+        customerId: req.user.id,
+      },
+      include: [
+        {
+          model: db.Car,
+          as: "car",
+          attributes: ["id", "name", "model", "brand", "year"],
+        },
+      ],
+    });
+
+    if (!rental) {
+      return res.status(404).json({
+        message: "Rental not found or you don't have permission to view it",
+      });
+    }
+
+    // Check if rental can be cancelled
+    if (rental.status === "completed" || rental.status === "cancelled") {
+      return res.status(400).json({
+        message: "This booking is already completed or cancelled",
+        canCancel: false,
+      });
+    }
+
+    if (rental.status === "active") {
+      return res.status(400).json({
+        message: "Cannot cancel an active rental. Please contact support.",
+        canCancel: false,
+      });
+    }
+
+    // Calculate cancellation fee
+    const cancellationDetails = calculateCancellationFee(rental);
+
+    res.json({
+      canCancel: true,
+      rental: {
+        id: rental.id,
+        car: rental.car,
+        startDate: rental.startDate,
+        endDate: rental.endDate,
+        status: rental.status,
+      },
+      cancellation: {
+        policyTier: cancellationDetails.policyTier,
+        hoursUntilStart: Math.round(cancellationDetails.hoursUntilStart),
+        originalAmount: cancellationDetails.totalAmount,
+        cancellationFee: cancellationDetails.feeAmount,
+        feePercentage: Math.round(cancellationDetails.feePercentage * 100),
+        refundAmount: cancellationDetails.refundAmount,
+        message: getCancellationMessage(cancellationDetails),
+      },
+      policy: {
+        description: "Cancellation Policy",
+        tiers: [
+          { name: "Full Refund", condition: "More than 48 hours before start", fee: "0%" },
+          { name: "Low Fee", condition: "24-48 hours before start", fee: "25%" },
+          { name: "Medium Fee", condition: "12-24 hours before start", fee: "50%" },
+          { name: "High Fee", condition: "Less than 12 hours before start", fee: "75%" },
+        ],
+      },
+    });
+  } catch (error) {
+    console.error("Error getting cancellation preview:", error);
     res.status(500).json({ error: error.message });
   }
 };
