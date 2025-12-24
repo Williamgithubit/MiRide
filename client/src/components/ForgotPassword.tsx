@@ -1,6 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { FaEnvelope, FaSpinner, FaCheckCircle, FaExclamationCircle, FaArrowLeft } from "react-icons/fa";
+import {
+  FaEnvelope,
+  FaSpinner,
+  FaCheckCircle,
+  FaExclamationCircle,
+  FaArrowLeft,
+} from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useForgotPasswordMutation } from "../store/Auth/authApi";
 import MiRideLogo from "../assets/MiRide Logo.png";
@@ -35,11 +41,19 @@ const ForgotPassword: React.FC = () => {
     }
 
     try {
-      await forgotPassword({ email: email.trim() }).unwrap();
+      // Normalize email for Gmail addresses (remove dots from local part)
+      let normalizedEmail = email.toLowerCase().trim();
+      if (normalizedEmail.endsWith("@gmail.com")) {
+        const [localPart, domain] = normalizedEmail.split("@");
+        normalizedEmail = `${localPart.replace(/\./g, "")}@${domain}`;
+      }
+
+      await forgotPassword({ email: normalizedEmail }).unwrap();
       setIsSubmitted(true);
       toast.success("Password reset link sent! Check your email.");
     } catch (err: any) {
-      const errorMessage = err?.data?.message || "Failed to send reset link. Please try again.";
+      const errorMessage =
+        err?.data?.message || "Failed to send reset link. Please try again.";
       setError(errorMessage);
       toast.error(errorMessage);
     }
@@ -53,20 +67,20 @@ const ForgotPassword: React.FC = () => {
           <div className="flex justify-center mb-6">
             <img src={MiRideLogo} alt="MiRide" className="h-16 w-auto" />
           </div>
-          
+
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <FaCheckCircle className="w-8 h-8 text-green-600" />
           </div>
-          
+
           <h2 className="text-2xl font-bold text-gray-800 mb-4">
             Check Your Email
           </h2>
-          
+
           <p className="text-gray-600 mb-6">
             We've sent a password reset link to{" "}
             <span className="font-semibold text-gray-800">{email}</span>
           </p>
-          
+
           <p className="text-sm text-gray-500 mb-8">
             Didn't receive the email? Check your spam folder or{" "}
             <button
@@ -79,7 +93,7 @@ const ForgotPassword: React.FC = () => {
               try again
             </button>
           </p>
-          
+
           <Link
             to="/login"
             className="inline-flex items-center justify-center gap-2 w-full py-3 px-4 bg-green-800 text-white rounded-md font-medium hover:bg-green-700 transition-colors"
@@ -98,11 +112,11 @@ const ForgotPassword: React.FC = () => {
         <div className="flex justify-center mb-6">
           <img src={MiRideLogo} alt="MiRide" className="h-16 w-auto" />
         </div>
-        
+
         <h2 className="text-3xl font-bold text-center text-primary-500 mb-2">
           Forgot Password?
         </h2>
-        
+
         <p className="text-center text-gray-600 mb-6">
           No worries! Enter your email and we'll send you a reset link.
         </p>

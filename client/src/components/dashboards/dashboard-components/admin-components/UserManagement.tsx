@@ -1,10 +1,10 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { 
-  Eye, 
-  Edit, 
-  Trash2, 
-  Search, 
-  UserPlus, 
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import {
+  Eye,
+  Edit,
+  Trash2,
+  Search,
+  UserPlus,
   MoreHorizontal,
   CheckSquare,
   Square,
@@ -14,9 +14,9 @@ import {
   ChevronRight,
   ArrowUpDown,
   ArrowUp,
-  ArrowDown
-} from 'lucide-react';
-import { toast } from 'react-hot-toast';
+  ArrowDown,
+} from "lucide-react";
+import { toast } from "react-hot-toast";
 import {
   useGetUsersQuery,
   useUpdateUserMutation,
@@ -28,24 +28,25 @@ import {
   type User,
   type UserFilters,
   type CreateUserData,
-  type UpdateUserData
-} from '../../../../store/User/userManagementApi';
-import UserDetailsModal from './UserDetailsModal';
+  type UpdateUserData,
+} from "../../../../store/User/userManagementApi";
+import UserDetailsModal from "./UserDetailsModal";
+import EditUserModal from "./EditUserModal";
 
 const UserManagement: React.FC = () => {
   // State management
   const [filters, setFilters] = useState<UserFilters>({
-    search: '',
-    role: 'all',
-    status: 'all',
+    search: "",
+    role: "all",
+    status: "all",
     page: 1,
     limit: 10,
-    sortBy: 'createdAt',
-    sortOrder: 'desc'
+    sortBy: "createdAt",
+    sortOrder: "desc",
   });
-  
-  const [searchInput, setSearchInput] = useState('');
-  
+
+  const [searchInput, setSearchInput] = useState("");
+
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [showDetailsModal, setShowDetailsModal] = useState<User | null>(null);
   const [showEditModal, setShowEditModal] = useState<User | null>(null);
@@ -53,18 +54,23 @@ const UserManagement: React.FC = () => {
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [newUserData, setNewUserData] = useState<CreateUserData>({
-    name: '',
-    email: '',
-    password: '',
-    role: 'customer',
-    phone: '',
-    isActive: true
+    name: "",
+    email: "",
+    password: "",
+    role: "customer",
+    phone: "",
+    isActive: true,
   });
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [editUserData, setEditUserData] = useState<UpdateUserData>({});
 
   // API queries and mutations
-  const { data: usersData, isLoading, error, refetch } = useGetUsersQuery(filters);
+  const {
+    data: usersData,
+    isLoading,
+    error,
+    refetch,
+  } = useGetUsersQuery(filters);
   const { data: userStats } = useGetUserStatsQuery();
   const [createUser] = useCreateUserMutation();
   const [updateUser] = useUpdateUserMutation();
@@ -75,7 +81,7 @@ const UserManagement: React.FC = () => {
   // Debounced search effect
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      setFilters(prev => ({ ...prev, search: searchInput, page: 1 }));
+      setFilters((prev) => ({ ...prev, search: searchInput, page: 1 }));
     }, 300);
 
     return () => clearTimeout(timeoutId);
@@ -84,8 +90,10 @@ const UserManagement: React.FC = () => {
   // Computed values
   const users = usersData?.users || [];
   const totalPages = usersData?.totalPages || 1;
-  const isAllSelected = users.length > 0 && selectedUsers.length === users.length;
-  const isSomeSelected = selectedUsers.length > 0 && selectedUsers.length < users.length;
+  const isAllSelected =
+    users.length > 0 && selectedUsers.length === users.length;
+  const isSomeSelected =
+    selectedUsers.length > 0 && selectedUsers.length < users.length;
 
   // Handlers
   const handleSearch = (value: string) => {
@@ -93,14 +101,15 @@ const UserManagement: React.FC = () => {
   };
 
   const handleFilterChange = (key: keyof UserFilters, value: any) => {
-    setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
+    setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
   };
 
   const handleSort = (sortBy: string) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       sortBy: sortBy as any,
-      sortOrder: prev.sortBy === sortBy && prev.sortOrder === 'asc' ? 'desc' : 'asc'
+      sortOrder:
+        prev.sortBy === sortBy && prev.sortOrder === "asc" ? "desc" : "asc",
     }));
   };
 
@@ -108,41 +117,51 @@ const UserManagement: React.FC = () => {
     if (isAllSelected) {
       setSelectedUsers([]);
     } else {
-      setSelectedUsers(users.map(user => user.id));
+      setSelectedUsers(users.map((user) => user.id));
     }
   };
 
   const handleSelectUser = (userId: string) => {
-    setSelectedUsers(prev => 
-      prev.includes(userId) 
-        ? prev.filter(id => id !== userId)
+    setSelectedUsers((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
         : [...prev, userId]
     );
   };
 
   const handleToggleStatus = async (user: User) => {
     try {
-      await toggleUserStatus({ userId: user.id, isActive: !user.isActive }).unwrap();
-      toast.success(`User ${user.isActive ? 'deactivated' : 'activated'} successfully`);
+      await toggleUserStatus({
+        userId: user.id,
+        isActive: !user.isActive,
+      }).unwrap();
+      toast.success(
+        `User ${user.isActive ? "deactivated" : "activated"} successfully`
+      );
     } catch (error) {
-      toast.error('Failed to update user status');
+      toast.error("Failed to update user status");
     }
   };
 
   const handleDeleteUser = async (userId: string) => {
     try {
       await deleteUser(userId).unwrap();
-      toast.success('User deleted successfully');
+      toast.success("User deleted successfully");
       setShowDeleteModal(null);
-      setSelectedUsers(prev => prev.filter(id => id !== userId));
+      setSelectedUsers((prev) => prev.filter((id) => id !== userId));
     } catch (error) {
-      toast.error('Failed to delete user');
+      toast.error("Failed to delete user");
     }
   };
 
-  const handleBulkAction = async (action: 'activate' | 'deactivate' | 'delete') => {
+  const handleBulkAction = async (
+    action: "activate" | "deactivate" | "delete"
+  ) => {
     try {
-      const result = await bulkUserAction({ userIds: selectedUsers, action }).unwrap();
+      const result = await bulkUserAction({
+        userIds: selectedUsers,
+        action,
+      }).unwrap();
       toast.success(`${result.affectedCount} users ${action}d successfully`);
       setSelectedUsers([]);
       setShowBulkModal(false);
@@ -153,42 +172,45 @@ const UserManagement: React.FC = () => {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate password match
     if (newUserData.password !== confirmPassword) {
-      toast.error('Passwords do not match');
+      toast.error("Passwords do not match");
       return;
     }
-    
+
     try {
       await createUser(newUserData).unwrap();
-      toast.success('User created successfully');
+      toast.success("User created successfully");
       setShowAddUserModal(false);
       setNewUserData({
-        name: '',
-        email: '',
-        password: '',
-        role: 'customer',
-        phone: '',
-        isActive: true
+        name: "",
+        email: "",
+        password: "",
+        role: "customer",
+        phone: "",
+        isActive: true,
       });
-      setConfirmPassword('');
+      setConfirmPassword("");
     } catch (error: any) {
-      toast.error(error?.data?.message || 'Failed to create user');
+      toast.error(error?.data?.message || "Failed to create user");
     }
   };
 
   const handleEditUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!showEditModal) return;
-    
+
     try {
-      await updateUser({ userId: showEditModal.id, data: editUserData }).unwrap();
-      toast.success('User updated successfully');
+      await updateUser({
+        userId: showEditModal.id,
+        data: editUserData,
+      }).unwrap();
+      toast.success("User updated successfully");
       setShowEditModal(null);
       setEditUserData({});
     } catch (error: any) {
-      toast.error(error?.data?.message || 'Failed to update user');
+      toast.error(error?.data?.message || "Failed to update user");
     }
   };
 
@@ -198,39 +220,47 @@ const UserManagement: React.FC = () => {
       name: user.name,
       email: user.email,
       role: user.role,
-      phone: user.phone || '',
-      isActive: user.isActive
+      phone: user.phone || "",
+      isActive: user.isActive,
     });
   };
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
-      case 'admin': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      case 'owner': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'customer': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+      case "admin":
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+      case "owner":
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+      case "customer":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
     }
   };
 
   const getStatusBadgeColor = (isActive: boolean) => {
-    return isActive 
-      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-      : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+    return isActive
+      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+      : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
   };
 
   const getSortIcon = (column: string) => {
     if (filters.sortBy !== column) return <ArrowUpDown className="w-4 h-4" />;
-    return filters.sortOrder === 'asc' 
-      ? <ArrowUp className="w-4 h-4" /> 
-      : <ArrowDown className="w-4 h-4" />;
+    return filters.sortOrder === "asc" ? (
+      <ArrowUp className="w-4 h-4" />
+    ) : (
+      <ArrowDown className="w-4 h-4" />
+    );
   };
 
   if (error) {
     return (
       <div className="text-center py-8">
-        <p className="text-red-600 dark:text-red-400">Error loading users. Please try again.</p>
-        <button 
-          onClick={() => refetch()} 
+        <p className="text-red-600 dark:text-red-400">
+          Error loading users. Please try again.
+        </p>
+        <button
+          onClick={() => refetch()}
           className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           Retry
@@ -244,10 +274,14 @@ const UserManagement: React.FC = () => {
       {/* Header with Stats */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">User Management</h3>
-          <p className="text-gray-600 dark:text-gray-400">Manage system users and their permissions</p>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+            User Management
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400">
+            Manage system users and their permissions
+          </p>
         </div>
-        <button 
+        <button
           onClick={() => setShowAddUserModal(true)}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
@@ -262,8 +296,12 @@ const UserManagement: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{userStats.totalUsers}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Total Users
+                </p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {userStats.totalUsers}
+                </p>
               </div>
               <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
                 <Eye className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -273,8 +311,12 @@ const UserManagement: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Active Users</p>
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{userStats.activeUsers}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Active Users
+                </p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {userStats.activeUsers}
+                </p>
               </div>
               <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
                 <UserCheck className="w-6 h-6 text-green-600 dark:text-green-400" />
@@ -284,8 +326,12 @@ const UserManagement: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Inactive Users</p>
-                <p className="text-2xl font-bold text-red-600 dark:text-red-400">{userStats.inactiveUsers}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Inactive Users
+                </p>
+                <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                  {userStats.inactiveUsers}
+                </p>
               </div>
               <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg">
                 <UserX className="w-6 h-6 text-red-600 dark:text-red-400" />
@@ -295,8 +341,12 @@ const UserManagement: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">New This Month</p>
-                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{userStats.newUsersThisMonth}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  New This Month
+                </p>
+                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                  {userStats.newUsersThisMonth}
+                </p>
               </div>
               <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
                 <UserPlus className="w-6 h-6 text-purple-600 dark:text-purple-400" />
@@ -327,7 +377,7 @@ const UserManagement: React.FC = () => {
           <div className="flex gap-2">
             <select
               value={filters.role}
-              onChange={(e) => handleFilterChange('role', e.target.value)}
+              onChange={(e) => handleFilterChange("role", e.target.value)}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="all">All Roles</option>
@@ -338,7 +388,7 @@ const UserManagement: React.FC = () => {
 
             <select
               value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
+              onChange={(e) => handleFilterChange("status", e.target.value)}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="all">All Status</option>
@@ -379,7 +429,9 @@ const UserManagement: React.FC = () => {
         {isLoading ? (
           <div className="p-8 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600 dark:text-gray-400">Loading users...</p>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
+              Loading users...
+            </p>
           </div>
         ) : users.length === 0 ? (
           <div className="p-8 text-center">
@@ -408,10 +460,10 @@ const UserManagement: React.FC = () => {
                     </th>
                     <th className="px-4 py-3 text-left">
                       <button
-                        onClick={() => handleSort('name')}
+                        onClick={() => handleSort("name")}
                         className="flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
                       >
-                        Name {getSortIcon('name')}
+                        Name {getSortIcon("name")}
                       </button>
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -425,10 +477,10 @@ const UserManagement: React.FC = () => {
                     </th>
                     <th className="px-4 py-3 text-left">
                       <button
-                        onClick={() => handleSort('createdAt')}
+                        onClick={() => handleSort("createdAt")}
                         className="flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
                       >
-                        Join Date {getSortIcon('createdAt')}
+                        Join Date {getSortIcon("createdAt")}
                       </button>
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -438,7 +490,10 @@ const UserManagement: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
                   {users.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <tr
+                      key={user.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
                       <td className="px-4 py-3">
                         <button
                           onClick={() => handleSelectUser(user.id)}
@@ -457,19 +512,32 @@ const UserManagement: React.FC = () => {
                             {user.name.charAt(0).toUpperCase()}
                           </div>
                           <div className="ml-3">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              {user.name}
+                            </p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{user.email}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                        {user.email}
+                      </td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
-                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(
+                            user.role
+                          )}`}
+                        >
+                          {user.role.charAt(0).toUpperCase() +
+                            user.role.slice(1)}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(user.isActive)}`}>
-                          {user.isActive ? 'Active' : 'Inactive'}
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(
+                            user.isActive
+                          )}`}
+                        >
+                          {user.isActive ? "Active" : "Inactive"}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
@@ -493,13 +561,18 @@ const UserManagement: React.FC = () => {
                           </button>
                           <button
                             onClick={() => handleToggleStatus(user)}
-                            className={`p-1 rounded ${user.isActive 
-                              ? 'text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900' 
-                              : 'text-green-600 hover:bg-green-100 dark:hover:bg-green-900'
+                            className={`p-1 rounded ${
+                              user.isActive
+                                ? "text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900"
+                                : "text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
                             }`}
-                            title={user.isActive ? 'Deactivate' : 'Activate'}
+                            title={user.isActive ? "Deactivate" : "Activate"}
                           >
-                            {user.isActive ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                            {user.isActive ? (
+                              <UserX className="w-4 h-4" />
+                            ) : (
+                              <UserCheck className="w-4 h-4" />
+                            )}
                           </button>
                           <button
                             onClick={() => setShowDeleteModal(user)}
@@ -519,7 +592,10 @@ const UserManagement: React.FC = () => {
             {/* Mobile Cards */}
             <div className="md:hidden space-y-4 p-4">
               {users.map((user) => (
-                <div key={user.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <div
+                  key={user.id}
+                  className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4"
+                >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center">
                       <button
@@ -536,22 +612,34 @@ const UserManagement: React.FC = () => {
                         {user.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="ml-3">
-                        <p className="font-medium text-gray-900 dark:text-white">{user.name}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{user.email}</p>
+                        <p className="font-medium text-gray-900 dark:text-white">
+                          {user.name}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {user.email}
+                        </p>
                       </div>
                     </div>
                     <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                       <MoreHorizontal className="w-5 h-5" />
                     </button>
                   </div>
-                  
+
                   <div className="mt-3 flex items-center justify-between">
                     <div className="flex gap-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(
+                          user.role
+                        )}`}
+                      >
                         {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                       </span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(user.isActive)}`}>
-                        {user.isActive ? 'Active' : 'Inactive'}
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(
+                          user.isActive
+                        )}`}
+                      >
+                        {user.isActive ? "Active" : "Inactive"}
                       </span>
                     </div>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -574,12 +662,17 @@ const UserManagement: React.FC = () => {
                     </button>
                     <button
                       onClick={() => handleToggleStatus(user)}
-                      className={`p-2 rounded ${user.isActive 
-                        ? 'text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900' 
-                        : 'text-green-600 hover:bg-green-100 dark:hover:bg-green-900'
+                      className={`p-2 rounded ${
+                        user.isActive
+                          ? "text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900"
+                          : "text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
                       }`}
                     >
-                      {user.isActive ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                      {user.isActive ? (
+                        <UserX className="w-4 h-4" />
+                      ) : (
+                        <UserCheck className="w-4 h-4" />
+                      )}
                     </button>
                     <button
                       onClick={() => setShowDeleteModal(user)}
@@ -604,7 +697,9 @@ const UserManagement: React.FC = () => {
                 </span>
                 <select
                   value={filters.limit}
-                  onChange={(e) => handleFilterChange('limit', Number(e.target.value))}
+                  onChange={(e) =>
+                    handleFilterChange("limit", Number(e.target.value))
+                  }
                   className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 >
                   <option value={5}>5 per page</option>
@@ -613,38 +708,47 @@ const UserManagement: React.FC = () => {
                   <option value={50}>50 per page</option>
                 </select>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => handleFilterChange('page', Math.max(1, filters.page! - 1))}
+                  onClick={() =>
+                    handleFilterChange("page", Math.max(1, filters.page! - 1))
+                  }
                   disabled={filters.page === 1}
                   className="p-1 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-600"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                
+
                 {/* Page numbers */}
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const pageNum = Math.max(1, Math.min(totalPages - 4, filters.page! - 2)) + i;
+                  const pageNum =
+                    Math.max(1, Math.min(totalPages - 4, filters.page! - 2)) +
+                    i;
                   if (pageNum > totalPages) return null;
-                  
+
                   return (
                     <button
                       key={pageNum}
-                      onClick={() => handleFilterChange('page', pageNum)}
+                      onClick={() => handleFilterChange("page", pageNum)}
                       className={`px-3 py-1 rounded text-sm ${
                         filters.page === pageNum
-                          ? 'bg-blue-600 text-white'
-                          : 'border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
+                          ? "bg-blue-600 text-white"
+                          : "border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
                       }`}
                     >
                       {pageNum}
                     </button>
                   );
                 })}
-                
+
                 <button
-                  onClick={() => handleFilterChange('page', Math.min(totalPages, filters.page! + 1))}
+                  onClick={() =>
+                    handleFilterChange(
+                      "page",
+                      Math.min(totalPages, filters.page! + 1)
+                    )
+                  }
                   disabled={filters.page === totalPages}
                   className="p-1 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-600"
                 >
@@ -667,9 +771,13 @@ const UserManagement: React.FC = () => {
       {showDeleteModal && (
         <div className="fixed inset-0 backdrop-blur-sm bg-gray-900/30 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold mb-4 text-red-600">Delete User</h3>
+            <h3 className="text-lg font-semibold mb-4 text-red-600">
+              Delete User
+            </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Are you sure you want to delete <strong>{showDeleteModal.name}</strong>? This action cannot be undone.
+              Are you sure you want to delete{" "}
+              <strong>{showDeleteModal.name}</strong>? This action cannot be
+              undone.
             </p>
             <div className="flex justify-end gap-2">
               <button
@@ -693,7 +801,9 @@ const UserManagement: React.FC = () => {
       {showAddUserModal && (
         <div className="fixed inset-0 backdrop-blur-sm bg-gray-900/30 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Add New User</h3>
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+              Add New User
+            </h3>
             <form onSubmit={handleCreateUser} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -703,11 +813,16 @@ const UserManagement: React.FC = () => {
                   type="text"
                   required
                   value={newUserData.name}
-                  onChange={(e) => setNewUserData(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) =>
+                    setNewUserData((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Email *
@@ -716,11 +831,16 @@ const UserManagement: React.FC = () => {
                   type="email"
                   required
                   value={newUserData.email}
-                  onChange={(e) => setNewUserData(prev => ({ ...prev, email: e.target.value }))}
+                  onChange={(e) =>
+                    setNewUserData((prev) => ({
+                      ...prev,
+                      email: e.target.value,
+                    }))
+                  }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Password *
@@ -729,11 +849,16 @@ const UserManagement: React.FC = () => {
                   type="password"
                   required
                   value={newUserData.password}
-                  onChange={(e) => setNewUserData(prev => ({ ...prev, password: e.target.value }))}
+                  onChange={(e) =>
+                    setNewUserData((prev) => ({
+                      ...prev,
+                      password: e.target.value,
+                    }))
+                  }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Confirm Password *
@@ -746,7 +871,7 @@ const UserManagement: React.FC = () => {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Phone
@@ -754,11 +879,16 @@ const UserManagement: React.FC = () => {
                 <input
                   type="tel"
                   value={newUserData.phone}
-                  onChange={(e) => setNewUserData(prev => ({ ...prev, phone: e.target.value }))}
+                  onChange={(e) =>
+                    setNewUserData((prev) => ({
+                      ...prev,
+                      phone: e.target.value,
+                    }))
+                  }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Role *
@@ -766,7 +896,12 @@ const UserManagement: React.FC = () => {
                 <select
                   required
                   value={newUserData.role}
-                  onChange={(e) => setNewUserData(prev => ({ ...prev, role: e.target.value as any }))}
+                  onChange={(e) =>
+                    setNewUserData((prev) => ({
+                      ...prev,
+                      role: e.target.value as any,
+                    }))
+                  }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   <option value="customer">Customer</option>
@@ -774,34 +909,42 @@ const UserManagement: React.FC = () => {
                   <option value="admin">Admin</option>
                 </select>
               </div>
-              
+
               <div className="flex items-center">
                 <input
                   type="checkbox"
                   id="isActive"
                   checked={newUserData.isActive}
-                  onChange={(e) => setNewUserData(prev => ({ ...prev, isActive: e.target.checked }))}
+                  onChange={(e) =>
+                    setNewUserData((prev) => ({
+                      ...prev,
+                      isActive: e.target.checked,
+                    }))
+                  }
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="isActive"
+                  className="ml-2 block text-sm text-gray-700 dark:text-gray-300"
+                >
                   Active User
                 </label>
               </div>
-              
+
               <div className="flex justify-end gap-2 pt-4">
                 <button
                   type="button"
                   onClick={() => {
                     setShowAddUserModal(false);
                     setNewUserData({
-                      name: '',
-                      email: '',
-                      password: '',
-                      role: 'customer',
-                      phone: '',
-                      isActive: true
+                      name: "",
+                      email: "",
+                      password: "",
+                      role: "customer",
+                      phone: "",
+                      isActive: true,
                     });
-                    setConfirmPassword('');
+                    setConfirmPassword("");
                   }}
                   className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
                 >
@@ -819,98 +962,19 @@ const UserManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Edit User Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 backdrop-blur-sm bg-gray-900/30 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Edit User</h3>
-            <form onSubmit={handleEditUser} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  value={editUserData.name || ''}
-                  onChange={(e) => setEditUserData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={editUserData.email || ''}
-                  onChange={(e) => setEditUserData(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  value={editUserData.phone || ''}
-                  onChange={(e) => setEditUserData(prev => ({ ...prev, phone: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Role
-                </label>
-                <select
-                  value={editUserData.role || ''}
-                  onChange={(e) => setEditUserData(prev => ({ ...prev, role: e.target.value as any }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option value="customer">Customer</option>
-                  <option value="owner">Owner</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="editIsActive"
-                  checked={editUserData.isActive || false}
-                  onChange={(e) => setEditUserData(prev => ({ ...prev, isActive: e.target.checked }))}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="editIsActive" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                  Active User
-                </label>
-              </div>
-              
-              <div className="flex justify-end gap-2 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEditModal(null);
-                    setEditUserData({});
-                  }}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Update User
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Edit User Modal - Modern Version */}
+      <EditUserModal
+        user={showEditModal}
+        onClose={() => {
+          setShowEditModal(null);
+          setEditUserData({});
+        }}
+        onUpdate={(updatedUser) => {
+          setShowEditModal(null);
+          setEditUserData({});
+          refetch();
+        }}
+      />
     </div>
   );
 };

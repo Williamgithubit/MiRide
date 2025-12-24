@@ -1,18 +1,18 @@
-import React, { useState, useMemo } from 'react';
-import { 
-  FaPlus, 
-  FaSearch, 
-  FaFilter, 
-  FaStar, 
-  FaSpinner, 
+import React, { useState, useMemo } from "react";
+import {
+  FaPlus,
+  FaSearch,
+  FaFilter,
+  FaStar,
+  FaSpinner,
   FaExclamationCircle,
   FaChevronLeft,
   FaChevronRight,
-  FaCar
-} from 'react-icons/fa';
-import { toast } from 'react-hot-toast';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store/store';
+  FaCar,
+} from "react-icons/fa";
+import { toast } from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
 import {
   useGetReviewsByCustomerQuery,
   useCreateReviewMutation,
@@ -20,23 +20,23 @@ import {
   useDeleteReviewMutation,
   Review,
   CreateReview,
-  UpdateReview
-} from '@/store/Review/reviewApi';
-import { useGetCustomerRentalsQuery, Rental } from '@/store/Rental/rentalApi';
-import ReviewCard from './review-components/ReviewCard';
-import ReviewForm from './review-components/ReviewForm';
-import StarRating from './review-components/StarRating';
-import { getPrimaryImageUrl } from '@/utils/imageUtils';
+  UpdateReview,
+} from "@/store/Review/reviewApi";
+import { useGetCustomerRentalsQuery, Rental } from "@/store/Rental/rentalApi";
+import ReviewCard from "./review-components/ReviewCard";
+import ReviewForm from "./review-components/ReviewForm";
+import StarRating from "./review-components/StarRating";
+import { getPrimaryImageUrl } from "@/utils/imageUtils";
 
 const MyReviews: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [ratingFilter, setRatingFilter] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [selectedReview, setSelectedReview] = useState<Review | null>(null);
   const [selectedRental, setSelectedRental] = useState<Rental | null>(null);
-  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+  const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const itemsPerPage = 6;
 
   // API hooks
@@ -44,65 +44,72 @@ const MyReviews: React.FC = () => {
     data: reviews = [],
     isLoading: reviewsLoading,
     error: reviewsError,
-    refetch: refetchReviews
-  } = useGetReviewsByCustomerQuery(user?.id || '', {
-    skip: !user?.id
+    refetch: refetchReviews,
+  } = useGetReviewsByCustomerQuery(user?.id || "", {
+    skip: !user?.id,
   });
 
   const {
     data: rentals = [],
     isLoading: rentalsLoading,
-    error: rentalsError
+    error: rentalsError,
   } = useGetCustomerRentalsQuery();
 
-  const [createReview, { isLoading: createLoading }] = useCreateReviewMutation();
-  const [updateReview, { isLoading: updateLoading }] = useUpdateReviewMutation();
-  const [deleteReview, { isLoading: deleteLoading }] = useDeleteReviewMutation();
+  const [createReview, { isLoading: createLoading }] =
+    useCreateReviewMutation();
+  const [updateReview, { isLoading: updateLoading }] =
+    useUpdateReviewMutation();
+  const [deleteReview, { isLoading: deleteLoading }] =
+    useDeleteReviewMutation();
 
   // Get completed rentals that can be reviewed
   const completedRentals = useMemo(() => {
     if (!rentals || !Array.isArray(rentals)) {
-      console.log('MyReviews - No rentals data or not an array:', rentals);
+      console.log("MyReviews - No rentals data or not an array:", rentals);
       return [];
     }
-    
-    console.log('MyReviews - Total rentals:', rentals.length);
-    console.log('MyReviews - Rentals data:', rentals);
-    
-    const reviewedRentalIds = new Set(reviews.map(review => review.rentalId));
+
+    console.log("MyReviews - Total rentals:", rentals.length);
+    console.log("MyReviews - Rentals data:", rentals);
+
+    const reviewedRentalIds = new Set(reviews.map((review) => review.rentalId));
     const now = new Date();
-    
-    const reviewableRentals = rentals.filter(rental => {
+
+    const reviewableRentals = rentals.filter((rental) => {
       if (!rental || !rental.id) {
-        console.log('MyReviews - Invalid rental (no id):', rental);
+        console.log("MyReviews - Invalid rental (no id):", rental);
         return false;
       }
-      
+
       // Check if rental has already been reviewed
       if (reviewedRentalIds.has(rental.id)) {
         console.log(`MyReviews - Rental ${rental.id} already reviewed`);
         return false;
       }
-      
+
       // Don't allow reviews for cancelled or rejected rentals
-      if (rental.status === 'cancelled' || rental.status === 'rejected') {
-        console.log(`MyReviews - Rental ${rental.id} is ${rental.status}, not reviewable`);
+      if (rental.status === "cancelled" || rental.status === "rejected") {
+        console.log(
+          `MyReviews - Rental ${rental.id} is ${rental.status}, not reviewable`
+        );
         return false;
       }
-      
+
       // Don't allow reviews for pending approval
-      if (rental.status === 'pending_approval') {
-        console.log(`MyReviews - Rental ${rental.id} is pending approval, not reviewable yet`);
+      if (rental.status === "pending_approval") {
+        console.log(
+          `MyReviews - Rental ${rental.id} is pending approval, not reviewable yet`
+        );
         return false;
       }
-      
+
       // A rental is reviewable if:
       // 1. It has status 'completed', OR
       // 2. Its endDate has passed (for active or approved rentals)
       const endDate = new Date(rental.endDate);
-      const isCompleted = rental.status === 'completed';
+      const isCompleted = rental.status === "completed";
       const hasEnded = endDate < now;
-      
+
       console.log(`MyReviews - Rental ${rental.id}:`, {
         status: rental.status,
         endDate: rental.endDate,
@@ -111,26 +118,33 @@ const MyReviews: React.FC = () => {
         isCompleted,
         hasEnded,
         isReviewable: isCompleted || hasEnded,
-        carInfo: rental.car ? `${rental.car.brand} ${rental.car.model}` : 'No car info'
+        carInfo: rental.car
+          ? `${rental.car.brand} ${rental.car.model}`
+          : "No car info",
       });
-      
+
       return isCompleted || hasEnded;
     });
-    
-    console.log('MyReviews - Reviewable rentals:', reviewableRentals.length);
-    console.log('MyReviews - Reviewable rentals details:', reviewableRentals);
+
+    console.log("MyReviews - Reviewable rentals:", reviewableRentals.length);
+    console.log("MyReviews - Reviewable rentals details:", reviewableRentals);
     return reviewableRentals;
   }, [rentals, reviews]);
 
   // Filter and search reviews
   const filteredReviews = useMemo(() => {
-    return reviews.filter(review => {
-      const matchesSearch = searchTerm === '' || 
-        (review.car?.brand && review.car.brand.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (review.car?.model && review.car.model.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (review.comment && review.comment.toLowerCase().includes(searchTerm.toLowerCase()));
+    return reviews.filter((review) => {
+      const matchesSearch =
+        searchTerm === "" ||
+        (review.car?.brand &&
+          review.car.brand.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (review.car?.model &&
+          review.car.model.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (review.comment &&
+          review.comment.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      const matchesRating = ratingFilter === null || review.rating === ratingFilter;
+      const matchesRating =
+        ratingFilter === null || review.rating === ratingFilter;
 
       return matchesSearch && matchesRating;
     });
@@ -153,7 +167,7 @@ const MyReviews: React.FC = () => {
   const handleCreateReview = (rental: Rental) => {
     setSelectedRental(rental);
     setSelectedReview(null);
-    setFormMode('create');
+    setFormMode("create");
     setShowReviewForm(true);
   };
 
@@ -161,41 +175,43 @@ const MyReviews: React.FC = () => {
     setSelectedReview(review);
     setSelectedRental({
       id: review.rentalId,
-      startDate: review.rental?.startDate || '',
-      endDate: review.rental?.endDate || '',
+      startDate: review.rental?.startDate || "",
+      endDate: review.rental?.endDate || "",
       carId: review.carId,
       customerId: review.customerId, // Keep as string (UUID)
-      status: 'completed',
+      status: "completed",
       totalCost: review.rental?.totalCost || 0,
       createdAt: review.rental?.createdAt || new Date().toISOString(), // Add required field
       updatedAt: review.rental?.updatedAt || new Date().toISOString(), // Add required field
-      car: review.car
+      car: review.car,
     } as Rental);
-    setFormMode('edit');
+    setFormMode("edit");
     setShowReviewForm(true);
   };
 
   const handleDeleteReview = async (reviewId: number) => {
     try {
       await deleteReview(reviewId).unwrap();
-      toast.success('Review deleted successfully!');
+      toast.success("Review deleted successfully!");
       refetchReviews();
     } catch (error) {
-      console.error('Error deleting review:', error);
-      toast.error('Failed to delete review. Please try again.');
+      console.error("Error deleting review:", error);
+      toast.error("Failed to delete review. Please try again.");
     }
   };
 
-  const handleSubmitReview = async (reviewData: CreateReview | UpdateReview) => {
+  const handleSubmitReview = async (
+    reviewData: CreateReview | UpdateReview
+  ) => {
     try {
-      if (formMode === 'create') {
+      if (formMode === "create") {
         await createReview(reviewData as CreateReview).unwrap();
       } else {
         await updateReview(reviewData as UpdateReview).unwrap();
       }
       refetchReviews();
     } catch (error) {
-      console.error('Error submitting review:', error);
+      console.error("Error submitting review:", error);
       throw error;
     }
   };
@@ -207,10 +223,10 @@ const MyReviews: React.FC = () => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -227,7 +243,9 @@ const MyReviews: React.FC = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <FaExclamationCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Failed to load reviews</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            Failed to load reviews
+          </p>
         </div>
       </div>
     );
@@ -238,7 +256,9 @@ const MyReviews: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">My Reviews</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+            My Reviews
+          </h2>
           <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
             Manage your car rental reviews and feedback
           </p>
@@ -253,8 +273,12 @@ const MyReviews: React.FC = () => {
               <FaStar className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-400" />
             </div>
             <div className="ml-3 sm:ml-4">
-              <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Total Reviews</p>
-              <p className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">{reviews.length}</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
+                Total Reviews
+              </p>
+              <p className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
+                {reviews.length}
+              </p>
             </div>
           </div>
         </div>
@@ -267,7 +291,9 @@ const MyReviews: React.FC = () => {
               </div>
             </div>
             <div className="ml-3 sm:ml-4">
-              <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Average Rating</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
+                Average Rating
+              </p>
               <p className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
                 {(Number(averageRating) || 0).toFixed(1)}
               </p>
@@ -281,8 +307,12 @@ const MyReviews: React.FC = () => {
               <FaPlus className="w-6 h-6 sm:w-8 sm:h-8 text-green-500" />
             </div>
             <div className="ml-3 sm:ml-4">
-              <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Can Review</p>
-              <p className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">{completedRentals.length}</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
+                Can Review
+              </p>
+              <p className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
+                {completedRentals.length}
+              </p>
             </div>
           </div>
         </div>
@@ -307,11 +337,15 @@ const MyReviews: React.FC = () => {
               >
                 <div className="flex items-center space-x-2 sm:space-x-3 mb-3">
                   <img
-                    src={getPrimaryImageUrl(rental.car?.images, rental.car?.imageUrl)}
+                    src={getPrimaryImageUrl(
+                      rental.car?.images,
+                      rental.car?.imageUrl
+                    )}
                     alt={`${rental.car?.brand} ${rental.car?.model}`}
                     className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover flex-shrink-0"
                     onError={(e) => {
-                      e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xMiAxOEgzNkwzNCAyN0gzMFYyNEgyN1YyN0gyMlYyNEgxOVYyN0gxNVYyNEgxM1YyN0gxMkwxOCAxOFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K';
+                      e.currentTarget.src =
+                        "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xMiAxOEgzNkwzNCAyN0gzMFYyNEgyN1YyN0gyMlYyNEgxOVYyN0gxNVYyNEgxM1YyN0gxMkwxOCAxOFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K";
                     }}
                   />
                   <div className="flex-1 min-w-0">
@@ -319,7 +353,8 @@ const MyReviews: React.FC = () => {
                       {rental.car?.brand} {rental.car?.model}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                      {formatDate(rental.startDate)} - {formatDate(rental.endDate)}
+                      {formatDate(rental.startDate)} -{" "}
+                      {formatDate(rental.endDate)}
                     </p>
                   </div>
                 </div>
@@ -356,8 +391,10 @@ const MyReviews: React.FC = () => {
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <FaFilter className="text-gray-400 w-4 h-4 flex-shrink-0" />
           <select
-            value={ratingFilter || ''}
-            onChange={(e) => setRatingFilter(e.target.value ? parseInt(e.target.value) : null)}
+            value={ratingFilter || ""}
+            onChange={(e) =>
+              setRatingFilter(e.target.value ? parseInt(e.target.value) : null)
+            }
             className="flex-1 sm:flex-none px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="">All Ratings</option>
@@ -375,13 +412,12 @@ const MyReviews: React.FC = () => {
         <div className="text-center py-8 sm:py-12">
           <FaCar className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 dark:text-gray-600 mx-auto mb-3 sm:mb-4" />
           <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white mb-2">
-            {reviews.length === 0 ? 'No reviews yet' : 'No reviews found'}
+            {reviews.length === 0 ? "No reviews yet" : "No reviews found"}
           </h3>
           <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-4 sm:mb-6 px-4">
-            {reviews.length === 0 
-              ? 'Complete a rental to write your first review'
-              : 'Try adjusting your search or filter criteria'
-            }
+            {reviews.length === 0
+              ? "Complete a rental to write your first review"
+              : "Try adjusting your search or filter criteria"}
           </p>
           {completedRentals.length > 0 && (
             <button
@@ -411,11 +447,15 @@ const MyReviews: React.FC = () => {
           {totalPages > 1 && (
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
               <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 text-center sm:text-left">
-                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredReviews.length)} of {filteredReviews.length} reviews
+                Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                {Math.min(currentPage * itemsPerPage, filteredReviews.length)}{" "}
+                of {filteredReviews.length} reviews
               </p>
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
                   disabled={currentPage === 1}
                   className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   aria-label="Previous page"
@@ -426,7 +466,9 @@ const MyReviews: React.FC = () => {
                   Page {currentPage} of {totalPages}
                 </span>
                 <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
                   disabled={currentPage === totalPages}
                   className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   aria-label="Next page"
@@ -449,16 +491,31 @@ const MyReviews: React.FC = () => {
           review={selectedReview}
           carInfo={{
             id: selectedRental.carId || selectedReview?.carId || 0,
-            name: selectedRental.car?.name || `${selectedReview?.car?.brand || ''} ${selectedReview?.car?.model || ''}`.trim() || 'Unknown Car',
-            model: selectedRental.car?.model || selectedReview?.car?.model || '',
-            brand: selectedRental.car?.brand || selectedReview?.car?.brand || '',
-            year: selectedRental.car?.year || selectedReview?.car?.year || new Date().getFullYear(),
-            imageUrl: selectedRental.car?.images?.[0]?.imageUrl || selectedRental.car?.imageUrl || selectedReview?.car?.images?.[0]?.imageUrl || selectedReview?.car?.imageUrl
+            name:
+              selectedRental.car?.name ||
+              `${selectedReview?.car?.brand || ""} ${
+                selectedReview?.car?.model || ""
+              }`.trim() ||
+              "Unknown Car",
+            model:
+              selectedRental.car?.model || selectedReview?.car?.model || "",
+            brand:
+              selectedRental.car?.brand || selectedReview?.car?.brand || "",
+            year:
+              selectedRental.car?.year ||
+              selectedReview?.car?.year ||
+              new Date().getFullYear(),
+            imageUrl:
+              selectedRental.car?.images?.[0]?.imageUrl ||
+              selectedRental.car?.imageUrl ||
+              selectedReview?.car?.images?.[0]?.imageUrl ||
+              selectedReview?.car?.imageUrl,
+            images: selectedRental.car?.images || selectedReview?.car?.images,
           }}
           rentalInfo={{
             id: selectedRental.id,
             startDate: selectedRental.startDate,
-            endDate: selectedRental.endDate
+            endDate: selectedRental.endDate,
           }}
           mode={formMode}
         />

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { FaTimes, FaSave, FaSpinner } from 'react-icons/fa';
-import { toast } from 'react-hot-toast';
-import StarRating from './StarRating';
-import { Review, CreateReview, UpdateReview } from '@/store/Review/reviewApi';
+import React, { useState, useEffect } from "react";
+import { FaTimes, FaSave, FaSpinner } from "react-icons/fa";
+import { toast } from "react-hot-toast";
+import StarRating from "./StarRating";
+import { Review, CreateReview, UpdateReview } from "@/store/Review/reviewApi";
+import { getPrimaryImageUrl } from "@/utils/imageUtils";
 
 interface ReviewFormProps {
   isOpen: boolean;
@@ -17,13 +18,14 @@ interface ReviewFormProps {
     brand: string;
     year: number;
     imageUrl?: string;
+    images?: Array<{ imageUrl: string; isPrimary?: boolean; order?: number }>;
   };
   rentalInfo: {
     id: number;
     startDate: string;
     endDate: string;
   };
-  mode: 'create' | 'edit';
+  mode: "create" | "edit";
 }
 
 const ReviewForm: React.FC<ReviewFormProps> = ({
@@ -34,20 +36,22 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
   review,
   carInfo,
   rentalInfo,
-  mode
+  mode,
 }) => {
   const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState('');
-  const [errors, setErrors] = useState<{ rating?: string; comment?: string }>({});
+  const [comment, setComment] = useState("");
+  const [errors, setErrors] = useState<{ rating?: string; comment?: string }>(
+    {}
+  );
 
   // Initialize form with existing review data if editing
   useEffect(() => {
-    if (mode === 'edit' && review) {
+    if (mode === "edit" && review) {
       setRating(review.rating);
       setComment(review.comment);
     } else {
       setRating(0);
-      setComment('');
+      setComment("");
     }
     setErrors({});
   }, [mode, review, isOpen]);
@@ -56,15 +60,15 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
     const newErrors: { rating?: string; comment?: string } = {};
 
     if (rating === 0) {
-      newErrors.rating = 'Please select a rating';
+      newErrors.rating = "Please select a rating";
     }
 
     if (!comment.trim()) {
-      newErrors.comment = 'Please write a review comment';
+      newErrors.comment = "Please write a review comment";
     } else if (comment.trim().length < 10) {
-      newErrors.comment = 'Review comment must be at least 10 characters';
+      newErrors.comment = "Review comment must be at least 10 characters";
     } else if (comment.trim().length > 1000) {
-      newErrors.comment = 'Review comment must be less than 1000 characters';
+      newErrors.comment = "Review comment must be less than 1000 characters";
     }
 
     setErrors(newErrors);
@@ -84,23 +88,27 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
         rentalId: rentalInfo.id,
         rating,
         comment: comment.trim(),
-        ...(mode === 'edit' && review ? { id: review.id } : {})
+        ...(mode === "edit" && review ? { id: review.id } : {}),
       };
 
       await onSubmit(reviewData);
-      toast.success(mode === 'create' ? 'Review submitted successfully!' : 'Review updated successfully!');
+      toast.success(
+        mode === "create"
+          ? "Review submitted successfully!"
+          : "Review updated successfully!"
+      );
       onClose();
     } catch (error) {
-      console.error('Error submitting review:', error);
-      toast.error('Failed to submit review. Please try again.');
+      console.error("Error submitting review:", error);
+      toast.error("Failed to submit review. Please try again.");
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -109,18 +117,18 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        {/* Background overlay */}
-        <div 
-          className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 backdrop-blur-sm"
+        {/* Background overlay with glass effect */}
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
           onClick={onClose}
         />
 
-        {/* Modal */}
-        <div className="relative z-10 inline-block w-full max-w-lg my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-xl rounded-2xl">
+        {/* Modal with glass effect */}
+        <div className="relative z-10 inline-block w-full max-w-lg my-8 overflow-hidden text-left align-middle transition-all transform bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-xl rounded-2xl border border-gray-200/20 dark:border-gray-700/20">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-              {mode === 'create' ? 'Write a Review' : 'Edit Review'}
+              {mode === "create" ? "Write a Review" : "Edit Review"}
             </h3>
             <button
               onClick={onClose}
@@ -136,11 +144,12 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
               <div className="flex items-center space-x-3">
                 <img
-                  src={carInfo.imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K'}
+                  src={getPrimaryImageUrl(carInfo.images, carInfo.imageUrl)}
                   alt={`${carInfo.brand} ${carInfo.model}`}
                   className="w-16 h-16 rounded-lg object-cover"
                   onError={(e) => {
-                    e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K';
+                    e.currentTarget.src =
+                      "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNiAyNEg0OEw0NiAzNkg0MFYzMkgzNlYzNkgzMFYzMkgyNlYzNkgyMFYzMkgxOFYzNkgxNkwyNCAyNFoiIGZpbGw9IiNGRkZGRkYiLz4KPHN2Zz4K";
                   }}
                 />
                 <div>
@@ -148,7 +157,8 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
                     {carInfo.brand} {carInfo.model}
                   </div>
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {carInfo.year} • Rented: {formatDate(rentalInfo.startDate)} - {formatDate(rentalInfo.endDate)}
+                    {carInfo.year} • Rented: {formatDate(rentalInfo.startDate)}{" "}
+                    - {formatDate(rentalInfo.endDate)}
                   </div>
                 </div>
               </div>
@@ -167,13 +177,18 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
                 className="mb-2"
               />
               {errors.rating && (
-                <p className="text-sm text-red-600 dark:text-red-400">{errors.rating}</p>
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  {errors.rating}
+                </p>
               )}
             </div>
 
             {/* Comment */}
             <div>
-              <label htmlFor="comment" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label
+                htmlFor="comment"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
                 Review Comment *
               </label>
               <textarea
@@ -187,7 +202,9 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
               />
               <div className="flex justify-between items-center mt-1">
                 {errors.comment && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.comment}</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {errors.comment}
+                  </p>
                 )}
                 <p className="text-sm text-gray-500 dark:text-gray-400 ml-auto">
                   {comment.length}/1000
@@ -213,12 +230,16 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
                 {loading ? (
                   <>
                     <FaSpinner className="w-4 h-4 animate-spin" />
-                    <span>{mode === 'create' ? 'Submitting...' : 'Updating...'}</span>
+                    <span>
+                      {mode === "create" ? "Submitting..." : "Updating..."}
+                    </span>
                   </>
                 ) : (
                   <>
                     <FaSave className="w-4 h-4" />
-                    <span>{mode === 'create' ? 'Submit Review' : 'Update Review'}</span>
+                    <span>
+                      {mode === "create" ? "Submit Review" : "Update Review"}
+                    </span>
                   </>
                 )}
               </button>

@@ -1,7 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { FaEye, FaEyeSlash, FaSpinner, FaExclamationCircle, FaCheckCircle, FaTimesCircle, FaUserSlash, FaEnvelope, FaLock, FaWifi } from "react-icons/fa";
+import {
+  FaEye,
+  FaEyeSlash,
+  FaSpinner,
+  FaExclamationCircle,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaUserSlash,
+  FaEnvelope,
+  FaLock,
+  FaWifi,
+} from "react-icons/fa";
 import { toast } from "react-toastify";
 import useReduxAuth from "../store/hooks/useReduxAuth";
 import { clearError } from "../store/Auth/authSlice";
@@ -10,16 +21,26 @@ import MiRideLogo from "../assets/MiRide Logo.png";
 // Error icon mapping based on error type
 const getErrorIcon = (errorMessage: string) => {
   const lowerMessage = errorMessage.toLowerCase();
-  if (lowerMessage.includes('password')) {
+  if (lowerMessage.includes("password")) {
     return <FaLock className="w-5 h-5" />;
   }
-  if (lowerMessage.includes('email') || lowerMessage.includes('account found')) {
+  if (
+    lowerMessage.includes("email") ||
+    lowerMessage.includes("account found")
+  ) {
     return <FaEnvelope className="w-5 h-5" />;
   }
-  if (lowerMessage.includes('disabled') || lowerMessage.includes('deactivated')) {
+  if (
+    lowerMessage.includes("disabled") ||
+    lowerMessage.includes("deactivated")
+  ) {
     return <FaUserSlash className="w-5 h-5" />;
   }
-  if (lowerMessage.includes('connect') || lowerMessage.includes('network') || lowerMessage.includes('server error')) {
+  if (
+    lowerMessage.includes("connect") ||
+    lowerMessage.includes("network") ||
+    lowerMessage.includes("server error")
+  ) {
     return <FaWifi className="w-5 h-5" />;
   }
   return <FaExclamationCircle className="w-5 h-5" />;
@@ -80,9 +101,16 @@ const Login: React.FC = () => {
     e.preventDefault();
     setError("");
     try {
+      // Normalize email for Gmail addresses (remove dots from local part)
+      let normalizedEmail = email.toLowerCase().trim();
+      if (normalizedEmail.endsWith("@gmail.com")) {
+        const [localPart, domain] = normalizedEmail.split("@");
+        normalizedEmail = `${localPart.replace(/\./g, "")}@${domain}`;
+      }
+
       // Use the login function from Redux auth hook
       // Trim inputs before sending to backend
-      await login({ email: email.trim(), password: password.trim() });
+      await login({ email: normalizedEmail, password: password.trim() });
 
       // Handle remember me functionality
       if (rememberMe) {
@@ -141,7 +169,7 @@ const Login: React.FC = () => {
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium">{error}</p>
-              {error.toLowerCase().includes('password') && (
+              {error.toLowerCase().includes("password") && (
                 <button
                   type="button"
                   onClick={handleForgotPassword}
