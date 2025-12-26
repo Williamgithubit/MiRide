@@ -90,6 +90,7 @@ const UserManagement: React.FC = () => {
   // Computed values
   const users = usersData?.users || [];
   const totalPages = usersData?.totalPages || 1;
+  const currentPage = filters.page || 1;
   const isAllSelected =
     users.length > 0 && selectedUsers.length === users.length;
   const isSomeSelected =
@@ -693,7 +694,7 @@ const UserManagement: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Page {filters.page} of {totalPages}
+                  Page {currentPage} of {totalPages}
                 </span>
                 <select
                   value={filters.limit}
@@ -712,10 +713,10 @@ const UserManagement: React.FC = () => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() =>
-                    handleFilterChange("page", Math.max(1, filters.page! - 1))
+                    handleFilterChange("page", Math.max(1, currentPage - 1))
                   }
-                  disabled={filters.page === 1}
-                  className="p-1 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-600"
+                  disabled={currentPage === 1}
+                  className="p-1 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -723,7 +724,7 @@ const UserManagement: React.FC = () => {
                 {/* Page numbers */}
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   const pageNum =
-                    Math.max(1, Math.min(totalPages - 4, filters.page! - 2)) +
+                    Math.max(1, Math.min(totalPages - 4, currentPage - 2)) +
                     i;
                   if (pageNum > totalPages) return null;
 
@@ -732,7 +733,7 @@ const UserManagement: React.FC = () => {
                       key={pageNum}
                       onClick={() => handleFilterChange("page", pageNum)}
                       className={`px-3 py-1 rounded text-sm ${
-                        filters.page === pageNum
+                        currentPage === pageNum
                           ? "bg-blue-600 text-white"
                           : "border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
                       }`}
@@ -746,11 +747,11 @@ const UserManagement: React.FC = () => {
                   onClick={() =>
                     handleFilterChange(
                       "page",
-                      Math.min(totalPages, filters.page! + 1)
+                      Math.min(totalPages, currentPage + 1)
                     )
                   }
-                  disabled={filters.page === totalPages}
-                  className="p-1 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-600"
+                  disabled={currentPage >= totalPages}
+                  className="p-1 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>

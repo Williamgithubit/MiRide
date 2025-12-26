@@ -159,17 +159,13 @@ const Signup: React.FC = () => {
     });
 
     try {
-      // Normalize email for Gmail addresses (remove dots from local part)
-      let normalizedEmail = email.toLowerCase().trim();
-      if (normalizedEmail.endsWith("@gmail.com")) {
-        const [localPart, domain] = normalizedEmail.split("@");
-        normalizedEmail = `${localPart.replace(/\./g, "")}@${domain}`;
-      }
+      // Prepare email (trim and lowercase only, preserve dots)
+      const cleanEmail = email.toLowerCase().trim();
 
       // Create registration data with explicit values and proper types
       const registrationData = {
         name, // Explicitly use the validated name
-        email: normalizedEmail,
+        email: cleanEmail,
         password,
         phone,
         role,
