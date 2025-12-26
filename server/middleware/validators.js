@@ -1,4 +1,5 @@
 import { body, param, query, validationResult } from "express-validator";
+import { normalizeEmail } from "../utils/emailNormalization.js";
 
 // ============================================
 // VALIDATION RESULT HANDLER
@@ -38,26 +39,11 @@ export const handleValidationErrors = (req, res, next) => {
 export const registerValidation = [
   body("email")
     .trim()
-    .customSanitizer((value) => {
-      // Convert to lowercase
-      const email = value.toLowerCase();
-
-      // Normalize Gmail addresses by removing dots in the local part
-      // Only for @gmail.com addresses
-      if (email.endsWith("@gmail.com")) {
-        const [localPart, domain] = email.split("@");
-        // Remove all dots from the local part
-        const normalizedLocal = localPart.replace(/\./g, "");
-        return `${normalizedLocal}@${domain}`;
-      }
-
-      return email;
-    })
     .isEmail()
     .withMessage("Please provide a valid email address")
     .isLength({ max: 255 })
-    .withMessage("Email must be less than 255 characters"),
-
+    .withMessage("Email must be less than 255 characters")
+    .customSanitizer((value) => value.toLowerCase()),
   body("password")
     .isLength({ min: 8 })
     .withMessage("Password must be at least 8 characters long")
@@ -105,20 +91,6 @@ export const registerValidation = [
 export const loginValidation = [
   body("email")
     .trim()
-    .customSanitizer((value) => {
-      // Convert to lowercase
-      const email = value.toLowerCase();
-
-      // Normalize Gmail addresses by removing dots in the local part
-      if (email.endsWith("@gmail.com")) {
-        const [localPart, domain] = email.split("@");
-        // Remove all dots from the local part
-        const normalizedLocal = localPart.replace(/\./g, "");
-        return `${normalizedLocal}@${domain}`;
-      }
-
-      return email;
-    })
     .isEmail()
     .withMessage("Please provide a valid email address"),
 
@@ -126,26 +98,12 @@ export const loginValidation = [
 
   handleValidationErrors,
 ];
-
 export const forgotPasswordValidation = [
   body("email")
     .trim()
-    .customSanitizer((value) => {
-      // Convert to lowercase
-      const email = value.toLowerCase();
-
-      // Normalize Gmail addresses by removing dots in the local part
-      if (email.endsWith("@gmail.com")) {
-        const [localPart, domain] = email.split("@");
-        // Remove all dots from the local part
-        const normalizedLocal = localPart.replace(/\./g, "");
-        return `${normalizedLocal}@${domain}`;
-      }
-
-      return email;
-    })
     .isEmail()
-    .withMessage("Please provide a valid email address"),
+    .withMessage("Please provide a valid email address")
+    .customSanitizer((value) => value.toLowerCase()),
 
   handleValidationErrors,
 ];

@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { Op } from "sequelize";
 import { sendPasswordResetEmail } from "../utils/sendEmail.js";
+import { normalizeEmail } from "../utils/emailNormalization.js";
 
 // SECURITY: JWT_SECRET must be set in environment variables
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -115,8 +116,57 @@ export const register = async (req, res) => {
   }
 
   try {
-    // Check if user already exists
-    const existingUser = await db.User.findOne({ where: { email } });
+    // Prepare email for storage (trim and lowercase only, preserve dots)
+    const cleanEmail = email.trim().toLowerCase();
+    
+    console.log("🔍 [REGISTER] Email processing:");
+    console.log("  Original email from req.body:", email);
+    console.log("  Clean email (should preserve dots):", cleanEmail);
+
+    // For Gmail addresses, check for existing users with flexible matching
+    let existingUser = null;
+    
+    if (cleanEmail.endsWith("@gmail.com")) {
+      const [localPart, domain] = cleanEmail.split("@");
+      const localWithoutDots = localPart.replace(/\./g, "");
+      
+      // Find all Gmail users and check if their local part matches when dots are removed
+      const allGmailUsers = await db.User.findAll({
+        where: {
+          email: {
+            [Op.like]: "%@gmail.com"
+          }
+        },
+      });
+      
+      for (const potentialUser of allGmailUsers) {
+        const [userLocalPart] = potentialUser.email.split("@");
+        const userLocalWithoutDots = userLocalPart.replace(/\./g, "");
+        
+        if (userLocalWithoutDots.toLowerCase() === localWithoutDots.toLowerCase()) {
+          existingUser = potentialUser;
+          console.log(`[REGISTER] Found existing Gmail user via dot-insensitive match: ${potentialUser.email}`);
+          break;
+        }
+      }
+    } else {
+      // For non-Gmail addresses, do exact match
+      existingUser = await db.User.findOne({
+        where: { email: cleanEmail },
+      });
+      
+      // If not found, try case-insensitive search
+      if (!existingUser) {
+        existingUser = await db.User.findOne({
+          where: db.sequelize.where(
+            db.sequelize.fn("LOWER", db.sequelize.col("email")),
+            Op.eq,
+            cleanEmail
+          ),
+        });
+      }
+    }
+
     if (existingUser) {
       return res
         .status(400)
@@ -169,11 +219,11 @@ export const register = async (req, res) => {
 
     // Use a transaction to ensure all operations succeed or fail together
     const result = await db.sequelize.transaction(async (t) => {
-      // Create the new user with hashed password
+      // Create the new user with hashed password and original email (with dots preserved)
       const newUser = await db.User.create(
         {
           name,
-          email,
+          email: cleanEmail,
           password, // Will be hashed in the model's beforeCreate hook
           phone,
           role: userRole,
@@ -257,23 +307,100 @@ export const login = async (req, res) => {
   }
 
   try {
-    const normalizedEmail = email.trim().toLowerCase();
+    const inputEmail = email.trim().toLowerCase();
+    
     console.log("🔐 LOGIN ATTEMPT");
-    console.log("  Email (raw):", email);
-    console.log("  Email (normalized):", normalizedEmail);
+    console.log("  Email (input):", inputEmail);
     console.log("  Password length:", password ? password.length : 0);
     console.log("  Password provided:", !!password);
 
-    // First, try simple find without includes to verify user exists
-    let user = await db.User.findOne({
-      where: { email: normalizedEmail },
-      raw: false,
-    });
+    // For Gmail addresses, we need to search for both with and without dots
+    // because Gmail treats them as equivalent but our DB might have either format
+    let searchEmails = [inputEmail];
+    
+    if (inputEmail.endsWith("@gmail.com")) {
+      const [localPart, domain] = inputEmail.split("@");
+      const withoutDots = `${localPart.replace(/\./g, "")}@${domain}`;
+      const withDots = localPart.replace(/\./g, "");
+      
+      // Add the alternate format if different
+      if (withoutDots !== inputEmail) {
+        searchEmails.push(withoutDots);
+      }
+      
+      // For the version without dots, we can't easily reconstruct where dots were,
+      // so we'll use a LIKE query for Gmail addresses
+      console.log("  Gmail detected - will search multiple formats");
+    }
+
+    console.log("  Search emails:", searchEmails);
+
+    let user = null;
+
+    // Try exact matches first
+    for (const searchEmail of searchEmails) {
+      user = await db.User.findOne({
+        where: { email: searchEmail },
+        raw: false,
+      });
+      if (user) {
+        console.log(`[LOGIN] Found user with exact match: ${searchEmail}`);
+        break;
+      }
+    }
+
+    // If not found and it's a Gmail address, try a more flexible search
+    if (!user && inputEmail.endsWith("@gmail.com")) {
+      console.log("[LOGIN] Trying flexible Gmail search (ignoring dots)");
+      
+      const [localPart] = inputEmail.split("@");
+      const localWithoutDots = localPart.replace(/\./g, "");
+      
+      // Find all Gmail users and check if their local part matches when dots are removed
+      const allUsers = await db.User.findAll({
+        where: {
+          email: {
+            [Op.like]: "%@gmail.com"
+          }
+        },
+        raw: false,
+      });
+      
+      for (const potentialUser of allUsers) {
+        const [userLocalPart] = potentialUser.email.split("@");
+        const userLocalWithoutDots = userLocalPart.replace(/\./g, "");
+        
+        if (userLocalWithoutDots.toLowerCase() === localWithoutDots.toLowerCase()) {
+          user = potentialUser;
+          console.log(`[LOGIN] Found Gmail user via dot-insensitive match: ${potentialUser.email}`);
+          break;
+        }
+      }
+    }
+
+    // If still not found, try case-insensitive search
+    if (!user) {
+      console.log("[LOGIN] Trying case-insensitive search");
+      for (const searchEmail of searchEmails) {
+        user = await db.User.findOne({
+          where: db.sequelize.where(
+            db.sequelize.fn("LOWER", db.sequelize.col("email")),
+            Op.eq,
+            searchEmail.toLowerCase()
+          ),
+          raw: false,
+        });
+        if (user) {
+          console.log(`[LOGIN] Found user with case-insensitive match: ${searchEmail}`);
+          break;
+        }
+      }
+    }
 
     console.log(
       "User found:",
       user ? "Yes" : "No",
-      user ? `ID: ${user.id}` : ""
+      user ? `ID: ${user.id}, Email: ${user.email}` : ""
     );
 
     // If user not found in User model, check legacy Customer model
@@ -282,16 +409,71 @@ export const login = async (req, res) => {
         "User not found in User model, checking legacy Customer model..."
       );
       if (db.Customer) {
-        const legacyUser = await db.Customer.findOne({
-          where: { email: normalizedEmail },
-        });
+        let legacyUser = null;
+        
+        // Try exact matches first
+        for (const searchEmail of searchEmails) {
+          legacyUser = await db.Customer.findOne({
+            where: { email: searchEmail },
+          });
+          if (legacyUser) {
+            console.log(`[LOGIN] Found legacy user with exact match: ${searchEmail}`);
+            break;
+          }
+        }
+
+        // If not found and it's Gmail, try flexible search
+        if (!legacyUser && inputEmail.endsWith("@gmail.com")) {
+          console.log("[LOGIN] Trying flexible Gmail search in legacy model");
+          
+          const [localPart] = inputEmail.split("@");
+          const localWithoutDots = localPart.replace(/\./g, "");
+          
+          const allLegacyUsers = await db.Customer.findAll({
+            where: {
+              email: {
+                [Op.like]: "%@gmail.com"
+              }
+            },
+          });
+          
+          for (const potentialUser of allLegacyUsers) {
+            const [userLocalPart] = potentialUser.email.split("@");
+            const userLocalWithoutDots = userLocalPart.replace(/\./g, "");
+            
+            if (userLocalWithoutDots.toLowerCase() === localWithoutDots.toLowerCase()) {
+              legacyUser = potentialUser;
+              console.log(`[LOGIN] Found legacy Gmail user via dot-insensitive match: ${potentialUser.email}`);
+              break;
+            }
+          }
+        }
+
+        // If still not found, try case-insensitive search
+        if (!legacyUser) {
+          console.log("[LOGIN] Trying case-insensitive search in legacy model");
+          for (const searchEmail of searchEmails) {
+            legacyUser = await db.Customer.findOne({
+              where: db.sequelize.where(
+                db.sequelize.fn("LOWER", db.sequelize.col("email")),
+                Op.eq,
+                searchEmail.toLowerCase()
+              ),
+            });
+            if (legacyUser) {
+              console.log(`[LOGIN] Found legacy user with case-insensitive match: ${searchEmail}`);
+              break;
+            }
+          }
+        }
+
         if (legacyUser) {
           console.log("User found in legacy Customer model");
           // Handle legacy user login
           return handleLegacyLogin(legacyUser, password, res);
         }
       }
-      console.log("No account found for email:", normalizedEmail);
+      console.log("No account found for email:", inputEmail);
       return res.status(404).json({
         message: "No account found with this email address",
         errorCode: "USER_NOT_FOUND",
@@ -687,29 +869,82 @@ export const forgotPassword = async (req, res) => {
   }
 
   try {
-    const normalizedEmail = email.trim().toLowerCase();
-    console.log(
-      "[FORGOT_PASSWORD] Searching for user with email:",
-      normalizedEmail
-    );
+    const inputEmail = email.trim().toLowerCase();
+    
+    console.log("[FORGOT_PASSWORD] Searching for user with email:", inputEmail);
 
-    // Try exact match first
-    let user = await db.User.findOne({
-      where: { email: normalizedEmail },
-    });
+    // For Gmail addresses, search for both with and without dots
+    let searchEmails = [inputEmail];
+    
+    if (inputEmail.endsWith("@gmail.com")) {
+      const [localPart, domain] = inputEmail.split("@");
+      const withoutDots = `${localPart.replace(/\./g, "")}@${domain}`;
+      
+      if (withoutDots !== inputEmail) {
+        searchEmails.push(withoutDots);
+      }
+      
+      console.log("[FORGOT_PASSWORD] Gmail detected - will search multiple formats");
+    }
 
-    // If not found, try case-insensitive search using Sequelize.where and Sequelize.fn
-    if (!user) {
-      console.log(
-        "[FORGOT_PASSWORD] Exact match not found, trying case-insensitive search"
-      );
+    console.log("[FORGOT_PASSWORD] Search emails:", searchEmails);
+
+    let user = null;
+
+    // Try exact matches first
+    for (const searchEmail of searchEmails) {
       user = await db.User.findOne({
-        where: db.sequelize.where(
-          db.sequelize.fn("LOWER", db.sequelize.col("email")),
-          Op.eq,
-          normalizedEmail
-        ),
+        where: { email: searchEmail },
       });
+      if (user) {
+        console.log(`[FORGOT_PASSWORD] Found user with exact match: ${searchEmail}`);
+        break;
+      }
+    }
+
+    // If not found and it's a Gmail address, try flexible search
+    if (!user && inputEmail.endsWith("@gmail.com")) {
+      console.log("[FORGOT_PASSWORD] Trying flexible Gmail search (ignoring dots)");
+      
+      const [localPart] = inputEmail.split("@");
+      const localWithoutDots = localPart.replace(/\./g, "");
+      
+      const allUsers = await db.User.findAll({
+        where: {
+          email: {
+            [Op.like]: "%@gmail.com"
+          }
+        },
+      });
+      
+      for (const potentialUser of allUsers) {
+        const [userLocalPart] = potentialUser.email.split("@");
+        const userLocalWithoutDots = userLocalPart.replace(/\./g, "");
+        
+        if (userLocalWithoutDots.toLowerCase() === localWithoutDots.toLowerCase()) {
+          user = potentialUser;
+          console.log(`[FORGOT_PASSWORD] Found Gmail user via dot-insensitive match: ${potentialUser.email}`);
+          break;
+        }
+      }
+    }
+
+    // If still not found, try case-insensitive search
+    if (!user) {
+      console.log("[FORGOT_PASSWORD] Trying case-insensitive search");
+      for (const searchEmail of searchEmails) {
+        user = await db.User.findOne({
+          where: db.sequelize.where(
+            db.sequelize.fn("LOWER", db.sequelize.col("email")),
+            Op.eq,
+            searchEmail.toLowerCase()
+          ),
+        });
+        if (user) {
+          console.log(`[FORGOT_PASSWORD] Found user with case-insensitive match: ${searchEmail}`);
+          break;
+        }
+      }
     }
 
     console.log("[FORGOT_PASSWORD] User search result:", {
